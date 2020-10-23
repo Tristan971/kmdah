@@ -46,6 +46,10 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-autoconfigure-processor</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+        </dependency>
 
         <!-- Webserver -->
         <dependency>
@@ -85,13 +89,6 @@
             <groupId>com.treatwell</groupId>
             <artifactId>immutables-styles</artifactId>
             <version>2.2.0</version>
-        </dependency>
-
-        <!-- Configuration -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-configuration-processor</artifactId>
-            <optional>true</optional>
         </dependency>
 
         <!-- Testing -->

@@ -32,7 +32,7 @@ abstract class AbstractPingRequest {
      * @return the currently available diskspace (for client usage) in bytes
      */
     @JsonProperty("disk_space")
-    public abstract int getDiskSpace();
+    public abstract long getDiskSpace();
 
     /**
      * @return the maximum speed to dedicate to the client, in kilobytes per second

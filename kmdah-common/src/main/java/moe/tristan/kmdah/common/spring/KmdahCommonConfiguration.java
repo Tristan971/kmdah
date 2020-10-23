@@ -22,7 +22,7 @@ import io.micrometer.core.instrument.MeterRegistry;
     PrometheusMetricsExportAutoConfiguration.class,
     RestTemplateAutoConfiguration.class
 })
-@ComponentScan("moe.tristan.kmdah.common.spring")
+@ComponentScan
 public class KmdahCommonConfiguration {
 
     @Bean
