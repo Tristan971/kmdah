@@ -11,4 +11,12 @@
 
     <artifactId>kmdah-operator</artifactId>
 
+    <dependencies>
+        <dependency>
+            <groupId>moe.tristan.kmdah</groupId>
+            <artifactId>kmdah-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
+
 </project>

@@ -1,0 +1,9 @@
+{
+  "properties": [
+    {
+      "name": "spring.application.version",
+      "type": "java.lang.String",
+      "description": "Runtime version of the kmdah operator."
+    }
+  ]
+}
