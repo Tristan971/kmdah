@@ -7,6 +7,6 @@ import moe.tristan.kmdah.common.spring.KmdahCommonConfiguration;
 
 @Configuration
 @Import(KmdahCommonConfiguration.class)
-public class OperatorConfiguration {
+public class KmdahOperatorConfiguration {
 
 }

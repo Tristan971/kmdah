@@ -1,4 +1,4 @@
-package moe.tristan.kmdah.operator.userconfig;
+package moe.tristan.kmdah.operator.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
@@ -8,7 +8,6 @@ import org.springframework.stereotype.Component;
 public class UserNetworkSettings {
 
     private int port;
-    private int bandwidthMegabytesPerSecond;
 
     public int getPort() {
         return port;
@@ -16,14 +15,6 @@ public class UserNetworkSettings {
 
     public void setPort(int port) {
         this.port = port;
-    }
-
-    public int getBandwidthMegabytesPerSecond() {
-        return bandwidthMegabytesPerSecond;
-    }
-
-    public void setBandwidthMegabytesPerSecond(int bandwidthMegabytesPerSecond) {
-        this.bandwidthMegabytesPerSecond = bandwidthMegabytesPerSecond;
     }
 
 }

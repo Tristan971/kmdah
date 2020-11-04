@@ -4,10 +4,10 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class Operator {
+public class KmdahOperator {
 
     public static void main(String[] args) {
-        SpringApplication.run(Operator.class);
+        SpringApplication.run(KmdahOperator.class);
     }
 
 }
