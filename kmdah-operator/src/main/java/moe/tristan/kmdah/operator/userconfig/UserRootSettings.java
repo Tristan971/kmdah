@@ -1,4 +1,4 @@
-package moe.tristan.kmdah.operator.service.config;
+package moe.tristan.kmdah.operator.userconfig;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;

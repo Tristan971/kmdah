@@ -15,9 +15,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 import moe.tristan.kmdah.common.mangadex.MangadexApi;
 import moe.tristan.kmdah.common.mangadex.ping.PingRequest;
 import moe.tristan.kmdah.common.mangadex.ping.PingResponse;
-import moe.tristan.kmdah.operator.service.config.UserNetworkSettings;
-import moe.tristan.kmdah.operator.service.config.UserRootSettings;
-import moe.tristan.kmdah.operator.service.config.UserStorageSettings;
+import moe.tristan.kmdah.operator.userconfig.UserNetworkSettings;
+import moe.tristan.kmdah.operator.userconfig.UserRootSettings;
+import moe.tristan.kmdah.operator.userconfig.UserStorageSettings;
 import moe.tristan.kmdah.operator.service.workers.WorkerPoolService;
 
 import io.micrometer.core.annotation.Timed;

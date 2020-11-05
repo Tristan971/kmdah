@@ -8,7 +8,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import moe.tristan.kmdah.common.mangadex.MangadexApi;
 import moe.tristan.kmdah.common.mangadex.stop.StopRequest;
-import moe.tristan.kmdah.operator.service.config.UserRootSettings;
+import moe.tristan.kmdah.operator.userconfig.UserRootSettings;
 
 import io.micrometer.core.annotation.Timed;
 

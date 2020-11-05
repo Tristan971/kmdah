@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import moe.tristan.kmdah.common.internal.Worker;
+import moe.tristan.kmdah.common.internal.WorkerConfig;
+import moe.tristan.kmdah.common.internal.WorkerShutdownConfig;
 import moe.tristan.kmdah.operator.service.workers.WorkerPoolService;
 
 @RestController
@@ -18,13 +20,13 @@ public class WorkerController {
     }
 
     @PutMapping("/worker")
-    public void register(@RequestBody Worker worker) {
-        workerPoolService.registerWorker(worker);
+    public WorkerConfig heartbeat(@RequestBody Worker worker) {
+        return workerPoolService.heartbeat(worker);
     }
 
     @DeleteMapping("/worker")
-    public void unregister(@RequestBody Worker worker) {
-        workerPoolService.unregisterWorker(worker);
+    public WorkerShutdownConfig disconnect(@RequestBody Worker worker) {
+        return workerPoolService.disconnect(worker);
     }
 
 }
