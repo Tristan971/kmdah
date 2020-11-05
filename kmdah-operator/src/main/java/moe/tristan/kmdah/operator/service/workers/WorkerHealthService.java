@@ -1,4 +1,4 @@
-package moe.tristan.kmdah.operator.workers;
+package moe.tristan.kmdah.operator.service.workers;
 
 import java.net.URI;
 
