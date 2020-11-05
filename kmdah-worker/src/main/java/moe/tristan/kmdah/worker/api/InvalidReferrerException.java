@@ -1,4 +1,4 @@
-package moe.tristan.kmdah.worker.service;
+package moe.tristan.kmdah.worker.api;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;

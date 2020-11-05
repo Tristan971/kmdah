@@ -1,4 +1,4 @@
-package moe.tristan.kmdah.worker.service;
+package moe.tristan.kmdah.worker.api;
 
 import java.io.IOException;
 import java.net.URI;
