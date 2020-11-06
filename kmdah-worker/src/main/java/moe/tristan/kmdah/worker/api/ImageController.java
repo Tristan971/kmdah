@@ -2,8 +2,8 @@ package moe.tristan.kmdah.worker.api;
 
 import javax.servlet.http.HttpServletResponse;
 
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
@@ -11,12 +11,19 @@ import org.springframework.web.bind.annotation.RestController;
 import moe.tristan.kmdah.common.mangadex.image.Image;
 import moe.tristan.kmdah.common.mangadex.image.ImageMode;
 import moe.tristan.kmdah.worker.model.ImageRequest;
+import moe.tristan.kmdah.worker.service.images.CachedImageService;
 
 @RestController
 public class ImageController {
 
+    private final CachedImageService imageService;
+
+    public ImageController(CachedImageService imageService) {
+        this.imageService = imageService;
+    }
+
     @GetMapping("/{token}/{image-mode}/{chapterHash}/{fileName}")
-    public byte[] tokenizedImage(
+    public InputStreamResource tokenizedImage(
         @PathVariable String token,
         @PathVariable("image-mode") String imageMode,
         @PathVariable String chapterHash,
@@ -27,7 +34,7 @@ public class ImageController {
     }
 
     @GetMapping("/{image-mode}/{chapterHash}/{fileName}")
-    public byte[] unTokenizedImage(
+    public InputStreamResource unTokenizedImage(
         @PathVariable("image-mode") String imageMode,
         @PathVariable String chapterHash,
         @PathVariable String fileName,
@@ -36,13 +43,14 @@ public class ImageController {
         return serve(response, imageMode, chapterHash, fileName);
     }
 
-    private byte[] serve(HttpServletResponse response, String imageMode, String chapter, String file) {
+    private InputStreamResource serve(HttpServletResponse response, String imageMode, String chapter, String file) {
         ImageRequest imageRequest = ImageRequest.of(
             ImageMode.fromPathFragment(imageMode),
             chapter,
             file
         );
-        Image image = fetchImage(imageRequest);
+        Image image = imageService.findOrFetch(imageRequest);
+        response.setContentLength(image.getSize());
         response.setContentType(image.getContentType());
 
         // MDAH spec headers
@@ -52,15 +60,7 @@ public class ImageController {
         response.setHeader("Timing-Allow-Origin", "https://mangadex.org");
         response.setHeader("X-Content-Type-Options", "nosniff");
 
-        return image.getBytes();
-    }
-
-    private Image fetchImage(ImageRequest imageRequest) {
-        return Image
-            .builder()
-            .bytes((byte) 0)
-            .contentType(MediaType.APPLICATION_JSON_VALUE)
-            .build();
+        return new InputStreamResource(image.getInputStream());
     }
 
 }

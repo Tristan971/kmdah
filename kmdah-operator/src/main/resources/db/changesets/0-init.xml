@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+    <changeSet id="0" author="Tristan Deloche" runAlways="false">
+
+        <sql>
+            CREATE SCHEMA mdah;
+
+            -- Images
+            CREATE TABLE mdah.images
+            (
+                filename     text primary key,
+                chapter_hash text    not null,
+                mode         text    not null,
+                content_type text    not null,
+                size         integer not null
+            );
+
+            CREATE UNIQUE INDEX idx_image_id ON mdah.images (filename);
+        </sql>
+
+    </changeSet>
+</databaseChangeLog>

@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import moe.tristan.kmdah.common.internal.Worker;
+import moe.tristan.kmdah.common.internal.api.worker.Worker;
 
 @Service
 public class WorkerHealthService {
@@ -19,16 +19,16 @@ public class WorkerHealthService {
         this.restTemplate = restTemplate;
     }
 
-    public void validateWorkerHealth(Worker worker) {
+    public void validateWorkerHealth(Worker workerHeartbeat) {
         URI workerTestUri = UriComponentsBuilder
-            .fromHttpUrl(worker.getHttpUrl())
+            .fromHttpUrl(workerHeartbeat.getHttpUrl())
             .path(TEST_IMAGE_PATH)
             .build()
             .toUri();
 
         byte[] response = restTemplate.getForObject(workerTestUri, byte[].class);
         if (response == null || response.length == 0) {
-            throw new IllegalStateException("Worker " + worker + " replied on test endpoint, but the response was null or empty!");
+            throw new IllegalStateException("Worker " + workerHeartbeat + " replied on test endpoint, but the response was null or empty!");
         }
     }
 

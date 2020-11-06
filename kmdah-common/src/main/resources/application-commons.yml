@@ -1,0 +1,15 @@
+kmdah:
+  operator:
+    port: ${KMDAH_OPERATOR_PORT:8080}
+    secret: ${KMDAH_OPERATOR_SECRET:super-very-mega-secret}
+
+  database:
+    host: ${KMDAH_DATABASE_HOST:localhost}
+    port: ${KMDAH_DATABASE_PORT:5432}
+    database: ${KMDAH_DATABASE_DATABASE:mdah}
+    user: ${KMDAH_DATABASE_USER:mdah}
+    password: ${KMDAH_DATABASE_PASSWORD:mdah}
+
+  cache:
+    root: ${KMDAH_CACHE_ROOT:cache}
+    maxsize: ${KMDAH_CACHE_SIZE:0}

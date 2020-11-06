@@ -4,7 +4,6 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
 
-    <!-- Include all files under <this file's directory>/changesets -->
-    <includeAll path="changesets" relativeToChangelogFile="true" errorIfMissingOrEmpty="true" />
+    <include file="changesets/0-init.xml" relativeToChangelogFile="true" />
 
 </databaseChangeLog>

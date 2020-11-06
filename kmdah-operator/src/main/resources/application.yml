@@ -1,44 +1,23 @@
-# User configuration
-kmdah:
-  operator:
-    port: ${KMDAH_OPERATOR_PORT:8080}
-    secret: ${KMDAH_OPERATOR_SECRET:super-very-mega-secret}
-
-  database:
-    host: ${KMDAH_DATABASE_HOST:localhost}
-    port: ${KMDAH_DATABASE_PORT:5432}
-    database: ${KMDAH_DATABASE_DATABASE:mdah}
-    user: ${KMDAH_DATABASE_USER:mdah}
-    password: ${KMDAH_DATABASE_PASSWORD:mdah}
-
 # Application configuration
 spring:
   application:
     name: kmdah-operator
     version: @project.version@
 
-  jpa:
-    open-in-view: false
-    generate-ddl: false
-    hibernate:
-      ddl-auto: validate
-
-  datasource:
-    type: com.zaxxer.hikari.HikariDataSource
-    driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://${kmdah.database.host}:${kmdah.database.port}/${kmdah.database.database}
-    username: ${kmdah.database.user}
-    password: ${kmdah.database.password}
+  profiles:
+    include:
+      - commons
+      - persistence
 
   liquibase:
     change-log: classpath:db/changesets.xml
+    liquibase-schema: public
+    default-schema: public
 
 logging:
   level:
     root: INFO
-    # noisy ones
     org.hibernate: WARN
-    liquibase: WARN
 
 server:
   port: ${kmdah.operator.port}

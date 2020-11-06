@@ -14,9 +14,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import moe.tristan.kmdah.common.internal.Worker;
-import moe.tristan.kmdah.common.internal.WorkerConfig;
-import moe.tristan.kmdah.common.internal.WorkerShutdownConfig;
+import moe.tristan.kmdah.common.internal.api.worker.Worker;
+import moe.tristan.kmdah.common.internal.api.worker.WorkerConfiguration;
+import moe.tristan.kmdah.common.internal.api.worker.WorkerShutdown;
+
 
 @Service
 public class WorkerPoolService {
@@ -34,7 +35,7 @@ public class WorkerPoolService {
         WORKER_REAPER.scheduleAtFixedRate(this::reapExpired, 1, 5, TimeUnit.SECONDS);
     }
 
-    public WorkerConfig heartbeat(Worker worker) {
+    public WorkerConfiguration heartbeat(Worker worker) {
         workerHealthService.validateWorkerHealth(worker);
 
         Instant previous = workersAndExpiries.put(worker, Instant.now().plus(1, ChronoUnit.MINUTES));
@@ -44,19 +45,17 @@ public class WorkerPoolService {
             LOGGER.info("Heartbeat received from worker: {}", worker);
         }
 
-        return WorkerConfig.of("https://s2.mangadex.org"); // todo: use the one from ping response
+        return WorkerConfiguration.of("https://s2.mangadex.org"); // todo: use the one from ping response
     }
 
-    public WorkerShutdownConfig disconnect(Worker worker) {
+    public WorkerShutdown disconnect(Worker worker) {
         workersAndExpiries.remove(worker);
         LOGGER.info("Successfully unregistered worker: {}", worker);
 
-        int requestedGracefulShutdownPeriodSeconds = 0;
-        if (workersAndExpiries.isEmpty()) {
-            requestedGracefulShutdownPeriodSeconds = 60 * 5; // if this is the latest worker, request that it waits 5 minutes to shutdown
-        }
-
-        return WorkerShutdownConfig.of(requestedGracefulShutdownPeriodSeconds);
+        return WorkerShutdown
+            .builder()
+            .gracefulShutdownRequired(workersAndExpiries.isEmpty())
+            .build();
     }
 
     private void reapExpired() {

@@ -6,10 +6,6 @@ import com.treatwell.immutables.styles.ValueObjectStyle;
 
 @Immutable
 @ValueObjectStyle
-abstract class AbstractImage {
-
-    public abstract String getContentType();
-
-    public abstract byte[] getBytes();
+abstract class AbstractCachedImage implements Image {
 
 }

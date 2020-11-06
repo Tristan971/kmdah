@@ -1,4 +1,4 @@
-package moe.tristan.kmdah.common.internal;
+package moe.tristan.kmdah.common.internal.api.worker;
 
 import org.immutables.value.Value.Immutable;
 import org.immutables.value.Value.Parameter;
@@ -7,9 +7,9 @@ import com.treatwell.immutables.styles.ValueObjectStyle;
 
 @Immutable
 @ValueObjectStyle
-abstract class AbstractWorkerConfig {
+abstract class AbstractWorkerShutdown {
 
     @Parameter
-    public abstract String getImageServer();
+    public abstract boolean isGracefulShutdownRequired();
 
 }
