@@ -1,11 +1,11 @@
-package moe.tristan.kmdah.operator.userconfig;
+package moe.tristan.kmdah.operator.configuration;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 @Component
 @ConfigurationProperties("kmdah.storage")
-public class UserStorageSettings {
+public class StorageSettings {
 
     private long cacheSizeMebibytes;
 

@@ -15,9 +15,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 import moe.tristan.kmdah.common.mangadex.MangadexApi;
 import moe.tristan.kmdah.common.mangadex.ping.PingRequest;
 import moe.tristan.kmdah.common.mangadex.ping.PingResponse;
-import moe.tristan.kmdah.operator.userconfig.UserNetworkSettings;
-import moe.tristan.kmdah.operator.userconfig.UserRootSettings;
-import moe.tristan.kmdah.operator.userconfig.UserStorageSettings;
+import moe.tristan.kmdah.operator.configuration.OperatorSettings;
+import moe.tristan.kmdah.operator.configuration.StorageSettings;
 import moe.tristan.kmdah.operator.service.workers.WorkerPoolService;
 
 import io.micrometer.core.annotation.Timed;
@@ -33,23 +32,20 @@ public class PingService {
 
     private final RestTemplate restTemplate;
 
-    private final UserRootSettings userRootSettings;
-    private final UserStorageSettings userStorageSettings;
-    private final UserNetworkSettings userNetworkSettings;
+    private final OperatorSettings operatorSettings;
+    private final StorageSettings storageSettings;
 
     private final WorkerPoolService workerPoolService;
 
     public PingService(
         RestTemplate restTemplate,
-        UserRootSettings userRootSettings,
-        UserStorageSettings userStorageSettings,
-        UserNetworkSettings userNetworkSettings,
+        OperatorSettings operatorSettings,
+        StorageSettings storageSettings,
         WorkerPoolService workerPoolService
     ) {
         this.restTemplate = restTemplate;
-        this.userRootSettings = userRootSettings;
-        this.userStorageSettings = userStorageSettings;
-        this.userNetworkSettings = userNetworkSettings;
+        this.operatorSettings = operatorSettings;
+        this.storageSettings = storageSettings;
         this.workerPoolService = workerPoolService;
     }
 
@@ -57,9 +53,9 @@ public class PingService {
     public PingResponse ping(Optional<ZonedDateTime> lastCreatedAt) {
         PingRequest request = PingRequest
             .builder()
-            .secret(userRootSettings.getSecret())
-            .port(userNetworkSettings.getPort())
-            .diskSpace(userStorageSettings.getCacheSizeMebibytes())
+            .secret(operatorSettings.getSecret())
+            .port(operatorSettings.getPort())
+            .diskSpace(storageSettings.getCacheSizeMebibytes())
             .networkSpeed(workerPoolService.getPoolBandwidthMbps() * 1024)
             .tlsCreatedAt(lastCreatedAt)
             .build();

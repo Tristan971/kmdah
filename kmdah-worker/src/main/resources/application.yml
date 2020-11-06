@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: kmdah-worker-${HOSTNAME}
+    version: @project.version@
+
+logging:
+  level:
+    root: WARN
+    moe.tristan.kmdah: INFO
+
+server:
+  port: ${kmdah.worker.port}
+
+# User configuration
+kmdah:
+  worker:
+    port: ${KMDAH_WORKER_PORT:8081}
+    operator:
+      host: ${KMDAH_WORKER_OPERATOR_HOST:localhost}
+      port: ${KMDAH_WORKER_OPERATOR_PORT:8080}
