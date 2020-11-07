@@ -86,4 +86,13 @@ public class ImageEntity implements ImageSpec {
         this.size = size;
     }
 
+    @Override
+    public String toString() {
+        return "ImageEntity{" +
+               "filename='" + filename + '\'' +
+               ", chapterHash='" + chapterHash + '\'' +
+               ", mode=" + mode +
+               '}';
+    }
+
 }

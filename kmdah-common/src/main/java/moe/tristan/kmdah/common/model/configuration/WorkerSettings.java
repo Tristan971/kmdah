@@ -11,9 +11,11 @@ public class WorkerSettings {
 
     private int port;
 
-    public URI operatorUri;
+    private URI operatorUri;
 
-    public int bandwidthMbps;
+    private int bandwidthMbps;
+
+    private boolean verifyReferrer;
 
     public int getPort() {
         return port;
@@ -37,6 +39,14 @@ public class WorkerSettings {
 
     public void setBandwidthMbps(int bandwidthMbps) {
         this.bandwidthMbps = bandwidthMbps;
+    }
+
+    public boolean isVerifyReferrer() {
+        return verifyReferrer;
+    }
+
+    public void setVerifyReferrer(boolean verifyReferrer) {
+        this.verifyReferrer = verifyReferrer;
     }
 
 }

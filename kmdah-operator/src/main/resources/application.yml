@@ -9,6 +9,7 @@ spring:
       - logging
       - metrics
       - persistence
+      - web
 
   liquibase:
     change-log: classpath:db/changesets.xml
@@ -22,4 +23,3 @@ spring:
 
 server:
   port: ${kmdah.operator.port}
-  shutdown: graceful

@@ -6,7 +6,7 @@ kmdah:
     port: ${KMDAH_OPERATOR_PORT:8080}
     secret: ${KMDAH_OPERATOR_SECRET:super-very-mega-secret}
     ping-frequency-seconds: ${KMDAH_OPERATOR_PING_FREQUENCY_SECONDS:30}
-    graceful-shutdown-seconds: ${KMDAH_OPERATOR_GRACEFUL_SHUTDOWN_SECONDS:300}
+    graceful-shutdown-seconds: ${KMDAH_GRACEFUL_SHUTDOWN_SECONDS:300}
 
   load-balancer:
     uri: ${KMDAH_LOAD_BALANCER_URI:http://localhost:${kmdah.worker.port}}
@@ -15,6 +15,7 @@ kmdah:
     port: ${KMDAH_WORKER_PORT:8081}
     operator-uri: ${KMDAH_WORKER_OPERATOR_URI:http://localhost:${kmdah.operator.port}}
     bandwidth-mbps: ${KMDAH_WORKER_BANDWIDTH_MBPS:1}
+    verify-referrer: ${KMDAH_WORKER_VERIFY_REFERRER:true}
 
   database:
     host: ${KMDAH_DATABASE_HOST:localhost}
@@ -26,3 +27,7 @@ kmdah:
   cache:
     root: ${KMDAH_CACHE_ROOT:cache}
     max-size-gibibytes: ${KMDAH_CACHE_SIZE:1}
+
+  metadata:
+    client-spec: 16
+    server-header: kube-mdah ${kmdah.version} - ${spring.application.name} - https://github.com/Tristan971/kube-mdah

@@ -2,7 +2,7 @@ package moe.tristan.kmdah.common.model.mangadex.image;
 
 public enum ImageMode {
 
-    ORIGINAL("data"),
+    DATA("data"),
     DATA_SAVER("data-saver");
 
     private final String pathFragment;
@@ -16,8 +16,8 @@ public enum ImageMode {
     }
 
     public static ImageMode fromPathFragment(String fragment) {
-        if (ORIGINAL.getPathFragment().equals(fragment)) {
-            return ORIGINAL;
+        if (DATA.getPathFragment().equals(fragment)) {
+            return DATA;
         } else if (DATA_SAVER.getPathFragment().equals(fragment)) {
             return DATA_SAVER;
         } else {

@@ -10,23 +10,26 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import moe.tristan.kmdah.worker.model.ImageRequest;
+import moe.tristan.kmdah.worker.service.lifecycle.WorkerConfigurationService;
 
 import io.micrometer.core.annotation.Timed;
 
 @Service
 public class MangadexImageService {
 
+    private final WorkerConfigurationService workerConfigurationService;
     private final RestTemplate restTemplate;
 
-    public MangadexImageService(RestTemplate restTemplate) {
+    public MangadexImageService(WorkerConfigurationService workerConfigurationService, RestTemplate restTemplate) {
+        this.workerConfigurationService = workerConfigurationService;
         this.restTemplate = restTemplate;
     }
 
     @Timed
-    public ResponseEntity<byte[]> download(String imageServer, ImageRequest imageRequest) {
+    public ResponseEntity<byte[]> download(ImageRequest imageRequest) {
 
         URI serverSideUri = UriComponentsBuilder
-            .fromHttpUrl(imageServer)
+            .fromHttpUrl(workerConfigurationService.getImageServer())
             .path("{mode}/{chapter}/{file}")
             .build(
                 imageRequest.getMode().getPathFragment(),

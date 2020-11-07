@@ -14,16 +14,19 @@ import org.springframework.stereotype.Component;
 import moe.tristan.kmdah.common.model.configuration.OperatorSettings;
 import moe.tristan.kmdah.common.model.mangadex.ping.PingResponse;
 import moe.tristan.kmdah.common.model.mangadex.ping.TlsData;
+import moe.tristan.kmdah.operator.service.workers.WorkerConfigurationHolder;
 
 @Component
 public class MangadexLifecycle implements SmartLifecycle {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MangadexLifecycle.class);
 
-    private final OperatorSettings operatorSettings;
-    private final StopService stopService;
-    private final PingService pingService;
     private final TaskScheduler taskScheduler;
+
+    private final PingService pingService;
+    private final StopService stopService;
+    private final OperatorSettings operatorSettings;
+    private final WorkerConfigurationHolder workerConfigurationHolder;
 
     private final AtomicReference<ZonedDateTime> lastCreatedAt = new AtomicReference<>();
 
@@ -31,25 +34,23 @@ public class MangadexLifecycle implements SmartLifecycle {
     private boolean running = false;
 
     public MangadexLifecycle(
-        OperatorSettings operatorSettings,
-        StopService stopService,
+        TaskScheduler taskScheduler,
         PingService pingService,
-        TaskScheduler taskScheduler
+        StopService stopService,
+        OperatorSettings operatorSettings,
+        WorkerConfigurationHolder workerConfigurationHolder
     ) {
-        this.operatorSettings = operatorSettings;
-        this.stopService = stopService;
-        this.pingService = pingService;
         this.taskScheduler = taskScheduler;
+        this.pingService = pingService;
+        this.stopService = stopService;
+        this.operatorSettings = operatorSettings;
+        this.workerConfigurationHolder = workerConfigurationHolder;
     }
 
     @Override
     public void start() {
         LOGGER.info("Starting ping job, every {} seconds", operatorSettings.getPingFrequencySeconds());
-        pingJob = taskScheduler.scheduleWithFixedDelay(() -> {
-            PingResponse pingResponse = pingService.ping(Optional.ofNullable(lastCreatedAt.get()));
-            ZonedDateTime createdAt = pingResponse.getTls().map(TlsData::getCreatedAt).orElseGet(lastCreatedAt::get);
-            lastCreatedAt.set(createdAt);
-        }, operatorSettings.getPingFrequencySeconds() * 1000L);
+        pingJob = taskScheduler.scheduleWithFixedDelay(this::doPing, operatorSettings.getPingFrequencySeconds() * 1000L);
         running = true;
     }
 
@@ -73,6 +74,13 @@ public class MangadexLifecycle implements SmartLifecycle {
     @Override
     public boolean isRunning() {
         return running;
+    }
+
+    private void doPing() {
+        PingResponse pingResponse = pingService.ping(Optional.ofNullable(lastCreatedAt.get()));
+        ZonedDateTime createdAt = pingResponse.getTls().map(TlsData::getCreatedAt).orElseGet(lastCreatedAt::get);
+        lastCreatedAt.set(createdAt);
+        workerConfigurationHolder.setImageServer(pingResponse.getImageServer());
     }
 
 }

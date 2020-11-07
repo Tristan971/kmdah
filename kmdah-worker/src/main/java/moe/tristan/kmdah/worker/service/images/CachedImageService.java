@@ -78,7 +78,7 @@ public class CachedImageService {
     }
 
     private UpstreamImage loadFromUpstream(ImageRequest imageRequest) {
-        ResponseEntity<byte[]> upstreamImage = mangadexImageService.download(null, imageRequest);
+        ResponseEntity<byte[]> upstreamImage = mangadexImageService.download(imageRequest);
         MediaType contentType = upstreamImage.getHeaders().getContentType();
         if (contentType == null) {
             throw new IllegalStateException("Upstream didn't set a content type!");

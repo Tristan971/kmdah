@@ -29,7 +29,7 @@ public class ImageFilesystemCacheService {
     }
 
     public InputStream openStream(ImageRequest imageRequest) throws IOException {
-        Path expectedPath = Paths.get(imageRequest.getPath());
+        Path expectedPath = getAbsolutePath(imageRequest);
         LOGGER.debug("Serving {} from {}", imageRequest, expectedPath);
         return Files.newInputStream(expectedPath);
     }
@@ -39,8 +39,7 @@ public class ImageFilesystemCacheService {
     }
 
     private UpstreamImage writeImageSync(ImageRequest imageRequest, UpstreamImage upstreamImage) {
-        Path cacheRoot = Paths.get(cacheSettings.getRoot());
-        Path savePath = cacheRoot.resolve(imageRequest.getPath());
+        Path savePath = getAbsolutePath(imageRequest);
         try {
             Files.createDirectories(savePath.getParent());
             Files.write(savePath, upstreamImage.getBytes(), StandardOpenOption.CREATE);
@@ -48,6 +47,11 @@ public class ImageFilesystemCacheService {
         } catch (IOException e) {
             throw new RuntimeException("Could not persist upstream image for " + imageRequest + " at path " + savePath);
         }
+    }
+
+    private Path getAbsolutePath(ImageRequest imageRequest) {
+        Path cacheRoot = Paths.get(cacheSettings.getRoot());
+        return cacheRoot.resolve(imageRequest.getPath()).toAbsolutePath();
     }
 
 }

@@ -14,6 +14,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import moe.tristan.kmdah.common.model.configuration.CacheSettings;
+import moe.tristan.kmdah.common.model.configuration.MetadataSettings;
 import moe.tristan.kmdah.common.model.mangadex.MangadexApi;
 import moe.tristan.kmdah.common.model.mangadex.ping.PingRequest;
 import moe.tristan.kmdah.common.model.mangadex.ping.PingResponse;
@@ -33,20 +34,22 @@ public class PingService {
 
     private final RestTemplate restTemplate;
 
-    private final OperatorSettings operatorSettings;
     private final CacheSettings cacheSettings;
-
+    private final OperatorSettings operatorSettings;
+    private final MetadataSettings metadataSettings;
     private final WorkerPoolService workerPoolService;
 
     public PingService(
         RestTemplate restTemplate,
         OperatorSettings operatorSettings,
         CacheSettings cacheSettings,
+        MetadataSettings metadataSettings,
         WorkerPoolService workerPoolService
     ) {
         this.restTemplate = restTemplate;
         this.operatorSettings = operatorSettings;
         this.cacheSettings = cacheSettings;
+        this.metadataSettings = metadataSettings;
         this.workerPoolService = workerPoolService;
     }
 
@@ -59,6 +62,7 @@ public class PingService {
             .diskSpace(DataSize.ofGigabytes(cacheSettings.getMaxSizeGibibytes()).toMegabytes()) // spring uses mebibytes for DataSize (good on them <3)
             .networkSpeed(workerPoolService.getPoolBandwidthMbps() * 1024)
             .tlsCreatedAt(lastCreatedAt)
+            .specVersion(metadataSettings.getClientSpec())
             .build();
 
         try {

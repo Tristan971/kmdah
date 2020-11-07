@@ -15,9 +15,9 @@ import org.springframework.web.client.RestTemplate;
 import io.micrometer.core.aop.TimedAspect;
 import io.micrometer.core.instrument.MeterRegistry;
 
-@Configuration
-@ComponentScan
 @EntityScan
+@ComponentScan
+@Configuration
 public class KmdahCommonConfiguration {
 
     @Bean

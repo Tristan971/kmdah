@@ -5,7 +5,6 @@ import static com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 
-import org.immutables.value.Value;
 import org.immutables.value.Value.Immutable;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -48,12 +47,9 @@ abstract class AbstractPingRequest {
     public abstract Optional<ZonedDateTime> getTlsCreatedAt();
 
     /**
-     * @return the client's build version
+     * @return the latest spec version that this client is compatible with
      */
-    @Value.Derived
     @JsonProperty("build_version")
-    public int getBuildVersion() {
-        return MangadexApi.VERSION;
-    }
+    public abstract int getSpecVersion();
 
 }

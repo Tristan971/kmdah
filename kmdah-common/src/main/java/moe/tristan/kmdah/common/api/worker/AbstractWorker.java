@@ -1,7 +1,5 @@
 package moe.tristan.kmdah.common.api.worker;
 
-import java.util.UUID;
-
 import org.immutables.value.Value.Auxiliary;
 import org.immutables.value.Value.Immutable;
 
@@ -11,10 +9,7 @@ import com.treatwell.immutables.styles.ValueObjectStyle;
 @ValueObjectStyle
 abstract class AbstractWorker {
 
-    public abstract UUID getUuid();
-
-    @Auxiliary
-    public abstract String getHttpUrl();
+    public abstract String getUniqueName();
 
     @Auxiliary
     public abstract int getBandwidthMbps();

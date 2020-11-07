@@ -8,6 +8,7 @@ spring:
       - logging
       - metrics
       - persistence
+      - web
 
 server:
   port: ${kmdah.worker.port}
