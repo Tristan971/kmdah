@@ -11,6 +11,10 @@ public class OperatorSettings {
 
     private String secret;
 
+    private int pingFrequencySeconds;
+
+    private int gracefulShutdownSeconds;
+
     public int getPort() {
         return port;
     }
@@ -25,6 +29,28 @@ public class OperatorSettings {
 
     public void setSecret(String secret) {
         this.secret = secret;
+    }
+
+    public int getPingFrequencySeconds() {
+        return pingFrequencySeconds;
+    }
+
+    public void setPingFrequencySeconds(int pingFrequencySeconds) {
+        if (pingFrequencySeconds > 100) {
+            throw new IllegalArgumentException(
+                "The MDAH client spec requires a ping to consistently happen at least every 2 minutes, "
+                + "but you asked for " + pingFrequencySeconds + " seconds."
+            );
+        }
+        this.pingFrequencySeconds = pingFrequencySeconds;
+    }
+
+    public int getGracefulShutdownSeconds() {
+        return gracefulShutdownSeconds;
+    }
+
+    public void setGracefulShutdownSeconds(int gracefulShutdownSeconds) {
+        this.gracefulShutdownSeconds = gracefulShutdownSeconds;
     }
 
 }

@@ -7,6 +7,8 @@ spring:
   profiles:
     include:
       - commons
+      - logging
+      - metrics
       - persistence
 
   liquibase:
@@ -14,10 +16,6 @@ spring:
     liquibase-schema: public
     default-schema: public
 
-logging:
-  level:
-    root: INFO
-    org.hibernate: WARN
-
 server:
   port: ${kmdah.operator.port}
+  shutdown: graceful

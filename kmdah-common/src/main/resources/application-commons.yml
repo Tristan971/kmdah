@@ -3,6 +3,14 @@ kmdah:
   operator:
     port: ${KMDAH_OPERATOR_PORT:8080}
     secret: ${KMDAH_OPERATOR_SECRET:super-very-mega-secret}
+    ping-frequency-seconds: ${KMDAH_OPERATOR_PING_FREQUENCY_SECONDS:30}
+    graceful-shutdown-seconds: ${KMDAH_OPERATOR_GRACEFUL_SHUTDOWN_SECONDS:300}
+
+  worker:
+    port: ${KMDAH_WORKER_PORT:8081}
+    operator:
+      host: ${KMDAH_WORKER_OPERATOR_HOST:localhost}
+      port: ${KMDAH_WORKER_OPERATOR_PORT:${kmdah.operator.port}}
 
   database:
     host: ${KMDAH_DATABASE_HOST:localhost}
@@ -13,4 +21,4 @@ kmdah:
 
   cache:
     root: ${KMDAH_CACHE_ROOT:cache}
-    max-size-gibibytes: ${KMDAH_CACHE_SIZE:0}
+    max-size-gibibytes: ${KMDAH_CACHE_SIZE:1}

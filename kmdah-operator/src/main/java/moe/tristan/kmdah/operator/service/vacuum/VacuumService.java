@@ -7,9 +7,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
@@ -34,8 +31,6 @@ public class VacuumService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(VacuumService.class);
 
-    private static final ScheduledExecutorService VACUUMER = Executors.newSingleThreadScheduledExecutor();
-
     private final DataSource dataSource;
     private final CacheSettings cacheSettings;
     private final ImageRepository imageRepository;
@@ -48,13 +43,6 @@ public class VacuumService {
         this.dataSource = dataSource;
         this.cacheSettings = cacheSettings;
         this.imageRepository = imageRepository;
-        VACUUMER.scheduleAtFixedRate(() -> {
-            try {
-                vacuumUntilUnderCacheMaxSize();
-            } catch (Throwable e) {
-                LOGGER.error("Vacuuming job failed!", e);
-            }
-        }, 0, 15, TimeUnit.MINUTES);
     }
 
     @Timed
@@ -69,7 +57,7 @@ public class VacuumService {
         DataSize excess = DataSize.ofBytes(currentCacheSize.toBytes() - maxCacheSize.toBytes());
 
         if (excess.toGigabytes() <= 0) {
-            LOGGER.info("No need for cache vacuuming ({}GB under requested size)", excess.toGigabytes());
+            LOGGER.info("No need for cache vacuuming ({}GB under requested size)", Math.abs(excess.toGigabytes()));
             return;
         }
 

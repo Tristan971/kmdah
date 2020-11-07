@@ -1,0 +1,4 @@
+logging:
+  level:
+    root: ${KMDAH_LOGGING_LEVEL:INFO}
+    org.hibernate: WARN

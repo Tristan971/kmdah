@@ -1,0 +1,10 @@
+management:
+  endpoints:
+    enabled-by-default: true
+    web:
+      base-path: /__mon
+      exposure:
+        include:
+          - '*'
+  metrics:
+    web.client.request.autotime.enabled: false
