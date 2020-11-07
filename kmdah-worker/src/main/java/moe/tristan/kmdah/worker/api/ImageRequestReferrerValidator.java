@@ -14,7 +14,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 
-import moe.tristan.kmdah.common.model.configuration.WorkerSettings;
+import moe.tristan.kmdah.common.model.settings.WorkerSettings;
 
 import io.micrometer.core.annotation.Timed;
 

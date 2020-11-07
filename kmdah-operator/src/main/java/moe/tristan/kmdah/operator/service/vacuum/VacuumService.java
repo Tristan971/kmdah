@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StopWatch;
 import org.springframework.util.unit.DataSize;
 
-import moe.tristan.kmdah.common.model.configuration.CacheSettings;
+import moe.tristan.kmdah.common.model.settings.CacheSettings;
 import moe.tristan.kmdah.common.model.persistence.ImageEntity;
 import moe.tristan.kmdah.operator.model.vacuum.VacuumResult;
 

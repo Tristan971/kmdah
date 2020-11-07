@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 
 import moe.tristan.kmdah.common.api.worker.WorkerConfiguration;
 import moe.tristan.kmdah.common.api.worker.WorkerShutdown;
-import moe.tristan.kmdah.common.model.configuration.WorkerSettings;
+import moe.tristan.kmdah.common.model.settings.WorkerSettings;
 
 @Component
 public class WorkerLifecycle implements SmartLifecycle {

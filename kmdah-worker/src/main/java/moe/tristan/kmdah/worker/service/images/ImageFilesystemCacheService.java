@@ -13,7 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import moe.tristan.kmdah.common.model.configuration.CacheSettings;
+import moe.tristan.kmdah.common.model.settings.CacheSettings;
 import moe.tristan.kmdah.common.model.persistence.UpstreamImage;
 import moe.tristan.kmdah.worker.model.ImageRequest;
 

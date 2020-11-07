@@ -1,4 +1,4 @@
-package moe.tristan.kmdah.common.model.configuration;
+package moe.tristan.kmdah.common.model.settings;
 
 import java.net.URI;
 

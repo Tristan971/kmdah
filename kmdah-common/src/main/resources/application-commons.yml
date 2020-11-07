@@ -8,6 +8,10 @@ kmdah:
     ping-frequency-seconds: ${KMDAH_OPERATOR_PING_FREQUENCY_SECONDS:30}
     graceful-shutdown-seconds: ${KMDAH_GRACEFUL_SHUTDOWN_SECONDS:300}
 
+  tls-secret:
+    namespace: ${KMDAH_OPERATOR_TLS_SECRET_NAMESPACE:default}
+    name: ${KMDAH_OPERATOR_TLS_SECRET_NAME:mangadex-at-home-tls-secret}
+
   load-balancer:
     uri: ${KMDAH_LOAD_BALANCER_URI:http://localhost:${kmdah.worker.port}}
 

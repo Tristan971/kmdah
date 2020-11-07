@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
 import moe.tristan.kmdah.common.api.worker.Worker;
 import moe.tristan.kmdah.common.api.worker.WorkerConfiguration;
 import moe.tristan.kmdah.common.api.worker.WorkerShutdown;
-import moe.tristan.kmdah.common.model.configuration.OperatorSettings;
+import moe.tristan.kmdah.common.model.settings.OperatorSettings;
 
 
 @Service

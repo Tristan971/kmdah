@@ -13,12 +13,12 @@ import org.springframework.web.client.HttpClientErrorException.UnsupportedMediaT
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import moe.tristan.kmdah.common.model.configuration.CacheSettings;
-import moe.tristan.kmdah.common.model.configuration.MetadataSettings;
+import moe.tristan.kmdah.common.model.settings.CacheSettings;
+import moe.tristan.kmdah.common.model.settings.MetadataSettings;
 import moe.tristan.kmdah.common.model.mangadex.MangadexApi;
 import moe.tristan.kmdah.common.model.mangadex.ping.PingRequest;
 import moe.tristan.kmdah.common.model.mangadex.ping.PingResponse;
-import moe.tristan.kmdah.common.model.configuration.OperatorSettings;
+import moe.tristan.kmdah.common.model.settings.OperatorSettings;
 import moe.tristan.kmdah.operator.service.workers.WorkerPoolService;
 
 import io.micrometer.core.annotation.Timed;

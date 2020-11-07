@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import moe.tristan.kmdah.common.model.configuration.LoadBalancerSettings;
+import moe.tristan.kmdah.common.model.settings.LoadBalancerSettings;
 
 @RestController
 public class ForwardingController {

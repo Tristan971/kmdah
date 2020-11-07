@@ -11,9 +11,10 @@ import org.springframework.context.SmartLifecycle;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Component;
 
-import moe.tristan.kmdah.common.model.configuration.OperatorSettings;
+import moe.tristan.kmdah.common.model.settings.OperatorSettings;
 import moe.tristan.kmdah.common.model.mangadex.ping.PingResponse;
 import moe.tristan.kmdah.common.model.mangadex.ping.TlsData;
+import moe.tristan.kmdah.operator.service.kubernetes.KubernetesIngressTlsSecretService;
 import moe.tristan.kmdah.operator.service.workers.WorkerConfigurationHolder;
 
 @Component
@@ -27,6 +28,8 @@ public class MangadexLifecycle implements SmartLifecycle {
     private final StopService stopService;
     private final OperatorSettings operatorSettings;
     private final WorkerConfigurationHolder workerConfigurationHolder;
+    private final KubernetesIngressTlsSecretService kubernetesIngressTlsSecretService;
+
 
     private final AtomicReference<ZonedDateTime> lastCreatedAt = new AtomicReference<>();
 
@@ -38,13 +41,15 @@ public class MangadexLifecycle implements SmartLifecycle {
         PingService pingService,
         StopService stopService,
         OperatorSettings operatorSettings,
-        WorkerConfigurationHolder workerConfigurationHolder
+        WorkerConfigurationHolder workerConfigurationHolder,
+        KubernetesIngressTlsSecretService kubernetesIngressTlsSecretService
     ) {
         this.taskScheduler = taskScheduler;
         this.pingService = pingService;
         this.stopService = stopService;
         this.operatorSettings = operatorSettings;
         this.workerConfigurationHolder = workerConfigurationHolder;
+        this.kubernetesIngressTlsSecretService = kubernetesIngressTlsSecretService;
     }
 
     @Override
@@ -78,8 +83,14 @@ public class MangadexLifecycle implements SmartLifecycle {
 
     private void doPing() {
         PingResponse pingResponse = pingService.ping(Optional.ofNullable(lastCreatedAt.get()));
+
+        // process createdAt for next ping calls
         ZonedDateTime createdAt = pingResponse.getTls().map(TlsData::getCreatedAt).orElseGet(lastCreatedAt::get);
         lastCreatedAt.set(createdAt);
+
+        // ensure tlsdata is synchronized with k8s when updated by the backend
+        pingResponse.getTls().ifPresent(kubernetesIngressTlsSecretService::syncTlsData);
+
         workerConfigurationHolder.setImageServer(pingResponse.getImageServer());
     }
 
