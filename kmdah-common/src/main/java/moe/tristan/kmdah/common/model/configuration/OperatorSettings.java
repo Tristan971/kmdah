@@ -1,4 +1,4 @@
-package moe.tristan.kmdah.operator.configuration;
+package moe.tristan.kmdah.common.model.configuration;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;

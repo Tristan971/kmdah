@@ -1,4 +1,5 @@
 kmdah:
+
   operator:
     port: ${KMDAH_OPERATOR_PORT:8080}
     secret: ${KMDAH_OPERATOR_SECRET:super-very-mega-secret}
@@ -12,4 +13,4 @@ kmdah:
 
   cache:
     root: ${KMDAH_CACHE_ROOT:cache}
-    max-size-gigabytes: ${KMDAH_CACHE_SIZE:0}
+    max-size-gibibytes: ${KMDAH_CACHE_SIZE:0}

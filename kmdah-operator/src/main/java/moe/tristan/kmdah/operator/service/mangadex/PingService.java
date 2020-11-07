@@ -5,6 +5,7 @@ import java.time.ZonedDateTime;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
+import org.springframework.util.unit.DataSize;
 import org.springframework.web.client.HttpClientErrorException.BadRequest;
 import org.springframework.web.client.HttpClientErrorException.Forbidden;
 import org.springframework.web.client.HttpClientErrorException.Unauthorized;
@@ -12,11 +13,11 @@ import org.springframework.web.client.HttpClientErrorException.UnsupportedMediaT
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import moe.tristan.kmdah.common.model.configuration.CacheSettings;
 import moe.tristan.kmdah.common.model.mangadex.MangadexApi;
 import moe.tristan.kmdah.common.model.mangadex.ping.PingRequest;
 import moe.tristan.kmdah.common.model.mangadex.ping.PingResponse;
-import moe.tristan.kmdah.operator.configuration.OperatorSettings;
-import moe.tristan.kmdah.operator.configuration.StorageSettings;
+import moe.tristan.kmdah.common.model.configuration.OperatorSettings;
 import moe.tristan.kmdah.operator.service.workers.WorkerPoolService;
 
 import io.micrometer.core.annotation.Timed;
@@ -33,19 +34,19 @@ public class PingService {
     private final RestTemplate restTemplate;
 
     private final OperatorSettings operatorSettings;
-    private final StorageSettings storageSettings;
+    private final CacheSettings cacheSettings;
 
     private final WorkerPoolService workerPoolService;
 
     public PingService(
         RestTemplate restTemplate,
         OperatorSettings operatorSettings,
-        StorageSettings storageSettings,
+        CacheSettings cacheSettings,
         WorkerPoolService workerPoolService
     ) {
         this.restTemplate = restTemplate;
         this.operatorSettings = operatorSettings;
-        this.storageSettings = storageSettings;
+        this.cacheSettings = cacheSettings;
         this.workerPoolService = workerPoolService;
     }
 
@@ -55,7 +56,7 @@ public class PingService {
             .builder()
             .secret(operatorSettings.getSecret())
             .port(operatorSettings.getPort())
-            .diskSpace(storageSettings.getCacheSizeMebibytes())
+            .diskSpace(DataSize.ofGigabytes(cacheSettings.getMaxSizeGibibytes()).toMegabytes()) // spring uses mebibytes for DataSize (good on them <3)
             .networkSpeed(workerPoolService.getPoolBandwidthMbps() * 1024)
             .tlsCreatedAt(lastCreatedAt)
             .build();

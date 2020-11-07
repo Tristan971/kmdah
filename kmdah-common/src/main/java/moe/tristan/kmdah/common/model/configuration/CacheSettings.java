@@ -7,22 +7,30 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties("kmdah.cache")
 public class CacheSettings {
 
-    private long maxSizeGigabytes;
+    private long maxSizeGibibytes;
 
     private String root;
 
-    public long getMaxSizeGigabytes() {
-        return maxSizeGigabytes;
+    public long getMaxSizeGibibytes() {
+        return maxSizeGibibytes;
     }
 
-    public void setMaxSizeGigabytes(long maxSizeGigabytes) {
-        this.maxSizeGigabytes = maxSizeGigabytes;
+    /**
+     * @param maxSizeGibibytes Maximal requested cache size
+     *
+     * @implNote The effective size will end up hovering *around* this value ; provision some extra storage (on the order of 15% or so, to be safe)
+     */
+    public void setMaxSizeGibibytes(long maxSizeGibibytes) {
+        this.maxSizeGibibytes = maxSizeGibibytes;
     }
 
     public String getRoot() {
         return root;
     }
 
+    /**
+     * @param root root directory in which to put the cache ; trailing ({@code /} must not be present)
+     */
     public void setRoot(String root) {
         this.root = root;
     }

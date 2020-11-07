@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import moe.tristan.kmdah.common.model.configuration.CacheSettings;
 import moe.tristan.kmdah.common.model.persistence.UpstreamImage;
 import moe.tristan.kmdah.worker.model.ImageRequest;
 
@@ -20,6 +21,12 @@ import moe.tristan.kmdah.worker.model.ImageRequest;
 public class ImageFilesystemCacheService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ImageFilesystemCacheService.class);
+
+    private final CacheSettings cacheSettings;
+
+    public ImageFilesystemCacheService(CacheSettings cacheSettings) {
+        this.cacheSettings = cacheSettings;
+    }
 
     public InputStream openStream(ImageRequest imageRequest) throws IOException {
         Path expectedPath = Paths.get(imageRequest.getPath());
@@ -32,7 +39,8 @@ public class ImageFilesystemCacheService {
     }
 
     private UpstreamImage writeImageSync(ImageRequest imageRequest, UpstreamImage upstreamImage) {
-        Path savePath = Paths.get(imageRequest.getPath());
+        Path cacheRoot = Paths.get(cacheSettings.getRoot());
+        Path savePath = cacheRoot.resolve(imageRequest.getPath());
         try {
             Files.createDirectories(savePath.getParent());
             Files.write(savePath, upstreamImage.getBytes(), StandardOpenOption.CREATE);
