@@ -44,6 +44,7 @@ public class MangadexLifecycle implements SmartLifecycle {
 
     @Override
     public void start() {
+        LOGGER.info("Starting ping job, every {} seconds", operatorSettings.getPingFrequencySeconds());
         pingJob = taskScheduler.scheduleWithFixedDelay(() -> {
             PingResponse pingResponse = pingService.ping(Optional.ofNullable(lastCreatedAt.get()));
             ZonedDateTime createdAt = pingResponse.getTls().map(TlsData::getCreatedAt).orElseGet(lastCreatedAt::get);
@@ -56,7 +57,12 @@ public class MangadexLifecycle implements SmartLifecycle {
     public void stop() {
         try {
             pingJob.cancel(true);
+            LOGGER.info("Stopped ping job");
+
             stopService.stop();
+            LOGGER.info("Notified backend of shutdown.");
+
+            LOGGER.info("Awaiting for {} seconds before exiting.", operatorSettings.getGracefulShutdownSeconds());
             Thread.sleep(operatorSettings.getGracefulShutdownSeconds() * 1000L);
         } catch (Exception e) {
             LOGGER.error("Failed graceful shutdown!", e);

@@ -1,5 +1,5 @@
 
-  ${spring.application.name} | version ${spring.application.version}
+  ${spring.application.name} v${kmdah.version}
                  _
    _ _ _ ___ ___| |_ ___ ___
   | | | | . |  _| '_| -_|  _|

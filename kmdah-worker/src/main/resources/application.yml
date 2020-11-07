@@ -1,7 +1,6 @@
 spring:
   application:
     name: kmdah-worker
-    version: @project.version@
 
   profiles:
     include:

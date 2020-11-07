@@ -2,7 +2,6 @@
 spring:
   application:
     name: kmdah-operator
-    version: @project.version@
 
   profiles:
     include:

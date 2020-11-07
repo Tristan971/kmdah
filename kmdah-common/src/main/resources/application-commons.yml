@@ -1,5 +1,7 @@
 kmdah:
 
+  version: @project.version@
+
   operator:
     port: ${KMDAH_OPERATOR_PORT:8080}
     secret: ${KMDAH_OPERATOR_SECRET:super-very-mega-secret}
