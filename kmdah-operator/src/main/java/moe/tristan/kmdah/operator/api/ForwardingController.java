@@ -9,16 +9,25 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import moe.tristan.kmdah.common.model.configuration.LoadBalancerSettings;
+
 @RestController
 public class ForwardingController {
 
-    @GetMapping
+    private final LoadBalancerSettings loadBalancerSettings;
+
+    public ForwardingController(LoadBalancerSettings loadBalancerSettings) {
+        this.loadBalancerSettings = loadBalancerSettings;
+    }
+
+    @GetMapping("**")
     public void handleImageRequest(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String redirection = UriComponentsBuilder
-            .fromHttpUrl(request.getRequestURI())
-            .host("mdah.tristan.moe")
+            .fromUri(loadBalancerSettings.getUri())
+            .path(request.getServletPath())
             .build()
             .toUriString();
+
         response.sendRedirect(redirection);
     }
 

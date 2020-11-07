@@ -8,6 +8,9 @@ kmdah:
     ping-frequency-seconds: ${KMDAH_OPERATOR_PING_FREQUENCY_SECONDS:30}
     graceful-shutdown-seconds: ${KMDAH_OPERATOR_GRACEFUL_SHUTDOWN_SECONDS:300}
 
+  load-balancer:
+    uri: ${KMDAH_LOAD_BALANCER_URI:http://localhost:${kmdah.worker.port}}
+
   worker:
     port: ${KMDAH_WORKER_PORT:8081}
     operator:
