@@ -15,6 +15,11 @@ spring:
     liquibase-schema: public
     default-schema: public
 
+  task:
+    scheduling:
+      pool:
+        size: 4
+
 server:
   port: ${kmdah.operator.port}
   shutdown: graceful

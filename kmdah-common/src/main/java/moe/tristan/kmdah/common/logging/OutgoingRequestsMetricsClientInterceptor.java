@@ -1,4 +1,4 @@
-package moe.tristan.kmdah.common.spring.logging;
+package moe.tristan.kmdah.common.logging;
 
 import java.io.IOException;
 

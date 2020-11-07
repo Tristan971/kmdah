@@ -15,6 +15,7 @@ abstract class AbstractUpstreamImage implements ImageContent {
 
     public abstract byte[] getBytes();
 
+    @Override
     public InputStream getInputStream() {
         return new ByteArrayInputStream(getBytes());
     }
