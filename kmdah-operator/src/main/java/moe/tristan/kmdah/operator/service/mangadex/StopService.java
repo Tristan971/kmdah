@@ -6,8 +6,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import moe.tristan.kmdah.common.mangadex.MangadexApi;
-import moe.tristan.kmdah.common.mangadex.stop.StopRequest;
+import moe.tristan.kmdah.common.model.mangadex.MangadexApi;
+import moe.tristan.kmdah.common.model.mangadex.stop.StopRequest;
 import moe.tristan.kmdah.operator.configuration.OperatorSettings;
 
 import io.micrometer.core.annotation.Timed;

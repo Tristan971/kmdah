@@ -5,9 +5,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import moe.tristan.kmdah.common.internal.api.worker.Worker;
-import moe.tristan.kmdah.common.internal.api.worker.WorkerConfiguration;
-import moe.tristan.kmdah.common.internal.api.worker.WorkerShutdown;
+import moe.tristan.kmdah.common.api.worker.Worker;
+import moe.tristan.kmdah.common.api.worker.WorkerConfiguration;
+import moe.tristan.kmdah.common.api.worker.WorkerShutdown;
 import moe.tristan.kmdah.operator.service.workers.WorkerPoolService;
 
 @RestController

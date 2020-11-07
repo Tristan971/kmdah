@@ -1,6 +1,5 @@
 package moe.tristan.kmdah.worker.service.images;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -14,7 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import moe.tristan.kmdah.common.mangadex.image.UpstreamImage;
+import moe.tristan.kmdah.common.model.persistence.UpstreamImage;
 import moe.tristan.kmdah.worker.model.ImageRequest;
 
 @Service
@@ -23,7 +22,7 @@ public class ImageFilesystemCacheService {
     private static final Logger LOGGER = LoggerFactory.getLogger(ImageFilesystemCacheService.class);
 
     public InputStream openStream(ImageRequest imageRequest) throws IOException {
-        Path expectedPath = Paths.get(getImagePath(imageRequest));
+        Path expectedPath = Paths.get(imageRequest.getPath());
         LOGGER.debug("Serving {} from {}", imageRequest, expectedPath);
         return Files.newInputStream(expectedPath);
     }
@@ -33,7 +32,7 @@ public class ImageFilesystemCacheService {
     }
 
     private UpstreamImage writeImageSync(ImageRequest imageRequest, UpstreamImage upstreamImage) {
-        Path savePath = Paths.get(getImagePath(imageRequest));
+        Path savePath = Paths.get(imageRequest.getPath());
         try {
             Files.createDirectories(savePath.getParent());
             Files.write(savePath, upstreamImage.getBytes(), StandardOpenOption.CREATE);
@@ -41,10 +40,6 @@ public class ImageFilesystemCacheService {
         } catch (IOException e) {
             throw new RuntimeException("Could not persist upstream image for " + imageRequest + " at path " + savePath);
         }
-    }
-
-    private String getImagePath(ImageRequest imageRequest) {
-        return String.join(File.separator, imageRequest.getChapter(), imageRequest.getMode().name(), imageRequest.getFile());
     }
 
 }

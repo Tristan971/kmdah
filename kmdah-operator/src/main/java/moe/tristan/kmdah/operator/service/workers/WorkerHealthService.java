@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import moe.tristan.kmdah.common.internal.api.worker.Worker;
+import moe.tristan.kmdah.common.api.worker.Worker;
 
 @Service
 public class WorkerHealthService {

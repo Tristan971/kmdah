@@ -12,10 +12,10 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import moe.tristan.kmdah.common.internal.model.image.ImageEntity;
-import moe.tristan.kmdah.common.mangadex.image.CachedImage;
-import moe.tristan.kmdah.common.mangadex.image.Image;
-import moe.tristan.kmdah.common.mangadex.image.UpstreamImage;
+import moe.tristan.kmdah.common.model.ImageContent;
+import moe.tristan.kmdah.common.model.persistence.CachedImage;
+import moe.tristan.kmdah.common.model.persistence.ImageEntity;
+import moe.tristan.kmdah.common.model.persistence.UpstreamImage;
 import moe.tristan.kmdah.worker.model.ImageRequest;
 import moe.tristan.kmdah.worker.service.mangadex.MangadexImageService;
 
@@ -25,23 +25,23 @@ public class CachedImageService {
     private static final Logger LOGGER = LoggerFactory.getLogger(CachedImageService.class);
 
     private final MangadexImageService mangadexImageService;
-    private final CachedImagesRepository cachedImagesRepository;
+    private final ImagesRepository imagesRepository;
     private final ImageFilesystemCacheService filesystemCacheService;
 
     public CachedImageService(
         MangadexImageService mangadexImageService,
-        CachedImagesRepository cachedImagesRepository,
+        ImagesRepository imagesRepository,
         ImageFilesystemCacheService filesystemCacheService
     ) {
         this.mangadexImageService = mangadexImageService;
-        this.cachedImagesRepository = cachedImagesRepository;
+        this.imagesRepository = imagesRepository;
         this.filesystemCacheService = filesystemCacheService;
     }
 
-    public Image findOrFetch(ImageRequest imageRequest) {
-        Optional<ImageEntity> cachedImageSearch = cachedImagesRepository.findByIdAndChapterIdAndMode(
-            imageRequest.getFile(),
-            imageRequest.getChapter(),
+    public ImageContent findOrFetch(ImageRequest imageRequest) {
+        Optional<ImageEntity> cachedImageSearch = imagesRepository.findByFilenameAndChapterHashAndMode(
+            imageRequest.getFilename(),
+            imageRequest.getChapterHash(),
             imageRequest.getMode()
         );
 
@@ -94,8 +94,8 @@ public class CachedImageService {
     }
 
     private void persistSavedImage(ImageRequest request, UpstreamImage image) {
-        ImageEntity imageEntity = new ImageEntity(request.getFile(), request.getChapter(), request.getMode(), image.getContentType(), image.getBytes().length);
-        cachedImagesRepository.save(imageEntity);
+        ImageEntity imageEntity = new ImageEntity(request.getFilename(), request.getChapterHash(), request.getMode(), image.getContentType(), image.getBytes().length);
+        imagesRepository.save(imageEntity);
         LOGGER.info("Persisted image {} to cache database", imageEntity);
     }
 

@@ -8,8 +8,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
-import moe.tristan.kmdah.common.mangadex.image.Image;
-import moe.tristan.kmdah.common.mangadex.image.ImageMode;
+import moe.tristan.kmdah.common.model.ImageContent;
+import moe.tristan.kmdah.common.model.mangadex.image.ImageMode;
 import moe.tristan.kmdah.worker.model.ImageRequest;
 import moe.tristan.kmdah.worker.service.images.CachedImageService;
 
@@ -44,12 +44,14 @@ public class ImageController {
     }
 
     private InputStreamResource serve(HttpServletResponse response, String imageMode, String chapter, String file) {
-        ImageRequest imageRequest = ImageRequest.of(
-            ImageMode.fromPathFragment(imageMode),
-            chapter,
-            file
-        );
-        Image image = imageService.findOrFetch(imageRequest);
+        ImageRequest imageRequest = ImageRequest
+            .builder()
+            .mode(ImageMode.fromPathFragment(imageMode))
+            .chapterHash(chapter)
+            .filename(file)
+            .build();
+
+        ImageContent image = imageService.findOrFetch(imageRequest);
         response.setContentLength(image.getSize());
         response.setContentType(image.getContentType());
 

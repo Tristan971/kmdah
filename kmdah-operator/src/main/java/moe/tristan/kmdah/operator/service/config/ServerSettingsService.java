@@ -2,7 +2,7 @@ package moe.tristan.kmdah.operator.service.config;
 
 import org.springframework.stereotype.Service;
 
-import moe.tristan.kmdah.common.mangadex.ping.PingResponse;
+import moe.tristan.kmdah.common.model.mangadex.ping.PingResponse;
 import moe.tristan.kmdah.operator.service.mangadex.PingService;
 
 @Service

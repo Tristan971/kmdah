@@ -14,9 +14,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import moe.tristan.kmdah.common.internal.api.worker.Worker;
-import moe.tristan.kmdah.common.internal.api.worker.WorkerConfiguration;
-import moe.tristan.kmdah.common.internal.api.worker.WorkerShutdown;
+import moe.tristan.kmdah.common.api.worker.Worker;
+import moe.tristan.kmdah.common.api.worker.WorkerConfiguration;
+import moe.tristan.kmdah.common.api.worker.WorkerShutdown;
 
 
 @Service

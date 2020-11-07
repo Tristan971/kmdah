@@ -1,10 +1,11 @@
-package moe.tristan.kmdah.common.spring;
+package moe.tristan.kmdah.common;
 
 import java.time.Clock;
 import java.time.ZoneOffset;
 import java.util.TimeZone;
 
 import org.springframework.boot.actuate.autoconfigure.metrics.export.prometheus.PrometheusMetricsExportAutoConfiguration;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.autoconfigure.web.client.RestTemplateAutoConfiguration;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
@@ -23,6 +24,7 @@ import io.micrometer.core.instrument.MeterRegistry;
     RestTemplateAutoConfiguration.class
 })
 @ComponentScan
+@EntityScan
 public class KmdahCommonConfiguration {
 
     @Bean

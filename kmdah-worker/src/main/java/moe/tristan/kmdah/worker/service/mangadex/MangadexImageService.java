@@ -30,8 +30,8 @@ public class MangadexImageService {
             .path("{mode}/{chapter}/{file}")
             .build(
                 imageRequest.getMode().getPathFragment(),
-                imageRequest.getChapter(),
-                imageRequest.getFile()
+                imageRequest.getChapterHash(),
+                imageRequest.getFilename()
             );
 
         ResponseEntity<byte[]> response;

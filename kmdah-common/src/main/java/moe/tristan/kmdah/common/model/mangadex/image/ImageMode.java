@@ -1,4 +1,4 @@
-package moe.tristan.kmdah.common.mangadex.image;
+package moe.tristan.kmdah.common.model.mangadex.image;
 
 public enum ImageMode {
 

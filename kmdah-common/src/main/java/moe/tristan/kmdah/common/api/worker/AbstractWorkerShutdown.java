@@ -1,4 +1,4 @@
-package moe.tristan.kmdah.common.mangadex.stop;
+package moe.tristan.kmdah.common.api.worker;
 
 import org.immutables.value.Value.Immutable;
 import org.immutables.value.Value.Parameter;
@@ -7,12 +7,9 @@ import com.treatwell.immutables.styles.ValueObjectStyle;
 
 @Immutable
 @ValueObjectStyle
-abstract class AbstractStopRequest {
+abstract class AbstractWorkerShutdown {
 
-    /**
-     * @return the client secret
-     */
     @Parameter
-    public abstract String getSecret();
+    public abstract boolean isGracefulShutdownRequired();
 
 }

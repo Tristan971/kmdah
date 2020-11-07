@@ -1,4 +1,4 @@
-package moe.tristan.kmdah.common.mangadex.image;
+package moe.tristan.kmdah.common.model.mangadex.image;
 
 import static com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING;
 
@@ -10,7 +10,7 @@ import org.immutables.value.Value.Parameter;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.treatwell.immutables.styles.ValueObjectStyle;
 
-import moe.tristan.kmdah.common.mangadex.MangadexApi;
+import moe.tristan.kmdah.common.model.mangadex.MangadexApi;
 
 @Immutable
 @ValueObjectStyle

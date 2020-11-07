@@ -1,4 +1,4 @@
-package moe.tristan.kmdah.common.mangadex.ping;
+package moe.tristan.kmdah.common.model.mangadex.ping;
 
 import java.net.URL;
 import java.util.Optional;

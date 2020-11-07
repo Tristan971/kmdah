@@ -1,8 +1,8 @@
-package moe.tristan.kmdah.common.mangadex.image;
+package moe.tristan.kmdah.common.model;
 
 import java.io.InputStream;
 
-public interface Image {
+public interface ImageContent {
 
     String getContentType();
 

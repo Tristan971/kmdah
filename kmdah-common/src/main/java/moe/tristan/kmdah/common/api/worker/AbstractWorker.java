@@ -1,4 +1,4 @@
-package moe.tristan.kmdah.common.internal.api.worker;
+package moe.tristan.kmdah.common.api.worker;
 
 import java.util.UUID;
 

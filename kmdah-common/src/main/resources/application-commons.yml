@@ -12,4 +12,4 @@ kmdah:
 
   cache:
     root: ${KMDAH_CACHE_ROOT:cache}
-    maxsize: ${KMDAH_CACHE_SIZE:0}
+    max-size-gigabytes: ${KMDAH_CACHE_SIZE:0}

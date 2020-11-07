@@ -1,4 +1,4 @@
-package moe.tristan.kmdah.common.mangadex;
+package moe.tristan.kmdah.common.model.mangadex;
 
 public final class MangadexApi {
 
