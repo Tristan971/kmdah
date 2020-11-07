@@ -1,30 +1,26 @@
 package moe.tristan.kmdah.common.model.settings;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
+import org.springframework.boot.context.properties.ConstructorBinding;
 
-@Component
+@ConstructorBinding
 @ConfigurationProperties("kmdah.metadata")
 public class MetadataSettings {
 
-    private String serverHeader;
+    private final String serverHeader;
+    private final int clientSpec;
 
-    private int clientSpec;
+    public MetadataSettings(String serverHeader, int clientSpec) {
+        this.serverHeader = serverHeader;
+        this.clientSpec = clientSpec;
+    }
 
     public String getServerHeader() {
         return serverHeader;
     }
 
-    public void setServerHeader(String serverHeader) {
-        this.serverHeader = serverHeader;
-    }
-
     public int getClientSpec() {
         return clientSpec;
-    }
-
-    public void setClientSpec(int clientSpec) {
-        this.clientSpec = clientSpec;
     }
 
 }

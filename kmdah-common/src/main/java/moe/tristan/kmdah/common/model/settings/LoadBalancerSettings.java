@@ -3,20 +3,20 @@ package moe.tristan.kmdah.common.model.settings;
 import java.net.URI;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
+import org.springframework.boot.context.properties.ConstructorBinding;
 
-@Component
+@ConstructorBinding
 @ConfigurationProperties("kmdah.load-balancer")
 public class LoadBalancerSettings {
 
-    private URI uri;
+    private final URI uri;
+
+    public LoadBalancerSettings(URI uri) {
+        this.uri = uri;
+    }
 
     public URI getUri() {
         return uri;
-    }
-
-    public void setUri(URI uri) {
-        this.uri = uri;
     }
 
 }

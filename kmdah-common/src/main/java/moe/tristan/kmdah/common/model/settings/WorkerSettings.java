@@ -3,50 +3,38 @@ package moe.tristan.kmdah.common.model.settings;
 import java.net.URI;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
+import org.springframework.boot.context.properties.ConstructorBinding;
 
-@Component
+@ConstructorBinding
 @ConfigurationProperties("kmdah.worker")
 public class WorkerSettings {
 
-    private int port;
+    private final int port;
+    private final URI operatorUri;
+    private final int bandwidthMbps;
+    private final boolean verifyReferrer;
 
-    private URI operatorUri;
-
-    private int bandwidthMbps;
-
-    private boolean verifyReferrer;
+    public WorkerSettings(int port, URI operatorUri, int bandwidthMbps, boolean verifyReferrer) {
+        this.port = port;
+        this.operatorUri = operatorUri;
+        this.bandwidthMbps = bandwidthMbps;
+        this.verifyReferrer = verifyReferrer;
+    }
 
     public int getPort() {
         return port;
-    }
-
-    public void setPort(int port) {
-        this.port = port;
     }
 
     public URI getOperatorUri() {
         return operatorUri;
     }
 
-    public void setOperatorUri(URI operatorUri) {
-        this.operatorUri = operatorUri;
-    }
-
     public int getBandwidthMbps() {
         return bandwidthMbps;
     }
 
-    public void setBandwidthMbps(int bandwidthMbps) {
-        this.bandwidthMbps = bandwidthMbps;
-    }
-
     public boolean isVerifyReferrer() {
         return verifyReferrer;
-    }
-
-    public void setVerifyReferrer(boolean verifyReferrer) {
-        this.verifyReferrer = verifyReferrer;
     }
 
 }

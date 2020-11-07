@@ -1,3 +1,8 @@
 #!/usr/bin/env bash
 
-java -Dspring.config.additional-location=file:"${KMDAH_CONFIG_FILE}" -jar "${KMDAH_JARFILE}"
+set -x
+
+java \
+  -Dspring.profiles.active=production \
+  -Dspring.config.additional-location=file:"${KMDAH_CONFIG_DIR}" \
+  -jar "${KMDAH_JARFILE}"
