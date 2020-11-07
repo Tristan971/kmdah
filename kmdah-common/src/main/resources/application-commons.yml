@@ -13,9 +13,8 @@ kmdah:
 
   worker:
     port: ${KMDAH_WORKER_PORT:8081}
-    operator:
-      host: ${KMDAH_WORKER_OPERATOR_HOST:localhost}
-      port: ${KMDAH_WORKER_OPERATOR_PORT:${kmdah.operator.port}}
+    operator-uri: ${KMDAH_WORKER_OPERATOR_URI:http://localhost:${kmdah.operator.port}}
+    bandwidth-mbps: ${KMDAH_WORKER_BANDWIDTH_MBPS:1}
 
   database:
     host: ${KMDAH_DATABASE_HOST:localhost}

@@ -1,0 +1,9 @@
+{
+  "properties": [
+    {
+      "name": "kmdah.version",
+      "type": "java.lang.String",
+      "description": "Application version, as filtered from the pom.xml."
+    }
+  ]
+}
