@@ -1,3 +1,0 @@
-server:
-  shutdown: graceful
-  server-header: ${kmdah.metadata.server-header}

@@ -1,15 +1,8 @@
 spring:
-  application:
-    name: kmdah-worker
+  application.name: kmdah-worker
 
-  profiles:
-    include:
-      - commons
-      - logging
-      - metrics
-      - persistence
-      - web
+  profiles.include:
+    - ${KMDAH_PROFILE:prod}
+    - kmdah
 
-server:
-  port: ${kmdah.worker.port}
-  shutdown: graceful
+server.port: ${kmdah.worker.port}

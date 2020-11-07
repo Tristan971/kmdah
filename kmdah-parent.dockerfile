@@ -14,7 +14,7 @@ ENV KMDAH_VERSION "$KMDAH_VERSION"
 WORKDIR /mangahome
 ADD ./docker-cmd.sh /mangahome/docker-cmd.sh
 
-ENV KMDAH_CONFIG_DIR "/mangahome"
+ENV KMDAH_PROFILE "prod"
 
 ENTRYPOINT ["/bin/dumb-init", "--"]
 CMD [ "/mangahome/docker-cmd.sh" ]

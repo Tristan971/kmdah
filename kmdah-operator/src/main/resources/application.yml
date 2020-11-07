@@ -1,25 +1,15 @@
-# Application configuration
 spring:
-  application:
-    name: kmdah-operator
+  application.name: kmdah-operator
 
-  profiles:
-    include:
-      - commons
-      - logging
-      - metrics
-      - persistence
-      - web
+  profiles.include:
+    - ${KMDAH_PROFILE:prod}
+    - kmdah
 
   liquibase:
     change-log: classpath:db/changesets.xml
     liquibase-schema: public
     default-schema: public
 
-  task:
-    scheduling:
-      pool:
-        size: 4
+  task.scheduling.pool.size: 4
 
-server:
-  port: ${kmdah.operator.port}
+server.port: ${kmdah.operator.port}

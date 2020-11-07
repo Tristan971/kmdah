@@ -1,0 +1,30 @@
+kmdah:
+  operator:
+    port: 8080
+    secret: super-very-mega-secret
+    ping-frequency-seconds: 30
+    graceful-shutdown-seconds: 300
+
+  tls-secret:
+    namespace: default
+    name: mangadex-at-home-tls-secret
+
+  load-balancer:
+    uri: https://mdah.tristan.moe
+
+  worker:
+    port: 8081
+    operator-uri: http://operator.mdah.svc.cluster.local:31100
+    bandwidth-mbps: 100
+    verify-referrer: true
+
+  database:
+    host: localhost
+    port: 5432
+    database: mdah
+    user: mdah
+    password: mdah
+
+  cache:
+    root: cache
+    max-size-gibibytes: 1
