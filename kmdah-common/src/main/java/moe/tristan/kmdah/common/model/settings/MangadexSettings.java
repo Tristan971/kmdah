@@ -5,7 +5,7 @@ import org.springframework.boot.context.properties.ConstructorBinding;
 
 @ConstructorBinding
 @ConfigurationProperties("kmdah.mangadex")
-public class MangadexSettings implements UserSettings {
+public class MangadexSettings {
 
     private final String clientSecret;
     private final int gracefulShutdownSeconds;

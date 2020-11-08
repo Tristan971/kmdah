@@ -5,7 +5,7 @@ import org.springframework.boot.context.properties.ConstructorBinding;
 
 @ConstructorBinding
 @ConfigurationProperties("kmdah.cache")
-public class CacheSettings implements UserSettings {
+public class CacheSettings {
 
     private final String root;
     private final long sizeGib;

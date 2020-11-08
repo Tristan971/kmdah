@@ -7,7 +7,7 @@ import org.springframework.boot.context.properties.ConstructorBinding;
 
 @ConstructorBinding
 @ConfigurationProperties("kmdah.operator")
-public class OperatorSettings implements UserSettings {
+public class OperatorSettings {
 
     private final int port;
     private final int pingFrequencySeconds;
