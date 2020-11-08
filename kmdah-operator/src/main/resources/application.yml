@@ -1,9 +1,27 @@
-spring:
-  application.name: kmdah-operator
+logging.level:
+  root: INFO
 
-  profiles.include:
-    - ${KMDAH_PROFILE:prod}
-    - kmdah
+server:
+  shutdown: graceful
+  port: ${kmdah.operator.port}
+  server-header: kube-mdah ${spring.application.version} - ${spring.application.name} - https://github.com/Tristan971/kube-mdah
+
+spring:
+  application:
+    name: kmdah-operator
+    version: @project.version@
+
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://${kmdah.database.host}:${kmdah.database.port}/${kmdah.database.database}
+    username: ${kmdah.database.user}
+    password: ${kmdah.database.password}
+  jpa:
+    open-in-view: false
+    generate-ddl: false
+    hibernate:
+      ddl-auto: validate
 
   liquibase:
     change-log: classpath:db/changesets.xml
@@ -12,4 +30,17 @@ spring:
 
   task.scheduling.pool.size: 4
 
-server.port: ${kmdah.operator.port}
+management:
+  endpoint:
+    health:
+      show-details: always
+  endpoints:
+    enabled-by-default: true
+    web:
+      base-path: /__mon
+      exposure.include:
+        - info
+        - health
+        - prometheus
+
+  metrics.web.client.request.autotime.enabled: false

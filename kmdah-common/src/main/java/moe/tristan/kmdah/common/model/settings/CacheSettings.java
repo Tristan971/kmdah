@@ -5,22 +5,22 @@ import org.springframework.boot.context.properties.ConstructorBinding;
 
 @ConstructorBinding
 @ConfigurationProperties("kmdah.cache")
-public class CacheSettings {
+public class CacheSettings implements UserSettings {
 
-    private final long maxSizeGibibytes;
     private final String root;
+    private final long sizeGib;
 
-    public CacheSettings(long maxSizeGibibytes, String root) {
-        this.maxSizeGibibytes = maxSizeGibibytes;
+    public CacheSettings(String root, long sizeGib) {
         this.root = root;
-    }
-
-    public long getMaxSizeGibibytes() {
-        return maxSizeGibibytes;
+        this.sizeGib = sizeGib;
     }
 
     public String getRoot() {
         return root;
+    }
+
+    public long getSizeGib() {
+        return sizeGib;
     }
 
 }

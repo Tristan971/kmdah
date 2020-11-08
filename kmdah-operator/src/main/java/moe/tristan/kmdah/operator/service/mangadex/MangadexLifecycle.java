@@ -11,9 +11,10 @@ import org.springframework.context.SmartLifecycle;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Component;
 
-import moe.tristan.kmdah.common.model.settings.OperatorSettings;
 import moe.tristan.kmdah.common.model.mangadex.ping.PingResponse;
 import moe.tristan.kmdah.common.model.mangadex.ping.TlsData;
+import moe.tristan.kmdah.common.model.settings.MangadexSettings;
+import moe.tristan.kmdah.common.model.settings.OperatorSettings;
 import moe.tristan.kmdah.operator.service.kubernetes.KubernetesIngressTlsSecretService;
 import moe.tristan.kmdah.operator.service.workers.WorkerConfigurationHolder;
 
@@ -27,10 +28,12 @@ public class MangadexLifecycle implements SmartLifecycle {
     private final PingService pingService;
     private final StopService stopService;
     private final OperatorSettings operatorSettings;
+    private final MangadexSettings mangadexSettings;
     private final WorkerConfigurationHolder workerConfigurationHolder;
     private final KubernetesIngressTlsSecretService kubernetesIngressTlsSecretService;
 
 
+    private final AtomicReference<PingResponse> lastPingResponse = new AtomicReference<>();
     private final AtomicReference<ZonedDateTime> lastCreatedAt = new AtomicReference<>();
 
     private ScheduledFuture<?> pingJob;
@@ -41,6 +44,7 @@ public class MangadexLifecycle implements SmartLifecycle {
         PingService pingService,
         StopService stopService,
         OperatorSettings operatorSettings,
+        MangadexSettings mangadexSettings,
         WorkerConfigurationHolder workerConfigurationHolder,
         KubernetesIngressTlsSecretService kubernetesIngressTlsSecretService
     ) {
@@ -48,6 +52,7 @@ public class MangadexLifecycle implements SmartLifecycle {
         this.pingService = pingService;
         this.stopService = stopService;
         this.operatorSettings = operatorSettings;
+        this.mangadexSettings = mangadexSettings;
         this.workerConfigurationHolder = workerConfigurationHolder;
         this.kubernetesIngressTlsSecretService = kubernetesIngressTlsSecretService;
     }
@@ -68,8 +73,8 @@ public class MangadexLifecycle implements SmartLifecycle {
             stopService.stop();
             LOGGER.info("Notified backend of shutdown.");
 
-            LOGGER.info("Awaiting for {} seconds before exiting.", operatorSettings.getGracefulShutdownSeconds());
-            Thread.sleep(operatorSettings.getGracefulShutdownSeconds() * 1000L);
+            LOGGER.info("Awaiting for {} seconds before exiting.", mangadexSettings.getGracefulShutdownSeconds());
+            Thread.sleep(mangadexSettings.getGracefulShutdownSeconds() * 1000L);
         } catch (Exception e) {
             LOGGER.error("Failed graceful shutdown!", e);
         }
@@ -83,6 +88,7 @@ public class MangadexLifecycle implements SmartLifecycle {
 
     private void doPing() {
         PingResponse pingResponse = pingService.ping(Optional.ofNullable(lastCreatedAt.get()));
+        lastPingResponse.set(pingResponse);
 
         // process createdAt for next ping calls
         ZonedDateTime createdAt = pingResponse.getTls().map(TlsData::getCreatedAt).orElseGet(lastCreatedAt::get);
@@ -92,6 +98,10 @@ public class MangadexLifecycle implements SmartLifecycle {
         pingResponse.getTls().ifPresent(kubernetesIngressTlsSecretService::syncTlsData);
 
         workerConfigurationHolder.setImageServer(pingResponse.getImageServer());
+    }
+
+    public PingResponse getLastPingResponse() {
+        return lastPingResponse.get();
     }
 
 }

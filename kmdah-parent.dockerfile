@@ -12,9 +12,6 @@ ARG KMDAH_VERSION
 ENV KMDAH_VERSION "$KMDAH_VERSION"
 
 WORKDIR /mangahome
-ADD ./docker-cmd.sh /mangahome/docker-cmd.sh
 
-ENV KMDAH_PROFILE "prod"
-
-ENTRYPOINT ["/bin/dumb-init", "--"]
-CMD [ "/mangahome/docker-cmd.sh" ]
+ENTRYPOINT ["/bin/dumb-init", "--" ]
+CMD sh -c "set -x; java -Dspring.profiles.active=prod -jar $JARFILE"

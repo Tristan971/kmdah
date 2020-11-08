@@ -4,8 +4,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConstructorBinding;
 
 @ConstructorBinding
-@ConfigurationProperties("kmdah.tls-secret")
-public class TlsSecretSettings {
+@ConfigurationProperties("kmdah.operator.tls-secret")
+public class TlsSecretSettings implements UserSettings {
 
     private final String name;
     private final String namespace;

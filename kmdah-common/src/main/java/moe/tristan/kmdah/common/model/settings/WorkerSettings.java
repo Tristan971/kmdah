@@ -7,7 +7,7 @@ import org.springframework.boot.context.properties.ConstructorBinding;
 
 @ConstructorBinding
 @ConfigurationProperties("kmdah.worker")
-public class WorkerSettings {
+public class WorkerSettings implements UserSettings {
 
     private final int port;
     private final URI operatorUri;

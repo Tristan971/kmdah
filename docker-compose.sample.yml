@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:12
+    environment:
+      POSTGRES_USER: mdah
+      POSTGRES_PASSWORD: mdah
+    ports:
+      - 5432:5432
+
+  operator:
+    image: tristandeloche/kmdah-operator:0.0.1-SNAPSHOT
+    ports:
+      - 3000:3000
+    volumes:
+      - type: bind
+        source: ./application-prod.yml
+        target: /mangahome/application-prod.yml
+        read_only: true
+
+  worker:
+    depends_on: [ operator ]
+    image: tristandeloche/kmdah-worker:0.0.1-SNAPSHOT
+    ports:
+      - 3001:3001
+    volumes:
+      - type: bind
+        source: ./application-prod.yml
+        target: /mangahome/application-prod.yml
+        read_only: true

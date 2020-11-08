@@ -51,7 +51,7 @@ public class VacuumService {
         stopWatch.start();
 
         DataSize currentCacheSize = DataSize.ofBytes(estimateCacheSize());
-        DataSize maxCacheSize = DataSize.ofGigabytes(cacheSettings.getMaxSizeGibibytes());
+        DataSize maxCacheSize = DataSize.ofGigabytes(cacheSettings.getSizeGib());
         LOGGER.info("Cache size uage: {}/{} GB", currentCacheSize.toGigabytes(), maxCacheSize.toGigabytes());
 
         DataSize excess = DataSize.ofBytes(currentCacheSize.toBytes() - maxCacheSize.toBytes());

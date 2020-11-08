@@ -5,7 +5,7 @@ import org.springframework.boot.context.properties.ConstructorBinding;
 
 @ConstructorBinding
 @ConfigurationProperties("kmdah.database")
-public class DatabaseSettings {
+public class DatabaseSettings implements UserSettings {
 
     private final String host;
     private final int port;

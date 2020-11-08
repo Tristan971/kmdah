@@ -12,11 +12,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.util.unit.DataSize;
 
 import moe.tristan.kmdah.common.api.worker.Worker;
 import moe.tristan.kmdah.common.api.worker.WorkerConfiguration;
 import moe.tristan.kmdah.common.api.worker.WorkerShutdown;
-import moe.tristan.kmdah.common.model.settings.OperatorSettings;
+import moe.tristan.kmdah.common.model.settings.MangadexSettings;
 
 
 @Service
@@ -24,12 +25,12 @@ public class WorkerPoolService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(WorkerPoolService.class);
 
-    private final OperatorSettings operatorSettings;
+    private final MangadexSettings mangadexSettings;
     private final WorkerConfigurationHolder workerConfigurationHolder;
     private final Map<Worker, Instant> workersAndExpiries = new ConcurrentHashMap<>();
 
-    public WorkerPoolService(OperatorSettings operatorSettings, WorkerConfigurationHolder workerConfigurationHolder) {
-        this.operatorSettings = operatorSettings;
+    public WorkerPoolService(MangadexSettings mangadexSettings, WorkerConfigurationHolder workerConfigurationHolder) {
+        this.mangadexSettings = mangadexSettings;
         this.workerConfigurationHolder = workerConfigurationHolder;
     }
 
@@ -53,7 +54,7 @@ public class WorkerPoolService {
 
         OptionalInt workerGracefulShutdownSeconds =
             workersAndExpiries.isEmpty()
-            ? OptionalInt.of(operatorSettings.getGracefulShutdownSeconds())
+            ? OptionalInt.of(mangadexSettings.getGracefulShutdownSeconds())
             : OptionalInt.empty();
 
         return WorkerShutdown
@@ -79,12 +80,19 @@ public class WorkerPoolService {
         }
     }
 
-    public int getPoolBandwidthMbps() {
-        return workersAndExpiries.keySet().stream().mapToInt(Worker::getBandwidthMbps).sum();
+    public DataSize getPoolBandwidth() {
+        return workersAndExpiries
+            .keySet()
+            .stream()
+            .map(Worker::getBandwidth)
+            .reduce(
+                DataSize.ofMegabytes(-1),
+                (b1, b2) -> DataSize.ofMegabytes(b1.toMegabytes() + b2.toMegabytes())
+            );
     }
 
     private void logPoolStatus() {
-        LOGGER.info("Worker pool: {} workers, {}Mbps", workersAndExpiries.size(), getPoolBandwidthMbps());
+        LOGGER.info("Worker pool: {} workers, {}Mbps", workersAndExpiries.size(), getPoolBandwidth().toMegabytes());
     }
 
 }

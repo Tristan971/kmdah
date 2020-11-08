@@ -1,0 +1,29 @@
+kmdah:
+  mangadex:
+    client-secret: ${KMDAH_MANGADEX_CLIENT_SECRET:super-very-mega-secret}
+    graceful-shutdown-seconds: ${KMDAH_MANGADEX_GRACEFUL_SHUTDOWN_SECONDS:300}
+
+  operator:
+    port: ${KMDAH_OPERATOR_PORT:8080}
+    ping-frequency-seconds: ${KMDAH_OPERATOR_PING_FREQUENCY_SECONDS:15}
+    workers-uri: ${KMDAH_OPERATOR_WORKERS_URI:http://localhost:${kmdah.worker.port}}
+    tls-secret:
+      namespace: ${KMDAH_OPERATOR_TLS_SECRET_NAMESPACE:default}
+      name: ${KMDAH_OPERATOR_TLS_SECRET_NAME:mangadex-at-home-tls-secret}
+
+  worker:
+    port: ${KMDAH_WORKER_PORT:8081}
+    operator-uri: ${KMDAH_WORKER_OPERATOR_URI:http://localhost:${kmdah.operator.port}}
+    bandwidth-mbps: ${KMDAH_WORKER_BANDWIDTH_MBPS:100}
+    verify-referrer: ${KMDAH_WORKER_VERIFY_REFERRER:true}
+
+  database:
+    host: ${KMDAH_DATABASE_HOST:localhost}
+    port: ${KMDAH_DATABASE_PORT:5432}
+    user: ${KMDAH_DABATASE_USER:mdah}
+    password: ${KMDAH_DATABASE_PASSWORD:mdah}
+    database: ${KMDAH_DATABASE_DATABASE:mdah}
+
+  cache:
+    root: ${KMDAH_CACHE_ROOT:cache}
+    size-gib: ${KMDAH_CACHE_SIZE_GIB:1}

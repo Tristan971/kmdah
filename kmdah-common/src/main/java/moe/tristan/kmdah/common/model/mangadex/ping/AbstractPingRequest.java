@@ -6,6 +6,7 @@ import java.time.ZonedDateTime;
 import java.util.Optional;
 
 import org.immutables.value.Value.Immutable;
+import org.immutables.value.Value.Redacted;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -20,6 +21,7 @@ abstract class AbstractPingRequest {
     /**
      * @return the client secret
      */
+    @Redacted
     public abstract String getSecret();
 
     /**
@@ -37,7 +39,7 @@ abstract class AbstractPingRequest {
      * @return the maximum speed to dedicate to the client, in kilobytes per second
      */
     @JsonProperty("network_speed")
-    public abstract int getNetworkSpeed();
+    public abstract long getNetworkSpeed();
 
     /**
      * @return the TLS timestamp from the previous ping

@@ -1,8 +1,39 @@
+logging.level:
+  root: WARN
+  moe.tristan.kmdah: INFO
+
+server:
+  shutdown: graceful
+  port: ${kmdah.worker.port}
+  server-header: kube-mdah ${spring.application.version} - ${spring.application.name} - https://github.com/Tristan971/kube-mdah
+
 spring:
-  application.name: kmdah-worker
+  application:
+    name: kmdah-worker
+    version: @project.version@
 
-  profiles.include:
-    - ${KMDAH_PROFILE:prod}
-    - kmdah
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://${kmdah.database.host}:${kmdah.database.port}/${kmdah.database.database}
+    username: ${kmdah.database.user}
+    password: ${kmdah.database.password}
+  jpa:
+    open-in-view: false
+    generate-ddl: false
+    hibernate:
+      ddl-auto: validate
 
-server.port: ${kmdah.worker.port}
+  task.scheduling.pool.size: 4
+
+management:
+  endpoints:
+    enabled-by-default: true
+    web:
+      base-path: /__mon
+      exposure.include:
+        - info
+        - health
+        - prometheus
+
+  metrics.web.client.request.autotime.enabled: false

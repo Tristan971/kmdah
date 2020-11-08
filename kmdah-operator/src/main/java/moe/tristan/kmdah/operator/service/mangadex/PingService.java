@@ -4,6 +4,8 @@ import java.net.URI;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.unit.DataSize;
 import org.springframework.web.client.HttpClientErrorException.BadRequest;
@@ -13,11 +15,11 @@ import org.springframework.web.client.HttpClientErrorException.UnsupportedMediaT
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import moe.tristan.kmdah.common.model.settings.CacheSettings;
-import moe.tristan.kmdah.common.model.settings.MetadataSettings;
 import moe.tristan.kmdah.common.model.mangadex.MangadexApi;
 import moe.tristan.kmdah.common.model.mangadex.ping.PingRequest;
 import moe.tristan.kmdah.common.model.mangadex.ping.PingResponse;
+import moe.tristan.kmdah.common.model.settings.CacheSettings;
+import moe.tristan.kmdah.common.model.settings.MangadexSettings;
 import moe.tristan.kmdah.common.model.settings.OperatorSettings;
 import moe.tristan.kmdah.operator.service.workers.WorkerPoolService;
 
@@ -25,6 +27,8 @@ import io.micrometer.core.annotation.Timed;
 
 @Service
 public class PingService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(PingService.class);
 
     private static final URI PING_ENDPOINT = UriComponentsBuilder
         .fromHttpUrl(MangadexApi.BASE_URL)
@@ -35,42 +39,46 @@ public class PingService {
     private final RestTemplate restTemplate;
 
     private final CacheSettings cacheSettings;
+    private final MangadexSettings mangadexSettings;
     private final OperatorSettings operatorSettings;
-    private final MetadataSettings metadataSettings;
     private final WorkerPoolService workerPoolService;
 
     public PingService(
         RestTemplate restTemplate,
         OperatorSettings operatorSettings,
         CacheSettings cacheSettings,
-        MetadataSettings metadataSettings,
+        MangadexSettings mangadexSettings,
         WorkerPoolService workerPoolService
     ) {
         this.restTemplate = restTemplate;
         this.operatorSettings = operatorSettings;
         this.cacheSettings = cacheSettings;
-        this.metadataSettings = metadataSettings;
+        this.mangadexSettings = mangadexSettings;
         this.workerPoolService = workerPoolService;
     }
 
     @Timed
     public PingResponse ping(Optional<ZonedDateTime> lastCreatedAt) {
+        DataSize poolSpeed = workerPoolService.getPoolBandwidth();
         PingRequest request = PingRequest
             .builder()
-            .secret(operatorSettings.getSecret())
+            .secret(mangadexSettings.getClientSecret())
             .port(operatorSettings.getPort())
-            .diskSpace(DataSize.ofGigabytes(cacheSettings.getMaxSizeGibibytes()).toMegabytes()) // spring uses mebibytes for DataSize (good on them <3)
-            .networkSpeed(workerPoolService.getPoolBandwidthMbps() * 1024)
+            .diskSpace(DataSize.ofGigabytes(cacheSettings.getSizeGib()).toMegabytes()) // spring uses mebibytes for DataSize (good on them <3)
+            .networkSpeed(poolSpeed.toKilobytes())
             .tlsCreatedAt(lastCreatedAt)
-            .specVersion(metadataSettings.getClientSpec())
+            .specVersion(MangadexApi.SPEC_VERSION)
             .build();
+        LOGGER.info("{}", request);
 
         try {
-            return restTemplate.postForObject(
+            PingResponse pingResponse = restTemplate.postForObject(
                 PING_ENDPOINT,
                 request,
                 PingResponse.class
             );
+            LOGGER.info("{}", pingResponse);
+            return pingResponse;
         } catch (Unauthorized e) {
             throw new IllegalStateException("Unauthorized! Either your secret is wrong, or your server was marked as compromised!");
         } catch (UnsupportedMediaType e) {

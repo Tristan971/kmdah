@@ -34,11 +34,10 @@ public class HeartbeatService {
             .path("/worker")
             .build()
             .toUri();
-        this.self = Worker
-            .builder()
-            .uniqueName(Inet4Address.getLocalHost().getHostName())
-            .bandwidthMbps(workerSettings.getBandwidthMbps())
-            .build();
+        this.self = Worker.of(
+            Inet4Address.getLocalHost().getHostName(),
+            workerSettings.getBandwidthMbps()
+        );
     }
 
     @Timed

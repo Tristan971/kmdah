@@ -8,7 +8,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import moe.tristan.kmdah.common.model.mangadex.MangadexApi;
 import moe.tristan.kmdah.common.model.mangadex.stop.StopRequest;
-import moe.tristan.kmdah.common.model.settings.OperatorSettings;
+import moe.tristan.kmdah.common.model.settings.MangadexSettings;
 
 import io.micrometer.core.annotation.Timed;
 
@@ -21,11 +21,11 @@ public class StopService {
         .build()
         .toUri();
 
-    private final OperatorSettings operatorSettings;
+    private final MangadexSettings mangadexSettings;
     private final RestTemplate restTemplate;
 
-    public StopService(OperatorSettings operatorSettings, RestTemplate restTemplate) {
-        this.operatorSettings = operatorSettings;
+    public StopService(MangadexSettings mangadexSettings, RestTemplate restTemplate) {
+        this.mangadexSettings = mangadexSettings;
         this.restTemplate = restTemplate;
     }
 
@@ -33,7 +33,7 @@ public class StopService {
     public void stop() {
         restTemplate.postForObject(
             STOP_ENDPOINT,
-            StopRequest.of(operatorSettings.getSecret()),
+            StopRequest.of(mangadexSettings.getClientSecret()),
             Void.class
         );
     }

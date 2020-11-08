@@ -1,33 +1,22 @@
 package moe.tristan.kmdah.common.model.settings;
 
+import java.net.URI;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConstructorBinding;
 
 @ConstructorBinding
 @ConfigurationProperties("kmdah.operator")
-public class OperatorSettings {
+public class OperatorSettings implements UserSettings {
 
-    private final String secret;
     private final int port;
     private final int pingFrequencySeconds;
-    private final int gracefulShutdownSeconds;
+    private final URI workersUri;
 
-    public OperatorSettings(String secret, int port, int pingFrequencySeconds, int gracefulShutdownSeconds) {
-        this.secret = secret;
+    public OperatorSettings(int port, int pingFrequencySeconds, URI workersUri) {
         this.port = port;
         this.pingFrequencySeconds = pingFrequencySeconds;
-        this.gracefulShutdownSeconds = gracefulShutdownSeconds;
-
-        if (pingFrequencySeconds > 100) {
-            throw new IllegalArgumentException(
-                "The MDAH client spec requires a ping to consistently happen at least every 2 minutes, "
-                + "but you asked for " + pingFrequencySeconds + " seconds."
-            );
-        }
-    }
-
-    public String getSecret() {
-        return secret;
+        this.workersUri = workersUri;
     }
 
     public int getPort() {
@@ -38,8 +27,8 @@ public class OperatorSettings {
         return pingFrequencySeconds;
     }
 
-    public int getGracefulShutdownSeconds() {
-        return gracefulShutdownSeconds;
+    public URI getWorkersUri() {
+        return workersUri;
     }
 
 }

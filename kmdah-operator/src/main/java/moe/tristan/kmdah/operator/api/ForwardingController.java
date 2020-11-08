@@ -9,21 +9,26 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import moe.tristan.kmdah.common.model.settings.LoadBalancerSettings;
+import moe.tristan.kmdah.common.model.settings.OperatorSettings;
 
 @RestController
 public class ForwardingController {
 
-    private final LoadBalancerSettings loadBalancerSettings;
+    private final OperatorSettings operatorSettings;
 
-    public ForwardingController(LoadBalancerSettings loadBalancerSettings) {
-        this.loadBalancerSettings = loadBalancerSettings;
+    public ForwardingController(OperatorSettings operatorSettings) {
+        this.operatorSettings = operatorSettings;
+    }
+
+    @GetMapping("/favicon.ico")
+    public void handleFavicon(HttpServletResponse response) throws IOException {
+        response.sendRedirect("https://mangadex.org/favicon.ico");
     }
 
     @GetMapping("**")
     public void handleImageRequest(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String redirection = UriComponentsBuilder
-            .fromUri(loadBalancerSettings.getUri())
+            .fromUri(operatorSettings.getWorkersUri())
             .path(request.getServletPath())
             .build()
             .toUriString();

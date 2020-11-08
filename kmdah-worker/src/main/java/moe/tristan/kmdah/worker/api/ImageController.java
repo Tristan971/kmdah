@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import moe.tristan.kmdah.common.model.ImageContent;
-import moe.tristan.kmdah.common.model.settings.MetadataSettings;
 import moe.tristan.kmdah.common.model.mangadex.image.ImageMode;
 import moe.tristan.kmdah.worker.model.ImageRequest;
 import moe.tristan.kmdah.worker.service.images.CachedImageService;
@@ -18,11 +17,9 @@ import moe.tristan.kmdah.worker.service.images.CachedImageService;
 @Controller
 public class ImageController {
 
-    private final MetadataSettings metadataSettings;
     private final CachedImageService imageService;
 
-    public ImageController(MetadataSettings metadataSettings, CachedImageService imageService) {
-        this.metadataSettings = metadataSettings;
+    public ImageController(CachedImageService imageService) {
         this.imageService = imageService;
     }
 
