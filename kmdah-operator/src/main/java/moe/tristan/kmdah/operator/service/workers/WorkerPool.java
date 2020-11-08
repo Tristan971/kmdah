@@ -16,7 +16,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.util.unit.DataSize;
 
 import moe.tristan.kmdah.common.api.worker.Worker;
 import moe.tristan.kmdah.common.api.worker.WorkerConfiguration;
@@ -96,13 +95,13 @@ public class WorkerPool {
         }
     }
 
-    public DataSize getPoolBandwidth() {
+    public long getPoolBandwidthMegabitsPerSecond() {
         return workersAndExpiries
             .keySet()
             .stream()
-            .map(Worker::getBandwidth)
-            .reduce((b1, b2) -> DataSize.ofMegabytes(b1.toMegabytes() + b2.toMegabytes()))
-            .orElse(DataSize.ofMegabytes(-1));
+            .mapToLong(Worker::getBandwidthMegabitsPerSecond)
+            .reduce(Long::sum)
+            .orElse(-1L);
     }
 
     @EventListener(PingResponseReceivedEvent.class)
@@ -111,7 +110,7 @@ public class WorkerPool {
     }
 
     private void logPoolStatus() {
-        LOGGER.info("Worker pool: {} workers, {}Mbps", workersAndExpiries.size(), getPoolBandwidth().toMegabytes());
+        LOGGER.info("Worker pool: {} workers, {}Mbps", workersAndExpiries.size(), getPoolBandwidthMegabitsPerSecond());
     }
 
 }

@@ -55,13 +55,13 @@ public class PingService {
 
     @Timed
     public PingResponse ping(Optional<ZonedDateTime> lastCreatedAt) {
-        DataSize poolSpeed = workerPool.getPoolBandwidth();
+        long poolSpeedMegabitsPerSecond = workerPool.getPoolBandwidthMegabitsPerSecond();
         PingRequest request = PingRequest
             .builder()
             .secret(mangadexSettings.getClientSecret())
             .port(443)
             .diskSpace((long) (DataSize.ofGigabytes(cacheSettings.getSizeGib()).toBytes() * 0.8)) // spring uses mebibytes for DataSize (good on them <3)
-            .networkSpeed(poolSpeed.toKilobytes())
+            .networkSpeed(poolSpeedMegabitsPerSecond * 1024 / 8)
             .tlsCreatedAt(lastCreatedAt)
             .specVersion(MangadexApi.SPEC_VERSION)
             .build();
