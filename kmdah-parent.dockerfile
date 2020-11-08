@@ -13,5 +13,7 @@ ENV KMDAH_VERSION "$KMDAH_VERSION"
 
 WORKDIR /mangahome
 
+ENV KMDAH_CONFIG_DIR "/mangahome/"
+
 ENTRYPOINT ["/bin/dumb-init", "--" ]
-CMD sh -c "set -x; java -Dspring.config.additional-location=$KMDAH_CONFIG_DIR -Dspring.profiles.active=prod -jar $JARFILE"
+CMD ["bash", "-c", "java -Dspring.config.additional-location=file:$KMDAH_CONFIG_DIR -Dspring.profiles.active=prod -jar $JARFILE"]
