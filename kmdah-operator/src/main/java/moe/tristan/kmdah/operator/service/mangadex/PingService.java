@@ -63,7 +63,7 @@ public class PingService {
         PingRequest request = PingRequest
             .builder()
             .secret(mangadexSettings.getClientSecret())
-            .port(operatorSettings.getPort())
+            .port(443)
             .diskSpace(DataSize.ofGigabytes(cacheSettings.getSizeGib()).toMegabytes()) // spring uses mebibytes for DataSize (good on them <3)
             .networkSpeed(poolSpeed.toKilobytes())
             .tlsCreatedAt(lastCreatedAt)
