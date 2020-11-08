@@ -21,7 +21,7 @@ import moe.tristan.kmdah.common.model.mangadex.ping.PingResponse;
 import moe.tristan.kmdah.common.model.settings.CacheSettings;
 import moe.tristan.kmdah.common.model.settings.MangadexSettings;
 import moe.tristan.kmdah.common.model.settings.OperatorSettings;
-import moe.tristan.kmdah.operator.service.workers.WorkerPoolService;
+import moe.tristan.kmdah.operator.service.workers.WorkerPool;
 
 import io.micrometer.core.annotation.Timed;
 
@@ -41,25 +41,25 @@ public class PingService {
     private final CacheSettings cacheSettings;
     private final MangadexSettings mangadexSettings;
     private final OperatorSettings operatorSettings;
-    private final WorkerPoolService workerPoolService;
+    private final WorkerPool workerPool;
 
     public PingService(
         RestTemplate restTemplate,
         OperatorSettings operatorSettings,
         CacheSettings cacheSettings,
         MangadexSettings mangadexSettings,
-        WorkerPoolService workerPoolService
+        WorkerPool workerPool
     ) {
         this.restTemplate = restTemplate;
         this.operatorSettings = operatorSettings;
         this.cacheSettings = cacheSettings;
         this.mangadexSettings = mangadexSettings;
-        this.workerPoolService = workerPoolService;
+        this.workerPool = workerPool;
     }
 
     @Timed
     public PingResponse ping(Optional<ZonedDateTime> lastCreatedAt) {
-        DataSize poolSpeed = workerPoolService.getPoolBandwidth();
+        DataSize poolSpeed = workerPool.getPoolBandwidth();
         PingRequest request = PingRequest
             .builder()
             .secret(mangadexSettings.getClientSecret())

@@ -8,25 +8,25 @@ import org.springframework.web.bind.annotation.RestController;
 import moe.tristan.kmdah.common.api.worker.Worker;
 import moe.tristan.kmdah.common.api.worker.WorkerConfiguration;
 import moe.tristan.kmdah.common.api.worker.WorkerShutdown;
-import moe.tristan.kmdah.operator.service.workers.WorkerPoolService;
+import moe.tristan.kmdah.operator.service.workers.WorkerPool;
 
 @RestController
 public class WorkerController {
 
-    private final WorkerPoolService workerPoolService;
+    private final WorkerPool workerPool;
 
-    public WorkerController(WorkerPoolService workerPoolService) {
-        this.workerPoolService = workerPoolService;
+    public WorkerController(WorkerPool workerPool) {
+        this.workerPool = workerPool;
     }
 
     @PutMapping("/worker")
     public WorkerConfiguration heartbeat(@RequestBody Worker worker) {
-        return workerPoolService.heartbeat(worker);
+        return workerPool.heartbeat(worker);
     }
 
     @DeleteMapping("/worker")
     public WorkerShutdown disconnect(@RequestBody Worker worker) {
-        return workerPoolService.disconnect(worker);
+        return workerPool.disconnect(worker);
     }
 
 }

@@ -27,6 +27,11 @@ spring:
   task.scheduling.pool.size: 4
 
 management:
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
   endpoints:
     enabled-by-default: true
     web:

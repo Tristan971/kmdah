@@ -10,7 +10,6 @@ import org.springframework.stereotype.Component;
 
 import moe.tristan.kmdah.common.api.worker.WorkerConfiguration;
 import moe.tristan.kmdah.common.api.worker.WorkerShutdown;
-import moe.tristan.kmdah.common.model.settings.WorkerSettings;
 
 @Component
 public class WorkerLifecycle implements SmartLifecycle {
@@ -18,21 +17,14 @@ public class WorkerLifecycle implements SmartLifecycle {
     private static final Logger LOGGER = LoggerFactory.getLogger(WorkerLifecycle.class);
 
     private final TaskScheduler taskScheduler;
-    private final WorkerSettings workerSettings;
     private final HeartbeatService heartbeatService;
     private final WorkerConfigurationService workerConfigurationService;
 
     private ScheduledFuture<?> heartbeatJob;
     private boolean running = false;
 
-    public WorkerLifecycle(
-        TaskScheduler taskScheduler,
-        WorkerSettings workerSettings,
-        HeartbeatService heartbeatService,
-        WorkerConfigurationService workerConfigurationService
-    ) {
+    public WorkerLifecycle(TaskScheduler taskScheduler, HeartbeatService heartbeatService, WorkerConfigurationService workerConfigurationService) {
         this.taskScheduler = taskScheduler;
-        this.workerSettings = workerSettings;
         this.heartbeatService = heartbeatService;
         this.workerConfigurationService = workerConfigurationService;
     }
@@ -71,7 +63,7 @@ public class WorkerLifecycle implements SmartLifecycle {
 
     private void doHeartbeat() {
         WorkerConfiguration configuration = heartbeatService.heartbeat();
-        workerConfigurationService.setImageServer(configuration.getImageServer());
+        configuration.getImageServer().ifPresent(workerConfigurationService::setImageServer);
     }
 
 }

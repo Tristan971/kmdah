@@ -8,10 +8,12 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import moe.tristan.kmdah.common.model.mangadex.ping.TlsData;
 import moe.tristan.kmdah.common.model.settings.TlsSecretSettings;
+import moe.tristan.kmdah.operator.service.mangadex.PingResponseReceivedEvent;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
@@ -19,26 +21,31 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 
 @Service
-public class KubernetesIngressTlsSecretService {
+public class IngressTlsSecretService {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(KubernetesIngressTlsSecretService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(IngressTlsSecretService.class);
 
     private final TlsSecretSettings tlsSecretSettings;
     private final CoreV1Api coreV1Api;
 
     private TlsData lastTlsData;
 
-    public KubernetesIngressTlsSecretService(TlsSecretSettings tlsSecretSettings, CoreV1Api kubernetesCoreV1Api) {
+    public IngressTlsSecretService(TlsSecretSettings tlsSecretSettings, CoreV1Api kubernetesCoreV1Api) {
         this.tlsSecretSettings = tlsSecretSettings;
         this.coreV1Api = kubernetesCoreV1Api;
     }
 
-    public void syncTlsData(TlsData tlsData) {
+    @EventListener(PingResponseReceivedEvent.class)
+    public void pingReceived(PingResponseReceivedEvent event) {
+        event.getPingResponse().getTls().ifPresent(this::syncTlsData);
+    }
+
+    private void syncTlsData(TlsData tlsData) {
         if (tlsData.equals(lastTlsData)) {
             LOGGER.debug("Unchanged TlsData");
         }
 
-        LOGGER.info("New TlsData is different from the previous, so updating tls cert secret");
+        LOGGER.info("New TlsData - syncing tls cert secret");
 
         V1Secret secret = buildSecretFromTlsData(tlsData);
 
