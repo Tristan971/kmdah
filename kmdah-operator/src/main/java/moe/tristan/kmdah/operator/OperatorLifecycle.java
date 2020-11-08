@@ -64,13 +64,14 @@ public class OperatorLifecycle implements SmartLifecycle {
     @EventListener(WorkerRegisteredEvent.class)
     public void scaleUpWorkers() {
         OperatorStatus currentStatus = status.get();
+
         switch (currentStatus) {
-            case INITIAL -> {
+            case INITIAL, STARTED -> {
                 status.set(OperatorStatus.STARTED);
-                LOGGER.info("Starting operator...");
+                LOGGER.info("Scaling operator...");
+                stopHeartbeat();
                 startHeartbeat();
             }
-            case STARTED -> LOGGER.info("Operator is started already - ignoring");
             case EXITING -> LOGGER.info("Operator is exiting already - ignoring");
         }
     }
@@ -126,7 +127,9 @@ public class OperatorLifecycle implements SmartLifecycle {
     }
 
     private void stopHeartbeat() {
-        heartbeatJob.cancel(true);
+        if (heartbeatJob != null && !heartbeatJob.isDone()) {
+            heartbeatJob.cancel(true);
+        }
         LOGGER.info("Stopped ping job");
         stopService.stop();
         LOGGER.info("Notified backend of shutdown.");
