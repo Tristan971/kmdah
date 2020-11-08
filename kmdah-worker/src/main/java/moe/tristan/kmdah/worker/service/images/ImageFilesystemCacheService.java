@@ -6,15 +6,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import moe.tristan.kmdah.common.model.settings.CacheSettings;
 import moe.tristan.kmdah.common.model.persistence.UpstreamImage;
+import moe.tristan.kmdah.common.model.settings.CacheSettings;
 import moe.tristan.kmdah.worker.model.ImageRequest;
 
 @Service
@@ -28,14 +28,19 @@ public class ImageFilesystemCacheService {
         this.cacheSettings = cacheSettings;
     }
 
-    public InputStream openStream(ImageRequest imageRequest) throws IOException {
+    public Optional<InputStream> findCachedImage(ImageRequest imageRequest) throws IOException {
         Path expectedPath = getAbsolutePath(imageRequest);
         LOGGER.debug("Serving {} from {}", imageRequest, expectedPath);
-        return Files.newInputStream(expectedPath);
+
+        if (Files.exists(expectedPath)) {
+            return Optional.of(Files.newInputStream(expectedPath));
+        } else {
+            return Optional.empty();
+        }
     }
 
-    public CompletionStage<UpstreamImage> writeAsync(ImageRequest imageRequest, UpstreamImage image) {
-        return CompletableFuture.supplyAsync(() -> writeImageSync(imageRequest, image));
+    public void writeAsync(ImageRequest imageRequest, UpstreamImage image) {
+        CompletableFuture.supplyAsync(() -> writeImageSync(imageRequest, image));
     }
 
     private UpstreamImage writeImageSync(ImageRequest imageRequest, UpstreamImage upstreamImage) {

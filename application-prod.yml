@@ -17,13 +17,6 @@ kmdah:
     bandwidth-mbps: 100
     verify-referrer: true
 
-  database:
-    host: postgres
-    port: 5432
-    user: mdah
-    password: mdah
-    database: mdah
-
   cache:
     root: cache
     size-gib: 10

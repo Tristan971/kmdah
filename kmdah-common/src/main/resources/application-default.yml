@@ -17,13 +17,6 @@ kmdah:
     bandwidth-mbps: ${KMDAH_WORKER_BANDWIDTH_MBPS:100}
     verify-referrer: ${KMDAH_WORKER_VERIFY_REFERRER:true}
 
-  database:
-    host: ${KMDAH_DATABASE_HOST:localhost}
-    port: ${KMDAH_DATABASE_PORT:5432}
-    user: ${KMDAH_DABATASE_USER:mdah}
-    password: ${KMDAH_DATABASE_PASSWORD:mdah}
-    database: ${KMDAH_DATABASE_DATABASE:mdah}
-
   cache:
     root: ${KMDAH_CACHE_ROOT:cache}
     size-gib: ${KMDAH_CACHE_SIZE_GIB:1}

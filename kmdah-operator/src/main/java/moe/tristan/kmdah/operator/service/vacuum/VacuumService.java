@@ -1,15 +1,14 @@
 package moe.tristan.kmdah.operator.service.vacuum;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import javax.sql.DataSource;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,8 +17,6 @@ import org.springframework.util.StopWatch;
 import org.springframework.util.unit.DataSize;
 
 import moe.tristan.kmdah.common.model.settings.CacheSettings;
-import moe.tristan.kmdah.common.model.persistence.ImageEntity;
-import moe.tristan.kmdah.operator.model.vacuum.VacuumResult;
 
 import io.micrometer.core.annotation.Timed;
 
@@ -31,18 +28,15 @@ public class VacuumService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(VacuumService.class);
 
-    private final DataSource dataSource;
+    private final Path cacheDirectoryPath;
     private final CacheSettings cacheSettings;
-    private final ImageRepository imageRepository;
+    private final ChapterDeleter chapterDeleter;
 
-    public VacuumService(
-        DataSource dataSource,
-        CacheSettings cacheSettings,
-        ImageRepository imageRepository
-    ) {
-        this.dataSource = dataSource;
+    public VacuumService(CacheSettings cacheSettings, ChapterDeleter chapterDeleter) {
         this.cacheSettings = cacheSettings;
-        this.imageRepository = imageRepository;
+        this.cacheDirectoryPath = Paths.get(cacheSettings.getRoot()).toAbsolutePath();
+        this.chapterDeleter = chapterDeleter;
+        LOGGER.info("Cache directory is: {}", cacheDirectoryPath);
     }
 
     @Timed
@@ -50,68 +44,70 @@ public class VacuumService {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
 
-        DataSize currentCacheSize = DataSize.ofBytes(estimateCacheSize());
-        DataSize maxCacheSize = DataSize.ofGigabytes(cacheSettings.getSizeGib());
-        LOGGER.info("Cache size uage: {}/{} GB", currentCacheSize.toGigabytes(), maxCacheSize.toGigabytes());
+        DataSize cacheSize = getCacheSize();
+        LOGGER.info("Cache size uage: {}/{} GB", cacheSize.toGigabytes(), cacheSettings.getSizeGib());
 
-        DataSize excess = DataSize.ofBytes(currentCacheSize.toBytes() - maxCacheSize.toBytes());
-
-        if (excess.toGigabytes() <= 0) {
-            LOGGER.info("No need for cache vacuuming ({}GB under requested size)", Math.abs(excess.toGigabytes()));
+        double vacuumStartFillPercentage = getFillPercentage();
+        if (vacuumStartFillPercentage <= 100.0) {
+            LOGGER.info("No need for cache vacuuming ({}% full)", (int) vacuumStartFillPercentage);
             return;
         }
 
-        long deletedFiles = 0;
-        while (excess.toGigabytes() > 0) {
-            LOGGER.info("Shrinking cache... (excess: {}GB)", excess.toGigabytes());
-            VacuumResult vacuum = vacuum();
-
-            excess = DataSize.ofBytes(excess.toBytes() - vacuum.getFreed());
-            deletedFiles += vacuum.getCount();
-        }
+        long vacuumed = vacuum(vacuumStartFillPercentage - 100.0);
+        double vacuumEndFillPercentage = getFillPercentage();
 
         stopWatch.stop();
-        LOGGER.info("Done shrinking cache - evicted {} files in {}s", deletedFiles, stopWatch.getTotalTimeSeconds());
+        LOGGER.info(
+            "Done shrinking cache ({}% -> {}%) - evicted {} chapters in {}s",
+            (int) vacuumStartFillPercentage,
+            (int) vacuumEndFillPercentage,
+            vacuumed,
+            stopWatch.getTotalTimeSeconds()
+        );
     }
 
-    @Timed
-    protected VacuumResult vacuum() {
-        List<ImageEntity> toDelete = imageRepository.findTop100By();
+    private long vacuum(double overfullPercentage) {
+        try (Stream<Path> chapterFoldersStream = Files.list(cacheDirectoryPath)) {
+            List<Path> chapterFolders = chapterFoldersStream.collect(Collectors.toList());
 
-        int count = toDelete.size();
-        int freed = toDelete.stream().mapToInt(ImageEntity::getSize).sum();
-        VacuumResult vacuumResult = VacuumResult.of(count, freed);
+            int totalChapterCount = chapterFolders.size();
+            LOGGER.info("Number of chapters in cache {}", totalChapterCount);
 
-        List<ImageEntity> deletedFromFilesystem = toDelete.stream().filter(deletedImage -> {
-            String deletedFilePath = deletedImage.getPath();
-            try {
-                deleteFromFilesystem(deletedFilePath);
-                return true;
-            } catch (IOException e) {
-                LOGGER.error("Failed to delete {} at path {}", deletedImage, deletedFilePath, e);
-                return false;
-            }
-        }).collect(Collectors.toList());
-        imageRepository.deleteInBatch(deletedFromFilesystem);
+            int chaptersToDeleteGuesstimate = (int) (totalChapterCount * (overfullPercentage / 100.0));
+            LOGGER.info("Guesstimate recommends deleting {}% of chapters (overfill factor)", (int) overfullPercentage);
 
-        return vacuumResult;
-    }
-
-    @Timed
-    protected long estimateCacheSize() {
-        try {
-            PreparedStatement preparedStatement = dataSource.getConnection().prepareStatement("select sum (size) as total from mdah.images");
-            ResultSet resultSet = preparedStatement.executeQuery();
-            resultSet.next();
-            return resultSet.getLong("total");
-        } catch (SQLException throwables) {
-            LOGGER.error("Cannot estimate cache size!", throwables);
-            return 0;
+            Collections.shuffle(chapterFolders);
+            chapterFolders
+                .stream()
+                .limit(chaptersToDeleteGuesstimate)
+                .forEach(this::deleteChapter);
+            return chaptersToDeleteGuesstimate;
+        } catch (IOException e) {
+            throw new RuntimeException("Cannot list chapters in cache directory!", e);
         }
     }
 
-    private void deleteFromFilesystem(String path) throws IOException {
-        Files.deleteIfExists(Paths.get(path));
+    private DataSize getCacheSize() {
+        File cacheRoot = cacheDirectoryPath.toFile();
+        long totalSpaceBytes = cacheRoot.getTotalSpace();
+        long usableSpaceBytes = cacheRoot.getUsableSpace();
+        long usedSpaceBytes = totalSpaceBytes - usableSpaceBytes;
+        return DataSize.ofBytes(usedSpaceBytes);
+    }
+
+    private double getFillPercentage() {
+        long currentCacheSizeBytes = getCacheSize().toBytes();
+        long maxCacheSizeBytes = DataSize.ofGigabytes(cacheSettings.getSizeGib()).toBytes();
+
+        return ((double) currentCacheSizeBytes / (double) maxCacheSizeBytes) * 100.0;
+    }
+
+    private void deleteChapter(Path chapter) {
+        try {
+            Files.walkFileTree(chapter, chapterDeleter);
+        } catch (IOException e) {
+            LOGGER.error("Could not delete chapter at {}", chapter, e);
+        }
     }
 
 }

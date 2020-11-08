@@ -1,10 +1,9 @@
 package moe.tristan.kmdah.worker.api;
 
-import static org.springframework.http.MediaType.parseMediaType;
-
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -53,8 +52,7 @@ public class ImageController {
         ImageContent image = imageService.findOrFetch(imageRequest);
 
         HttpHeaders responseHeaders = new HttpHeaders();
-        responseHeaders.setContentLength(image.getSize());
-        responseHeaders.setContentType(parseMediaType(image.getContentType()));
+        image.getContentType().map(MediaType::parseMediaType).ifPresent(responseHeaders::setContentType);
 
         // MDAH spec headers
         responseHeaders.add(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "https://mangadex.org");

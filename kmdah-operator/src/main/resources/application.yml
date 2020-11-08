@@ -10,24 +10,6 @@ spring:
   application:
     name: kmdah-operator
     version: @project.version@
-
-  datasource:
-    type: com.zaxxer.hikari.HikariDataSource
-    driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://${kmdah.database.host}:${kmdah.database.port}/${kmdah.database.database}
-    username: ${kmdah.database.user}
-    password: ${kmdah.database.password}
-  jpa:
-    open-in-view: false
-    generate-ddl: false
-    hibernate:
-      ddl-auto: validate
-
-  liquibase:
-    change-log: classpath:db/changesets.xml
-    liquibase-schema: public
-    default-schema: public
-
   task.scheduling.pool.size: 4
 
 management:

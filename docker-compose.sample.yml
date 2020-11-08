@@ -1,16 +1,7 @@
 version: "3.8"
 
 services:
-  postgres:
-    image: postgres:12
-    environment:
-      POSTGRES_USER: mdah
-      POSTGRES_PASSWORD: mdah
-    ports:
-      - 5432:5432
-
   operator:
-    depends_on: [ postgres ]
     image: tristandeloche/kmdah-operator:0.0.1-SNAPSHOT
     ports:
       - 3000:3000

@@ -12,10 +12,11 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import moe.tristan.kmdah.common.api.CacheMode;
 import moe.tristan.kmdah.common.model.ImageContent;
 import moe.tristan.kmdah.common.model.persistence.CachedImage;
-import moe.tristan.kmdah.common.model.persistence.ImageEntity;
 import moe.tristan.kmdah.common.model.persistence.UpstreamImage;
+import moe.tristan.kmdah.worker.metrics.CacheModeCounter;
 import moe.tristan.kmdah.worker.model.ImageRequest;
 import moe.tristan.kmdah.worker.service.mangadex.MangadexImageService;
 
@@ -24,57 +25,45 @@ public class CachedImageService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CachedImageService.class);
 
+    private final CacheModeCounter cacheModeCounter;
     private final MangadexImageService mangadexImageService;
-    private final ImagesRepository imagesRepository;
     private final ImageFilesystemCacheService filesystemCacheService;
 
     public CachedImageService(
+        CacheModeCounter cacheModeCounter,
         MangadexImageService mangadexImageService,
-        ImagesRepository imagesRepository,
         ImageFilesystemCacheService filesystemCacheService
     ) {
+        this.cacheModeCounter = cacheModeCounter;
         this.mangadexImageService = mangadexImageService;
-        this.imagesRepository = imagesRepository;
         this.filesystemCacheService = filesystemCacheService;
     }
 
     public ImageContent findOrFetch(ImageRequest imageRequest) {
-        Optional<ImageEntity> cachedImageSearch = imagesRepository.findByFilenameAndChapterHashAndMode(
-            imageRequest.getFilename(),
-            imageRequest.getChapterHash(),
-            imageRequest.getMode()
-        );
+        Optional<InputStream> cachedImageSearch = Optional.empty();
+        try {
+            cachedImageSearch = filesystemCacheService.findCachedImage(imageRequest);
+        } catch (IOException e) {
+            LOGGER.info("Could not load image from cache!", e);
+        }
 
-        // if present in db, try returning from filesystem -- if this fails, use upstream instead
         if (cachedImageSearch.isPresent()) {
-            ImageEntity cachedImage = cachedImageSearch.get();
-            try {
-                return loadFromFilecache(imageRequest, cachedImage);
-            } catch (IOException cause) {
-                LOGGER.error("Image {} was marked as present in cache but couldn't be loaded! Retrying from upstream.", imageRequest, cause);
-            }
+            cacheModeCounter.record(CacheMode.HIT);
+            return CachedImage
+                .builder()
+                .cacheMode(CacheMode.HIT)
+                .inputStream(cachedImageSearch.get())
+                .build();
         }
 
         // if we it wasn't in cache, or could not be loaded from it, use upstream
+        cacheModeCounter.record(CacheMode.MISS);
         UpstreamImage upstreamImage = loadFromUpstream(imageRequest);
 
-        // schedule disk saving, and db persistence once that has successfully finished
-        // db persistence uses its own threadpool, to allow it to have more or less pressure if needed
-        filesystemCacheService
-            .writeAsync(imageRequest, upstreamImage)
-            .thenAcceptAsync(savedImage -> persistSavedImage(imageRequest, savedImage));
+        // schedule disk saving
+        filesystemCacheService.writeAsync(imageRequest, upstreamImage);
 
         return upstreamImage;
-    }
-
-    private CachedImage loadFromFilecache(ImageRequest imageRequest, ImageEntity imageEntity) throws IOException {
-        InputStream cachedImageStream = filesystemCacheService.openStream(imageRequest);
-        return CachedImage
-            .builder()
-            .contentType(imageEntity.getContentType())
-            .size(imageEntity.getSize())
-            .inputStream(cachedImageStream)
-            .build();
     }
 
     private UpstreamImage loadFromUpstream(ImageRequest imageRequest) {
@@ -89,14 +78,7 @@ public class CachedImageService {
             .builder()
             .contentType(contentType.toString())
             .bytes(requireNonNull(bytes))
-            .size(bytes.length)
             .build();
-    }
-
-    private void persistSavedImage(ImageRequest request, UpstreamImage image) {
-        ImageEntity imageEntity = new ImageEntity(request.getFilename(), request.getChapterHash(), request.getMode(), image.getContentType(), image.getBytes().length);
-        imagesRepository.save(imageEntity);
-        LOGGER.info("Persisted image {} to cache database", imageEntity);
     }
 
 }

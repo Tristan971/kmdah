@@ -10,9 +10,6 @@ import com.treatwell.immutables.styles.ValueObjectStyle;
 abstract class AbstractVacuumResult {
 
     @Parameter
-    public abstract int getCount();
-
-    @Parameter
-    public abstract int getFreed();
+    public abstract int getChapterCount();
 
 }
