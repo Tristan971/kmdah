@@ -16,3 +16,7 @@ docker build . -f docker/kmdah-operator.dockerfile -t "tristandeloche/kmdah-oper
 
 echo "Building worker image"
 docker build . -f docker/kmdah-worker.dockerfile -t "tristandeloche/kmdah-worker:$VERSION"
+
+docker push "tristandeloche/kmdah-parent:$VERSION"
+docker push "tristandeloche/kmdah-operator:$VERSION"
+docker push "tristandeloche/kmdah-worker:$VERSION"
