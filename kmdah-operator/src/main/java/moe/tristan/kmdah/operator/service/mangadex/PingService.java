@@ -20,7 +20,6 @@ import moe.tristan.kmdah.common.model.mangadex.ping.PingRequest;
 import moe.tristan.kmdah.common.model.mangadex.ping.PingResponse;
 import moe.tristan.kmdah.common.model.settings.CacheSettings;
 import moe.tristan.kmdah.common.model.settings.MangadexSettings;
-import moe.tristan.kmdah.common.model.settings.OperatorSettings;
 import moe.tristan.kmdah.operator.service.workers.WorkerPool;
 
 import io.micrometer.core.annotation.Timed;
@@ -40,18 +39,15 @@ public class PingService {
 
     private final CacheSettings cacheSettings;
     private final MangadexSettings mangadexSettings;
-    private final OperatorSettings operatorSettings;
     private final WorkerPool workerPool;
 
     public PingService(
         RestTemplate restTemplate,
-        OperatorSettings operatorSettings,
         CacheSettings cacheSettings,
         MangadexSettings mangadexSettings,
         WorkerPool workerPool
     ) {
         this.restTemplate = restTemplate;
-        this.operatorSettings = operatorSettings;
         this.cacheSettings = cacheSettings;
         this.mangadexSettings = mangadexSettings;
         this.workerPool = workerPool;
@@ -64,7 +60,7 @@ public class PingService {
             .builder()
             .secret(mangadexSettings.getClientSecret())
             .port(443)
-            .diskSpace(DataSize.ofGigabytes(cacheSettings.getSizeGib()).toMegabytes()) // spring uses mebibytes for DataSize (good on them <3)
+            .diskSpace((long) (DataSize.ofGigabytes(cacheSettings.getSizeGib()).toBytes() * 0.8)) // spring uses mebibytes for DataSize (good on them <3)
             .networkSpeed(poolSpeed.toKilobytes())
             .tlsCreatedAt(lastCreatedAt)
             .specVersion(MangadexApi.SPEC_VERSION)
