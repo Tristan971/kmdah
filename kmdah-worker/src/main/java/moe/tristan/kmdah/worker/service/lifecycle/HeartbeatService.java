@@ -4,6 +4,7 @@ import java.net.Inet4Address;
 import java.net.URI;
 import java.net.UnknownHostException;
 import java.util.Objects;
+import java.util.Optional;
 
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
@@ -34,9 +35,10 @@ public class HeartbeatService {
             .path("/worker")
             .build()
             .toUri();
+        String workerName = Optional.ofNullable(System.getenv("KMDAH_WORKER_NAME")).orElse(Inet4Address.getLocalHost().getHostName());
         this.self = Worker
             .builder()
-            .uniqueName(Inet4Address.getLocalHost().getHostName())
+            .uniqueName(workerName)
             .bandwidthMegabitsPerSecond(workerSettings.getBandwidthMbps())
             .build();
     }

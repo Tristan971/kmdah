@@ -100,8 +100,7 @@ public class WorkerPool {
             .keySet()
             .stream()
             .mapToLong(Worker::getBandwidthMegabitsPerSecond)
-            .reduce(Long::sum)
-            .orElse(-1L);
+            .sum();
     }
 
     @EventListener(PingResponseReceivedEvent.class)

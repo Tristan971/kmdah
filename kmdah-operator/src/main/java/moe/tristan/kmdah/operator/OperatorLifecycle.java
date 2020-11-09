@@ -66,19 +66,18 @@ public class OperatorLifecycle implements SmartLifecycle {
         OperatorStatus currentStatus = status.get();
 
         switch (currentStatus) {
-            case INITIAL, STARTED -> {
+            case INITIAL -> {
                 status.set(OperatorStatus.STARTED);
-                LOGGER.info("Scaling operator...");
-                stopHeartbeat();
+                LOGGER.info("Starting heartbeat");
                 startHeartbeat();
             }
+            case STARTED -> LOGGER.info("Heartbeat already running - updating required network speed");
             case EXITING -> LOGGER.info("Operator is exiting already - ignoring");
         }
     }
 
     @EventListener(WorkerPoolEmptiedEvent.class)
     public void scaledDownWorkers() {
-        status.set(OperatorStatus.EXITING);
         LOGGER.info("Pool is empty, stopping operator heartbeat.");
         stopHeartbeat();
         status.set(OperatorStatus.INITIAL);
@@ -111,7 +110,12 @@ public class OperatorLifecycle implements SmartLifecycle {
         return status.get() != OperatorStatus.EXITED;
     }
 
-    private void startHeartbeat() {
+    private synchronized void startHeartbeat() {
+        if (heartbeatJob != null) {
+            LOGGER.info("Heartbeat already running.");
+            return;
+        }
+
         LOGGER.info("Starting mangadex ping job - schedule: every {} seconds", operatorSettings.getPingFrequencySeconds());
         this.heartbeatJob = taskScheduler.scheduleWithFixedDelay(() -> {
             try {
@@ -126,13 +130,14 @@ public class OperatorLifecycle implements SmartLifecycle {
         }, operatorSettings.getPingFrequencySeconds() * 1000L);
     }
 
-    private void stopHeartbeat() {
-        if (heartbeatJob != null && !heartbeatJob.isDone()) {
+    private synchronized void stopHeartbeat() {
+        if (heartbeatJob != null) {
             heartbeatJob.cancel(true);
+            LOGGER.info("Stopped ping job");
+            stopService.stop();
+            LOGGER.info("Notified backend of shutdown.");
+            heartbeatJob = null;
         }
-        LOGGER.info("Stopped ping job");
-        stopService.stop();
-        LOGGER.info("Notified backend of shutdown.");
     }
 
 }
