@@ -1,6 +1,5 @@
 package moe.tristan.kmdah.operator.service.vacuum;
 
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -12,7 +11,7 @@ public class VacuumJob {
         this.vacuumService = vacuumService;
     }
 
-    @Scheduled(fixedDelay = 15 * 60 * 1000)
+    //@Scheduled(fixedDelay = 15 * 60 * 1000)
     public void execute() {
         vacuumService.vacuumUntilUnderCacheMaxSize();
     }

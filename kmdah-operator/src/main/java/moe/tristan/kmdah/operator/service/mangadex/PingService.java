@@ -66,7 +66,7 @@ public class PingService {
             .builder()
             .secret(mangadexSettings.getClientSecret())
             .port(443)
-            .diskSpace((long) (DataSize.ofGigabytes(cacheSettings.getSizeGib()).toBytes() * 0.8)) // spring uses mebibytes for DataSize (good on them <3)
+            .diskSpace((long) (DataSize.ofGigabytes(cacheSettings.getMaxSizeGb()).toBytes() * 0.8)) // spring uses mebibytes for DataSize (good on them <3)
             .networkSpeed(networkSpeedBytesPerSecond)
             .tlsCreatedAt(lastCreatedAt)
             .specVersion(MangadexApi.SPEC_VERSION)

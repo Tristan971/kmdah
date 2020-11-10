@@ -7,20 +7,58 @@ import org.springframework.boot.context.properties.ConstructorBinding;
 @ConfigurationProperties("kmdah.cache")
 public class CacheSettings {
 
-    private final String root;
-    private final long sizeGib;
+    private final int maxSizeGb;
+    private final String bucketName;
+    private final S3Auth s3Auth;
 
-    public CacheSettings(String root, long sizeGib) {
-        this.root = root;
-        this.sizeGib = sizeGib;
+    public CacheSettings(int maxSizeGb, String bucketName, S3Auth s3Auth) {
+        this.maxSizeGb = maxSizeGb;
+        this.bucketName = bucketName;
+        this.s3Auth = s3Auth;
     }
 
-    public String getRoot() {
-        return root;
+    public int getMaxSizeGb() {
+        return maxSizeGb;
     }
 
-    public long getSizeGib() {
-        return sizeGib;
+    public String getBucketName() {
+        return bucketName;
+    }
+
+    public S3Auth getS3Auth() {
+        return s3Auth;
+    }
+
+    @ConstructorBinding
+    public static class S3Auth {
+
+        private final String serviceUri;
+        private final String signingRegion;
+        private final String accessKeyId;
+        private final String secretAccessKey;
+
+        public S3Auth(String serviceUri, String signingRegion, String accessKeyId, String secretAccessKey) {
+            this.serviceUri = serviceUri;
+            this.signingRegion = signingRegion;
+            this.accessKeyId = accessKeyId;
+            this.secretAccessKey = secretAccessKey;
+        }
+
+        public String getServiceUri() {
+            return serviceUri;
+        }
+
+        public String getSigningRegion() {
+            return signingRegion;
+        }
+
+        public String getAccessKeyId() {
+            return accessKeyId;
+        }
+
+        public String getSecretAccessKey() {
+            return secretAccessKey;
+        }
     }
 
 }

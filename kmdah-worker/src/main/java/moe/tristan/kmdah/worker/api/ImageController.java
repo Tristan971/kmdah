@@ -11,14 +11,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import moe.tristan.kmdah.common.model.ImageContent;
 import moe.tristan.kmdah.common.model.mangadex.image.ImageMode;
 import moe.tristan.kmdah.worker.model.ImageRequest;
-import moe.tristan.kmdah.worker.service.images.CachedImageService;
+import moe.tristan.kmdah.worker.service.images.ImageService;
 
 @Controller
 public class ImageController {
 
-    private final CachedImageService imageService;
+    private final ImageService imageService;
 
-    public ImageController(CachedImageService imageService) {
+    public ImageController(ImageService imageService) {
         this.imageService = imageService;
     }
 

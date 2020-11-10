@@ -21,18 +21,18 @@ import moe.tristan.kmdah.worker.model.ImageRequest;
 import moe.tristan.kmdah.worker.service.mangadex.MangadexImageService;
 
 @Service
-public class CachedImageService {
+public class ImageService {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(CachedImageService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ImageService.class);
 
     private final CacheModeCounter cacheModeCounter;
     private final MangadexImageService mangadexImageService;
-    private final ImageFilesystemCacheService filesystemCacheService;
+    private final CacheService filesystemCacheService;
 
-    public CachedImageService(
-        CacheModeCounter cacheModeCounter,
-        MangadexImageService mangadexImageService,
-        ImageFilesystemCacheService filesystemCacheService
+    public ImageService(
+            CacheModeCounter cacheModeCounter,
+            MangadexImageService mangadexImageService,
+            CacheService filesystemCacheService
     ) {
         this.cacheModeCounter = cacheModeCounter;
         this.mangadexImageService = mangadexImageService;
@@ -40,7 +40,7 @@ public class CachedImageService {
     }
 
     public ImageContent findOrFetch(ImageRequest imageRequest) {
-        Optional<InputStream> cachedImageSearch = Optional.empty();
+        Optional<CachedImage> cachedImageSearch = Optional.empty();
         try {
             cachedImageSearch = filesystemCacheService.findCachedImage(imageRequest);
         } catch (IOException e) {
@@ -49,11 +49,7 @@ public class CachedImageService {
 
         if (cachedImageSearch.isPresent()) {
             cacheModeCounter.record(CacheMode.HIT);
-            return CachedImage
-                .builder()
-                .cacheMode(CacheMode.HIT)
-                .inputStream(cachedImageSearch.get())
-                .build();
+            return cachedImageSearch.get();
         }
 
         // if we it wasn't in cache, or could not be loaded from it, use upstream
@@ -75,10 +71,10 @@ public class CachedImageService {
 
         byte[] bytes = upstreamImage.getBody();
         return UpstreamImage
-            .builder()
-            .contentType(contentType.toString())
-            .bytes(requireNonNull(bytes))
-            .build();
+                .builder()
+                .contentType(contentType.toString())
+                .bytes(requireNonNull(bytes))
+                .build();
     }
 
 }

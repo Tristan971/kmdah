@@ -18,5 +18,10 @@ kmdah:
     verify-referrer: ${KMDAH_WORKER_VERIFY_REFERRER:true}
 
   cache:
-    root: ${KMDAH_CACHE_ROOT:cache}
-    size-gib: ${KMDAH_CACHE_SIZE_GIB:1}
+    max-size-gb: ${KMDAH_CACHE_MAX_SIZE_GB:200}
+    bucket-name: ${KMDAH_CACHE_BUCKET_NAME:kmdah-test}
+    s3-auth:
+      service-uri: ${KMDAH_CACHE_S3_AUTH_SERVICE_URI:https://kmdah-test.s3.fr-par.scw.cloud}
+      signing-region: ${KMDAH_CACHE_S3_AUTH_SERVICE_REGION:fr-par}
+      access-key-id: ${KMDAH_CACHE_S3_AUTH_ACCESS_KEY_ID}
+      secret-access-key: ${KMDAH_CACHE_S3_AUTH_SECRET_ACCESS_KEY}
