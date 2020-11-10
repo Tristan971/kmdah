@@ -41,7 +41,7 @@ public class ImageRequestReferrerValidator extends HttpFilter {
     }
 
     @Timed
-    private void validate(HttpServletRequest request) {
+    protected void validate(HttpServletRequest request) {
         String referrer = request.getHeader(HttpHeaders.REFERER);
 
         if (referrer == null || "".equals(referrer)) {

@@ -13,6 +13,7 @@ import com.amazonaws.services.s3.internal.Mimetypes;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
 
+import io.micrometer.core.annotation.Timed;
 import moe.tristan.kmdah.common.model.persistence.CachedImage;
 import moe.tristan.kmdah.common.model.persistence.UpstreamImage;
 import moe.tristan.kmdah.common.model.settings.CacheSettings;
@@ -31,6 +32,7 @@ public class CacheService {
         this.cacheSettings = cacheSettings;
     }
 
+    @Timed
     public Optional<CachedImage> findCachedImage(ImageRequest imageRequest) throws IOException {
         String expectedPath = imageRequest.getPath();
         LOGGER.debug("Serving {} from {}", imageRequest, expectedPath);
@@ -61,7 +63,8 @@ public class CacheService {
         CompletableFuture.runAsync(() -> writeImageSync(imageRequest, image));
     }
 
-    private void writeImageSync(ImageRequest imageRequest, UpstreamImage upstreamImage) {
+    @Timed
+    protected void writeImageSync(ImageRequest imageRequest, UpstreamImage upstreamImage) {
         String savePath = imageRequest.getPath();
         try {
             ObjectMetadata objectMetadata = new ObjectMetadata();
