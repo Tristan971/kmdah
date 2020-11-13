@@ -6,11 +6,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import io.micrometer.core.annotation.Timed;
 import moe.tristan.kmdah.common.model.mangadex.MangadexApi;
 import moe.tristan.kmdah.common.model.mangadex.stop.StopRequest;
-import moe.tristan.kmdah.common.model.settings.MangadexSettings;
-
-import io.micrometer.core.annotation.Timed;
+import moe.tristan.kmdah.operator.model.MangadexSettings;
 
 @Service
 public class StopService {

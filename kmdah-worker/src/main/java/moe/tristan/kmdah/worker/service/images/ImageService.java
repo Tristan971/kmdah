@@ -2,8 +2,6 @@ package moe.tristan.kmdah.worker.service.images;
 
 import static java.util.Objects.requireNonNull;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -43,7 +41,7 @@ public class ImageService {
         Optional<CachedImage> cachedImageSearch = Optional.empty();
         try {
             cachedImageSearch = filesystemCacheService.findCachedImage(imageRequest);
-        } catch (IOException e) {
+        } catch (Exception e) {
             LOGGER.info("Could not load image from cache!", e);
         }
 

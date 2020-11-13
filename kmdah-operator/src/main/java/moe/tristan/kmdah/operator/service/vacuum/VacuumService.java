@@ -7,7 +7,7 @@ import org.springframework.util.StopWatch;
 import org.springframework.util.unit.DataSize;
 
 import io.micrometer.core.annotation.Timed;
-import moe.tristan.kmdah.common.model.settings.CacheSettings;
+import moe.tristan.kmdah.operator.model.CacheSettings;
 
 /**
  * Deletes stuff from the cache, 100-by-100, until we're under the cache size

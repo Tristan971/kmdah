@@ -1,4 +1,4 @@
-package moe.tristan.kmdah.common.model.settings;
+package moe.tristan.kmdah.operator.model;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConstructorBinding;

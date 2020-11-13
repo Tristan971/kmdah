@@ -1,4 +1,4 @@
-package moe.tristan.kmdah.common.model.settings;
+package moe.tristan.kmdah.operator.model;
 
 import java.net.URI;
 
@@ -11,12 +11,12 @@ public class OperatorSettings {
 
     private final int port;
     private final int pingFrequencySeconds;
-    private final URI workersUri;
+    private final URI redirectUri;
 
-    public OperatorSettings(int port, int pingFrequencySeconds, URI workersUri) {
+    public OperatorSettings(int port, int pingFrequencySeconds, URI redirectUri) {
         this.port = port;
         this.pingFrequencySeconds = pingFrequencySeconds;
-        this.workersUri = workersUri;
+        this.redirectUri = redirectUri;
     }
 
     public int getPort() {
@@ -27,8 +27,8 @@ public class OperatorSettings {
         return pingFrequencySeconds;
     }
 
-    public URI getWorkersUri() {
-        return workersUri;
+    public URI getRedirectUri() {
+        return redirectUri;
     }
 
 }

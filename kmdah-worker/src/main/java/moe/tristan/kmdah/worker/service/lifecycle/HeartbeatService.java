@@ -16,7 +16,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import moe.tristan.kmdah.common.api.worker.Worker;
 import moe.tristan.kmdah.common.api.worker.WorkerConfiguration;
 import moe.tristan.kmdah.common.api.worker.WorkerShutdown;
-import moe.tristan.kmdah.common.model.settings.WorkerSettings;
+import moe.tristan.kmdah.worker.model.WorkerSettings;
 
 import io.micrometer.core.annotation.Timed;
 

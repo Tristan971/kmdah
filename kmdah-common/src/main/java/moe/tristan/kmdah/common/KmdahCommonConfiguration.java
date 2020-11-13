@@ -21,7 +21,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
 import io.micrometer.core.aop.TimedAspect;
 import io.micrometer.core.instrument.MeterRegistry;
-import moe.tristan.kmdah.common.model.settings.CacheSettings;
+import moe.tristan.kmdah.common.model.settings.S3Settings;
 
 @Configuration
 @EntityScan
@@ -47,15 +47,15 @@ public class KmdahCommonConfiguration {
     }
 
     @Bean
-    public AmazonS3 s3cacheClient(CacheSettings cacheSettings) {
+    public AmazonS3 s3cacheClient(S3Settings s3Settings) {
         AWSStaticCredentialsProvider credentialsProvider = new AWSStaticCredentialsProvider(new BasicAWSCredentials(
-            cacheSettings.getS3Auth().getAccessKeyId(),
-            cacheSettings.getS3Auth().getSecretAccessKey()
+            s3Settings.getAccessKeyId(),
+            s3Settings.getSecretAccessKey()
         ));
 
         EndpointConfiguration endpointConfiguration = new EndpointConfiguration(
-            cacheSettings.getS3Auth().getServiceUri(),
-            cacheSettings.getS3Auth().getSigningRegion()
+            s3Settings.getServiceUri(),
+            s3Settings.getSigningRegion()
         );
 
         return AmazonS3ClientBuilder

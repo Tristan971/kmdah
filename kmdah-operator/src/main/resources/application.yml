@@ -1,23 +1,21 @@
-logging.level:
-  root: INFO
-
-server:
-  shutdown: graceful
-  port: ${kmdah.operator.port}
-  server-header: kube-mdah ${spring.application.version} - ${spring.application.name} - https://github.com/Tristan971/kube-mdah
-
+# Internal configuration
 spring:
   application:
-    name: kmdah-operator
+    name: @project.artifactId@
     version: @project.version@
-  task.scheduling.pool.size: 4
+    spec: @mangadex.spec@
+
+server:
+  port: ${kmdah.operator.port}
+  shutdown: graceful
+  server-header: kube-mdah ${spring.application.version} (${spring.application.spec}) - ${spring.application.name} - github.com/Tristan971/kube-mdah
+
+logging.level:
+  root: WARN
+  moe.tristan.kmdah: INFO
 
 management:
-  endpoint:
-    health:
-      show-details: always
-      probes:
-        enabled: true
+  endpoint.health.show-details: always
   endpoints:
     enabled-by-default: true
     web:
@@ -28,3 +26,27 @@ management:
         - prometheus
 
   metrics.web.client.request.autotime.enabled: false
+
+# User configuration
+kmdah:
+  operator:
+    port: ${KMDAH_OPERATOR_PORT:8080}
+    redirect-uri: ${KMDAH_OPERATOR_REDIRECT_URI:http://localhost:8081}
+
+    mangadex:
+      client-secret: ${KMDAH_MANGADEX_CLIENT_SECRET:super-very-mega-secret}
+      graceful-shutdown-seconds: ${KMDAH_MANGADEX_GRACEFUL_SHUTDOWN_SECONDS:300}
+
+    tls-secret:
+      namespace: ${KMDAH_OPERATOR_TLS_SECRET_NAMESPACE:default}
+      name: ${KMDAH_OPERATOR_TLS_SECRET_NAME:mangadex-at-home-tls-secret}
+
+    cache:
+      max-size-gb: ${KMDAH_CACHE_MAX_SIZE_GB:200}
+
+  s3:
+    bucket-name: ${KMDAH_CACHE_BUCKET_NAME:kmdah-test}
+    service-uri: ${KMDAH_CACHE_S3_AUTH_SERVICE_URI:https://kmdah-test.s3.fr-par.scw.cloud}
+    signing-region: ${KMDAH_CACHE_S3_AUTH_SERVICE_REGION:fr-par}
+    access-key-id: ${KMDAH_CACHE_S3_AUTH_ACCESS_KEY_ID:fake-access-key}
+    secret-access-key: ${KMDAH_CACHE_S3_AUTH_SECRET_ACCESS_KEY:fake-secret-key}

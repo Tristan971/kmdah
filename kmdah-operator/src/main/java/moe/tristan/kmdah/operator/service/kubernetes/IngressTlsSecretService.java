@@ -11,14 +11,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
-import moe.tristan.kmdah.common.model.mangadex.ping.TlsData;
-import moe.tristan.kmdah.common.model.settings.TlsSecretSettings;
-import moe.tristan.kmdah.operator.service.mangadex.PingResponseReceivedEvent;
-
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
+import moe.tristan.kmdah.common.model.mangadex.ping.TlsData;
+import moe.tristan.kmdah.operator.model.TlsSecretSettings;
+import moe.tristan.kmdah.operator.service.mangadex.PingResponseReceivedEvent;
 
 @Service
 public class IngressTlsSecretService {

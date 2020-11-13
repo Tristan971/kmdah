@@ -1,4 +1,4 @@
-package moe.tristan.kmdah.common.model.settings;
+package moe.tristan.kmdah.worker.model;
 
 import java.net.URI;
 
@@ -12,13 +12,11 @@ public class WorkerSettings {
     private final int port;
     private final URI operatorUri;
     private final int bandwidthMbps;
-    private final boolean verifyReferrer;
 
-    public WorkerSettings(int port, URI operatorUri, int bandwidthMbps, boolean verifyReferrer) {
+    public WorkerSettings(int port, URI operatorUri, int bandwidthMbps) {
         this.port = port;
         this.operatorUri = operatorUri;
         this.bandwidthMbps = bandwidthMbps;
-        this.verifyReferrer = verifyReferrer;
     }
 
     public int getPort() {
@@ -31,10 +29,6 @@ public class WorkerSettings {
 
     public int getBandwidthMbps() {
         return bandwidthMbps;
-    }
-
-    public boolean isVerifyReferrer() {
-        return verifyReferrer;
     }
 
 }

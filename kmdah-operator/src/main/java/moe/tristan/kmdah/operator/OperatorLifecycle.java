@@ -15,8 +15,8 @@ import org.springframework.stereotype.Component;
 
 import moe.tristan.kmdah.common.model.mangadex.ping.PingResponse;
 import moe.tristan.kmdah.common.model.mangadex.ping.TlsData;
-import moe.tristan.kmdah.common.model.settings.MangadexSettings;
-import moe.tristan.kmdah.common.model.settings.OperatorSettings;
+import moe.tristan.kmdah.operator.model.MangadexSettings;
+import moe.tristan.kmdah.operator.model.OperatorSettings;
 import moe.tristan.kmdah.operator.service.mangadex.PingResponseReceivedEvent;
 import moe.tristan.kmdah.operator.service.mangadex.PingService;
 import moe.tristan.kmdah.operator.service.mangadex.StopService;

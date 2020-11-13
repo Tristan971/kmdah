@@ -1,10 +1,10 @@
-package moe.tristan.kmdah.common.model.settings;
+package moe.tristan.kmdah.operator.model;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConstructorBinding;
 
 @ConstructorBinding
-@ConfigurationProperties("kmdah.mangadex")
+@ConfigurationProperties("kmdah.operator.mangadex")
 public class MangadexSettings {
 
     private final String clientSecret;

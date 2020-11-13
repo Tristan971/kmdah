@@ -14,8 +14,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 
-import moe.tristan.kmdah.common.model.settings.WorkerSettings;
-
 import io.micrometer.core.annotation.Timed;
 
 @Component
@@ -26,17 +24,9 @@ public class ImageRequestReferrerValidator extends HttpFilter {
         "^((.+[.])?mangadex(\\.org|\\.network))|(mdah\\.tristan\\.moe)$"
     );
 
-    private final WorkerSettings workerSettings;
-
-    public ImageRequestReferrerValidator(WorkerSettings workerSettings) {
-        this.workerSettings = workerSettings;
-    }
-
     @Override
     protected void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
-        if (workerSettings.isVerifyReferrer()) {
-            validate(request);
-        }
+        validate(request);
         super.doFilter(request, response, chain);
     }
 

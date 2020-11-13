@@ -15,14 +15,13 @@ import org.springframework.web.client.HttpClientErrorException.UnsupportedMediaT
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import io.micrometer.core.annotation.Timed;
 import moe.tristan.kmdah.common.model.mangadex.MangadexApi;
 import moe.tristan.kmdah.common.model.mangadex.ping.PingRequest;
 import moe.tristan.kmdah.common.model.mangadex.ping.PingResponse;
-import moe.tristan.kmdah.common.model.settings.CacheSettings;
-import moe.tristan.kmdah.common.model.settings.MangadexSettings;
+import moe.tristan.kmdah.operator.model.CacheSettings;
+import moe.tristan.kmdah.operator.model.MangadexSettings;
 import moe.tristan.kmdah.operator.service.workers.WorkerPool;
-
-import io.micrometer.core.annotation.Timed;
 
 @Service
 public class PingService {
@@ -37,9 +36,9 @@ public class PingService {
 
     private final RestTemplate restTemplate;
 
+    private final WorkerPool workerPool;
     private final CacheSettings cacheSettings;
     private final MangadexSettings mangadexSettings;
-    private final WorkerPool workerPool;
 
     public PingService(
         RestTemplate restTemplate,
@@ -69,7 +68,7 @@ public class PingService {
             .diskSpace((long) (DataSize.ofGigabytes(cacheSettings.getMaxSizeGb()).toBytes() * 0.8)) // spring uses mebibytes for DataSize (good on them <3)
             .networkSpeed(networkSpeedBytesPerSecond)
             .tlsCreatedAt(lastCreatedAt)
-            .specVersion(MangadexApi.SPEC_VERSION)
+            .specVersion(19)
             .build();
         LOGGER.info("{}", request);
 

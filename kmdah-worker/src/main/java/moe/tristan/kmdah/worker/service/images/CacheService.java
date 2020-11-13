@@ -1,6 +1,5 @@
 package moe.tristan.kmdah.worker.service.images;
 
-import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -16,7 +15,7 @@ import com.amazonaws.services.s3.model.S3Object;
 import io.micrometer.core.annotation.Timed;
 import moe.tristan.kmdah.common.model.persistence.CachedImage;
 import moe.tristan.kmdah.common.model.persistence.UpstreamImage;
-import moe.tristan.kmdah.common.model.settings.CacheSettings;
+import moe.tristan.kmdah.common.model.settings.S3Settings;
 import moe.tristan.kmdah.worker.model.ImageRequest;
 
 @Service
@@ -25,20 +24,20 @@ public class CacheService {
     private static final Logger LOGGER = LoggerFactory.getLogger(CacheService.class);
 
     private final AmazonS3 s3CacheClient;
-    private final CacheSettings cacheSettings;
+    private final S3Settings s3Settings;
 
-    public CacheService(AmazonS3 s3CacheClient, CacheSettings cacheSettings) {
+    public CacheService(AmazonS3 s3CacheClient, S3Settings s3Settings) {
         this.s3CacheClient = s3CacheClient;
-        this.cacheSettings = cacheSettings;
+        this.s3Settings = s3Settings;
     }
 
     @Timed
-    public Optional<CachedImage> findCachedImage(ImageRequest imageRequest) throws IOException {
+    public Optional<CachedImage> findCachedImage(ImageRequest imageRequest) {
         String expectedPath = imageRequest.getPath();
         LOGGER.debug("Serving {} from {}", imageRequest, expectedPath);
 
-        if (s3CacheClient.doesObjectExist(cacheSettings.getBucketName(), expectedPath)) {
-            S3Object object = s3CacheClient.getObject(cacheSettings.getBucketName(), expectedPath);
+        if (s3CacheClient.doesObjectExist(s3Settings.getBucketName(), expectedPath)) {
+            S3Object object = s3CacheClient.getObject(s3Settings.getBucketName(), expectedPath);
             ObjectMetadata objectMetadata = object.getObjectMetadata();
 
             long contentLength = objectMetadata.getContentLength();
@@ -71,7 +70,7 @@ public class CacheService {
             objectMetadata.setContentLength(upstreamImage.getBytes().length);
             upstreamImage.getContentType().ifPresent(objectMetadata::setContentType);
 
-            s3CacheClient.putObject(cacheSettings.getBucketName(), savePath, upstreamImage.getInputStream(), objectMetadata);
+            s3CacheClient.putObject(s3Settings.getBucketName(), savePath, upstreamImage.getInputStream(), objectMetadata);
         } catch (Exception e) {
             throw new RuntimeException("Could not persist upstream image for " + imageRequest + " at path " + savePath, e);
         }

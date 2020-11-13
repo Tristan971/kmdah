@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import moe.tristan.kmdah.common.model.settings.OperatorSettings;
+import moe.tristan.kmdah.operator.model.OperatorSettings;
 
 @RestController
 public class ForwardingController {
@@ -28,7 +28,7 @@ public class ForwardingController {
     @GetMapping("**")
     public void handleImageRequest(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String redirection = UriComponentsBuilder
-            .fromUri(operatorSettings.getWorkersUri())
+            .fromUri(operatorSettings.getRedirectUri())
             .path(request.getServletPath())
             .build()
             .toUriString();
