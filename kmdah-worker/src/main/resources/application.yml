@@ -6,7 +6,7 @@ spring:
     spec: @mangadex.spec@
 
 server:
-  port: ${kmdah.operator.port}
+  port: ${kmdah.worker.port}
   shutdown: graceful
   server-header: kube-mdah ${spring.application.version} (${spring.application.spec}) - ${spring.application.name} - github.com/Tristan971/kube-mdah
 

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.internal.Mimetypes;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
 
@@ -36,7 +37,7 @@ public class CacheService {
         String expectedPath = imageRequest.getPath();
         LOGGER.debug("Serving {} from {}", imageRequest, expectedPath);
 
-        if (s3CacheClient.doesObjectExist(s3Settings.getBucketName(), expectedPath)) {
+        try {
             S3Object object = s3CacheClient.getObject(s3Settings.getBucketName(), expectedPath);
             ObjectMetadata objectMetadata = object.getObjectMetadata();
 
@@ -53,7 +54,8 @@ public class CacheService {
                 .build();
 
             return Optional.of(image);
-        } else {
+        } catch (AmazonS3Exception e) {
+            LOGGER.info(e.getMessage());
             return Optional.empty();
         }
     }

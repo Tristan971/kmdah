@@ -16,7 +16,6 @@ import org.springframework.stereotype.Component;
 import moe.tristan.kmdah.common.model.mangadex.ping.PingResponse;
 import moe.tristan.kmdah.common.model.mangadex.ping.TlsData;
 import moe.tristan.kmdah.operator.model.MangadexSettings;
-import moe.tristan.kmdah.operator.model.OperatorSettings;
 import moe.tristan.kmdah.operator.service.mangadex.PingResponseReceivedEvent;
 import moe.tristan.kmdah.operator.service.mangadex.PingService;
 import moe.tristan.kmdah.operator.service.mangadex.StopService;
@@ -32,7 +31,6 @@ public class OperatorLifecycle implements SmartLifecycle {
     private final PingService pingService;
     private final StopService stopService;
     private final MangadexSettings mangadexSettings;
-    private final OperatorSettings operatorSettings;
     private final ApplicationEventPublisher applicationEventPublisher;
 
     private final AtomicReference<OperatorStatus> status = new AtomicReference<>(OperatorStatus.INITIAL);
@@ -45,14 +43,12 @@ public class OperatorLifecycle implements SmartLifecycle {
         MangadexSettings mangadexSettings,
         PingService pingService,
         StopService stopService,
-        OperatorSettings operatorSettings,
         ApplicationEventPublisher applicationEventPublisher
     ) {
         this.taskScheduler = taskScheduler;
         this.mangadexSettings = mangadexSettings;
         this.pingService = pingService;
         this.stopService = stopService;
-        this.operatorSettings = operatorSettings;
         this.applicationEventPublisher = applicationEventPublisher;
     }
 
@@ -116,7 +112,7 @@ public class OperatorLifecycle implements SmartLifecycle {
             return;
         }
 
-        LOGGER.info("Starting mangadex ping job - schedule: every {} seconds", operatorSettings.getPingFrequencySeconds());
+        LOGGER.info("Starting mangadex ping job - schedule: every 5 seconds");
         this.heartbeatJob = taskScheduler.scheduleWithFixedDelay(() -> {
             try {
                 PingResponse pingResponse = pingService.ping(Optional.ofNullable(lastCreatedAt.get()));
@@ -127,7 +123,7 @@ public class OperatorLifecycle implements SmartLifecycle {
             } catch (Throwable e) {
                 LOGGER.error("Ping failure!", e);
             }
-        }, operatorSettings.getPingFrequencySeconds() * 1000L);
+        }, 5000L);
     }
 
     private synchronized void stopHeartbeat() {

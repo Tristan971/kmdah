@@ -21,6 +21,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
 import io.micrometer.core.aop.TimedAspect;
 import io.micrometer.core.instrument.MeterRegistry;
+import moe.tristan.kmdah.common.model.persistence.S3RequestMetricsCollector;
 import moe.tristan.kmdah.common.model.settings.S3Settings;
 
 @Configuration
@@ -47,7 +48,7 @@ public class KmdahCommonConfiguration {
     }
 
     @Bean
-    public AmazonS3 s3cacheClient(S3Settings s3Settings) {
+    public AmazonS3 s3cacheClient(S3RequestMetricsCollector s3RequestMetricsCollector, S3Settings s3Settings) {
         AWSStaticCredentialsProvider credentialsProvider = new AWSStaticCredentialsProvider(new BasicAWSCredentials(
             s3Settings.getAccessKeyId(),
             s3Settings.getSecretAccessKey()
@@ -60,6 +61,7 @@ public class KmdahCommonConfiguration {
 
         return AmazonS3ClientBuilder
             .standard()
+            .withMetricsCollector(s3RequestMetricsCollector)
             .withCredentials(credentialsProvider)
             .withEndpointConfiguration(endpointConfiguration)
             .withPathStyleAccessEnabled(true)

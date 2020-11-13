@@ -10,21 +10,15 @@ import org.springframework.boot.context.properties.ConstructorBinding;
 public class OperatorSettings {
 
     private final int port;
-    private final int pingFrequencySeconds;
     private final URI redirectUri;
 
-    public OperatorSettings(int port, int pingFrequencySeconds, URI redirectUri) {
+    public OperatorSettings(int port, URI redirectUri) {
         this.port = port;
-        this.pingFrequencySeconds = pingFrequencySeconds;
         this.redirectUri = redirectUri;
     }
 
     public int getPort() {
         return port;
-    }
-
-    public int getPingFrequencySeconds() {
-        return pingFrequencySeconds;
     }
 
     public URI getRedirectUri() {

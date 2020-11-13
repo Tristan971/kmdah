@@ -32,7 +32,7 @@ public class WorkerLifecycle implements SmartLifecycle {
     @Override
     public void start() {
         doHeartbeat();
-        heartbeatJob = taskScheduler.scheduleWithFixedDelay(this::doHeartbeat, 10_000);
+        heartbeatJob = taskScheduler.scheduleWithFixedDelay(this::doHeartbeat, 1000);
         running = true;
     }
 
