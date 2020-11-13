@@ -35,7 +35,7 @@ kmdah:
     bandwidth-mbps: ${KMDAH_WORKER_BANDWIDTH_MBPS:100}
 
   s3:
-    bucket-name: ${KMDAH_CACHE_BUCKET_NAME:kmdah-test}
+    bucket-name: ${KMDAH_CACHE_BUCKET_NAME:}
     service-uri: ${KMDAH_CACHE_S3_AUTH_SERVICE_URI:https://kmdah-test.s3.fr-par.scw.cloud}
     signing-region: ${KMDAH_CACHE_S3_AUTH_SERVICE_REGION:fr-par}
     access-key-id: ${KMDAH_CACHE_S3_AUTH_ACCESS_KEY_ID:fake-access-key}
