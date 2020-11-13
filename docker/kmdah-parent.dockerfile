@@ -1,6 +1,6 @@
 FROM adoptopenjdk:15-jre-hotspot
 
-RUN dnf install -y dumb-init
+RUN apt update && apt install -y dumb-init
 
 ARG KMDAH_VERSION
 ENV KMDAH_VERSION "$KMDAH_VERSION"
