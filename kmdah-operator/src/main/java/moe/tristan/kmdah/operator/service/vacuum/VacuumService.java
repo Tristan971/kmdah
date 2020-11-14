@@ -13,8 +13,7 @@ import org.springframework.util.StopWatch;
 import org.springframework.util.unit.DataSize;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.DeleteObjectsRequest;
-import com.amazonaws.services.s3.model.DeleteObjectsRequest.KeyVersion;
+import com.amazonaws.services.s3.model.DeleteObjectRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 
@@ -76,11 +75,12 @@ public class VacuumService {
                     .collect(Collectors.toSet());
                 deletionList.removeAll(batch);
 
-                List<KeyVersion> batchKeys = batch.stream().map(S3ObjectSummary::getKey).map(KeyVersion::new).collect(Collectors.toList());
+                batch.stream()
+                    .map(S3ObjectSummary::getKey)
+                    .map(key -> new DeleteObjectRequest(s3Settings.getBucketName(), key))
+                    .parallel()
+                    .forEach(amazonS3::deleteObject);
 
-                DeleteObjectsRequest deleteObjectsRequest = new DeleteObjectsRequest(s3Settings.getBucketName());
-                deleteObjectsRequest.setKeys(batchKeys);
-                amazonS3.deleteObjects(deleteObjectsRequest);
                 LOGGER.info("Deletion progress: {}/{}", deletedCount - deletionList.size(), deletionList.size());
             } while (!deletionList.isEmpty());
 
