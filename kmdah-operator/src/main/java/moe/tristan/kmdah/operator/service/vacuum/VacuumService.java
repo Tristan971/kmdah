@@ -93,9 +93,11 @@ public class VacuumService {
 
     private BucketScanResult scanBucket() {
         ObjectListing objectListing = amazonS3.listObjects(s3Settings.getBucketName());
-        List<S3ObjectSummary> summaries = new ArrayList<>();
+        List<S3ObjectSummary> summaries = new ArrayList<>(objectListing.getObjectSummaries());
+        LOGGER.info("Discovered {} files", summaries.size());
         do {
             summaries.addAll(objectListing.getObjectSummaries());
+            LOGGER.info("Discovered {} files", summaries.size());
             objectListing = amazonS3.listNextBatchOfObjects(objectListing);
         } while (objectListing.isTruncated());
 

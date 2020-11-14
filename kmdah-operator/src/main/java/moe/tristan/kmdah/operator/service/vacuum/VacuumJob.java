@@ -12,7 +12,8 @@ public class VacuumJob {
         this.vacuumService = vacuumService;
     }
 
-    @Scheduled(fixedDelay = 15 * 60 * 1000)
+    // once per hour
+    @Scheduled(fixedDelay = 3600 * 1000)
     public void execute() {
         vacuumService.vacuumUntilUnderCacheMaxSize();
     }
