@@ -2,6 +2,7 @@ package moe.tristan.kmdah.operator.service.vacuum;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -28,6 +29,7 @@ import moe.tristan.kmdah.operator.model.vacuum.BucketScanResult;
 public class VacuumService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(VacuumService.class);
+    private static final Pattern IMAGE_KEY_PATTERN = Pattern.compile("^(data|data-saver)/.+/.+\\..+$");
 
     private final AmazonS3 amazonS3;
     private final S3Settings s3Settings;
@@ -55,10 +57,11 @@ public class VacuumService {
         int filesToDelete = preVacuumScan.getObjects().size() * (int) percentageOfFilesToDelete / 100;
 
         if (filesToDelete > 0) {
-            LOGGER.info("Above size threshold, will vacuum {}% of files ({} files)", percentageOfFilesToDelete, filesToDelete);
+            LOGGER.info("Above size threshold, will vacuum {}% of files ({} files)", (int) percentageOfFilesToDelete, filesToDelete);
             List<S3ObjectSummary> filesDeleted = preVacuumScan
                 .getObjects()
                 .stream()
+                .filter(summary -> IMAGE_KEY_PATTERN.matcher(summary.getKey()).matches())
                 .limit(filesToDelete)
                 .collect(Collectors.toList());
 
@@ -105,6 +108,10 @@ public class VacuumService {
         long bucketSize = summaries.stream().mapToLong(S3ObjectSummary::getSize).sum();
 
         return BucketScanResult.of(DataSize.ofBytes(bucketSize), summaries);
+    }
+
+    private boolean isImage(String key) {
+
     }
 
 }
