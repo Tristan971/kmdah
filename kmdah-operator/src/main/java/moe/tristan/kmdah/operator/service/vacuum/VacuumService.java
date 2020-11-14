@@ -114,8 +114,4 @@ public class VacuumService {
         return BucketScanResult.of(DataSize.ofBytes(bucketSize), summaries);
     }
 
-    private boolean isImage(String key) {
-
-    }
-
 }
