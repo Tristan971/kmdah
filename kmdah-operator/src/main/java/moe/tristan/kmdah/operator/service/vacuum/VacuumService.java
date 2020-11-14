@@ -29,7 +29,7 @@ import moe.tristan.kmdah.operator.model.vacuum.BucketScanResult;
 public class VacuumService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(VacuumService.class);
-    private static final Pattern IMAGE_KEY_PATTERN = Pattern.compile("^(data|data-saver)/.+/.+\\..+$");
+    private static final Pattern IMAGE_KEY_PATTERN = Pattern.compile("^.+/(data|data-saver)/.+\\..+$");
 
     private final AmazonS3 amazonS3;
     private final S3Settings s3Settings;
@@ -76,7 +76,7 @@ public class VacuumService {
             deleteObjectsRequest.setKeys(deletedKeys);
 
             amazonS3.deleteObjects(deleteObjectsRequest);
-            LOGGER.info("Done deleting {} random files - reclaimed {}", deletedKeys, deletedSize);
+            LOGGER.info("Done deleting {} random files - reclaimed {}", deletedKeys.size(), deletedSize);
         } else {
             LOGGER.info("Under size threshold, no need to vacuum files");
             return;
