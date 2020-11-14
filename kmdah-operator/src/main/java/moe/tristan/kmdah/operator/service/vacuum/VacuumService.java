@@ -66,7 +66,11 @@ public class VacuumService {
                 .collect(Collectors.toList());
 
             long deletedSize = filesDeleted.stream().mapToLong(S3ObjectSummary::getSize).sum();
-            List<KeyVersion> deletedKeys = filesDeleted.stream().map(S3ObjectSummary::getKey).map(KeyVersion::new).collect(Collectors.toList());
+            List<KeyVersion> deletedKeys = filesDeleted
+                .stream()
+                .map(S3ObjectSummary::getKey)
+                .map(KeyVersion::new)
+                .collect(Collectors.toList());
 
             DeleteObjectsRequest deleteObjectsRequest = new DeleteObjectsRequest(s3Settings.getBucketName());
             deleteObjectsRequest.setKeys(deletedKeys);
