@@ -2,6 +2,7 @@ package moe.tristan.kmdah.operator.service.vacuum;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -58,25 +59,32 @@ public class VacuumService {
 
         if (filesToDelete > 0) {
             LOGGER.info("Above size threshold, will vacuum {}% of files ({} files)", (int) percentageOfFilesToDelete, filesToDelete);
-            List<S3ObjectSummary> filesDeleted = preVacuumScan
+            Set<S3ObjectSummary> deletionList = preVacuumScan
                 .getObjects()
                 .stream()
                 .filter(summary -> IMAGE_KEY_PATTERN.matcher(summary.getKey()).matches())
                 .limit(filesToDelete)
-                .collect(Collectors.toList());
+                .collect(Collectors.toSet());
 
-            long deletedSize = filesDeleted.stream().mapToLong(S3ObjectSummary::getSize).sum();
-            List<KeyVersion> deletedKeys = filesDeleted
-                .stream()
-                .map(S3ObjectSummary::getKey)
-                .map(KeyVersion::new)
-                .collect(Collectors.toList());
+            long deletedSize = deletionList.stream().mapToLong(S3ObjectSummary::getSize).sum();
+            int deletedCount = deletionList.size();
 
-            DeleteObjectsRequest deleteObjectsRequest = new DeleteObjectsRequest(s3Settings.getBucketName());
-            deleteObjectsRequest.setKeys(deletedKeys);
+            do {
+                Set<S3ObjectSummary> batch = deletionList
+                    .stream()
+                    .limit(500)
+                    .collect(Collectors.toSet());
+                deletionList.removeAll(batch);
 
-            amazonS3.deleteObjects(deleteObjectsRequest);
-            LOGGER.info("Done deleting {} random files - reclaimed {}", deletedKeys.size(), deletedSize);
+                List<KeyVersion> batchKeys = batch.stream().map(S3ObjectSummary::getKey).map(KeyVersion::new).collect(Collectors.toList());
+
+                DeleteObjectsRequest deleteObjectsRequest = new DeleteObjectsRequest(s3Settings.getBucketName());
+                deleteObjectsRequest.setKeys(batchKeys);
+                amazonS3.deleteObjects(deleteObjectsRequest);
+                LOGGER.info("Deletion progress: {}/{}", deletedCount - deletionList.size(), deletionList.size());
+            } while (!deletionList.isEmpty());
+
+            LOGGER.info("Done deleting {} files - reclaimed {}GB", deletedCount, DataSize.ofBytes(deletedSize).toGigabytes());
         } else {
             LOGGER.info("Under size threshold, no need to vacuum files");
             return;
