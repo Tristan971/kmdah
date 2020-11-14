@@ -52,7 +52,7 @@ public class VacuumService {
         LOGGER.info("Cache size usage: {}% - {}/{} GB", (int) originalFill, preVacuumScan.getSize().toGigabytes(), limitSize.toGigabytes());
 
         double percentageOfFilesToDelete = originalFill - 100.;
-        int filesToDelete = preVacuumScan.getObjects().size() * (int) percentageOfFilesToDelete;
+        int filesToDelete = preVacuumScan.getObjects().size() * (int) percentageOfFilesToDelete / 100;
 
         if (filesToDelete > 0) {
             LOGGER.info("Above size threshold, will vacuum {}% of files ({} files)", percentageOfFilesToDelete, filesToDelete);
