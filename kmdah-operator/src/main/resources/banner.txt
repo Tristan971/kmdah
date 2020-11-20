@@ -1,7 +1,0 @@
-
-  ${spring.application.name} v${spring.application.version}
-                       _
-   ___ ___ ___ ___ ___| |_ ___ ___
-  | . | . | -_|  _| .'|  _| . |  _|
-  |___|  _|___|_| |__,|_| |___|_|
-      |_|
