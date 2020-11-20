@@ -52,9 +52,9 @@ public class PingService {
         }
 
         PingRequest request = new PingRequest(
-            mangadexSettings.getClientSecret(),
+            mangadexSettings.clientSecret(),
             443,
-            (long) (DataSize.ofGigabytes(cacheSettings.getMaxSizeGb()).toBytes() * 0.8),
+            (long) (DataSize.ofGigabytes(cacheSettings.maxSizeGb()).toBytes() * 0.8),
             networkSpeedBytesPerSecond,
             lastCreatedAt,
             19

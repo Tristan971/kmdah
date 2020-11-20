@@ -1,16 +1,16 @@
 package moe.tristan.kmdah.mangadex.image;
 
-import java.awt.image.DataBuffer;
 import java.net.URI;
 
+import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
+import reactor.core.publisher.Mono;
 
 import moe.tristan.kmdah.cache.CacheMode;
 import moe.tristan.kmdah.model.ImageContent;
 import moe.tristan.kmdah.model.ImageSpec;
-import reactor.core.publisher.Mono;
 
 @Service
 public class MangadexImageService {

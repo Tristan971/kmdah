@@ -1,17 +1,16 @@
 package moe.tristan.kmdah.api;
 
-import java.awt.image.DataBuffer;
-
+import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import reactor.core.publisher.Flux;
 
 import moe.tristan.kmdah.mangadex.image.ImageMode;
 import moe.tristan.kmdah.mangadex.image.MangadexHeaders;
 import moe.tristan.kmdah.model.ImageSpec;
 import moe.tristan.kmdah.service.images.ImageService;
-import reactor.core.publisher.Flux;
 
 @Controller
 public class ImageController {

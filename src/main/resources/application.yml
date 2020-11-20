@@ -5,6 +5,17 @@ spring:
     version: @project.version@
     spec: @mangadex.spec@
 
+  data:
+    mongodb:
+      host: ${kmdah.cache.mongodb.host}
+      port: ${kmdah.cache.mongodb.port}
+      database: ${kmdah.cache.mongodb.database}
+      authentication-database: ${kmdah.cache.mongodb.auth-database}
+      username: ${kmdah.cache.mongodb.username}
+      password: ${kmdah.cache.mongodb.password}
+      gridfs:
+        database: ${kmdah.cache.mongodb.database}
+
 server:
   port: ${kmdah.web.port}
   shutdown: graceful
@@ -31,6 +42,13 @@ management:
 kmdah:
   cache:
     max-size-gb: ${KMDAH_CACHE_MAX_SIZE_GB:100}
+    mongodb:
+      host: ${KMDAH_CACHE_MONGODB_HOST:localhost}
+      port: ${KMDAH_CACHE_MONGODB_PORT:27017}
+      auth-database: ${KMDAH_CACHE_MONGODB_AUTH_DATABASE:admin}
+      database: ${KMDAH_CACHE_MONGODB_DATABASE:kmdah}
+      username: ${KMDAH_CACHE_MONGODB_USERNAME:kmdah}
+      password: ${KMDAH_CACHE_MONGODB_PASSWORD:kmdah}
 
   k8s:
     tls-secret:

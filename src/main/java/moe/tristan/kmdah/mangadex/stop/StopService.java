@@ -30,7 +30,7 @@ public class StopService {
         webClient
             .post()
             .uri(STOP_ENDPOINT)
-            .bodyValue(new StopRequest(mangadexSettings.getClientSecret()))
+            .bodyValue(new StopRequest(mangadexSettings.clientSecret()))
             .retrieve()
             .toBodilessEntity();
     }

@@ -5,10 +5,8 @@ import java.time.Clock;
 import java.time.ZoneOffset;
 import java.util.TimeZone;
 
-import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
@@ -19,8 +17,6 @@ import io.micrometer.core.aop.TimedAspect;
 import io.micrometer.core.instrument.MeterRegistry;
 
 @Configuration
-@EntityScan
-@ComponentScan
 @ConfigurationPropertiesScan
 public class KmdahConfiguration {
 
