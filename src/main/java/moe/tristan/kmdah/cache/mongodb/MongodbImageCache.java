@@ -4,6 +4,7 @@ import java.util.Optional;
 import java.util.OptionalLong;
 
 import org.bson.Document;
+import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.buffer.DataBuffer;
@@ -40,19 +41,21 @@ public class MongodbImageCache implements ImageCache {
         String filepath = imageSpec.getPath();
         return reactiveGridFsTemplate
             .getResource(filepath)
-            .flatMap(this::zipResourceAsImageContent);
+            .log()
+            .flatMap(this::zipResourceAsImageContent)
+            .doOnNext(imageContent -> LOGGER.info("Retrieved {} in GridFS for spec {}", imageContent, imageSpec));
     }
 
     @Override
-    public void saveImage(ImageSpec imageSpec, ImageContent imageContent) {
+    public Mono<ObjectId> saveImage(ImageSpec imageSpec, ImageContent imageContent) {
         String filename = imageSpec.getPath();
 
         Document document = new Document();
         imageContent.contentType().ifPresent(type -> document.put(HttpHeaders.CONTENT_TYPE, type.toString()));
 
-        reactiveGridFsTemplate
+        return reactiveGridFsTemplate
             .store(imageContent.bytes(), filename, document)
-            .subscribe(id -> LOGGER.info("Stored {} in GridFS as {} (with metadata: {})", imageSpec, id, document.toString()));
+            .doOnNext(id -> LOGGER.info("Stored {} in GridFS as _id:{} (with metadata: {})", imageSpec, id, document.toString()));
     }
 
     @Override
