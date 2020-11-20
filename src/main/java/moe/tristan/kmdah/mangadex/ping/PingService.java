@@ -6,18 +6,17 @@ import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.unit.DataSize;
-import org.springframework.web.client.HttpClientErrorException.BadRequest;
-import org.springframework.web.client.HttpClientErrorException.Forbidden;
-import org.springframework.web.client.HttpClientErrorException.Unauthorized;
-import org.springframework.web.client.HttpClientErrorException.UnsupportedMediaType;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.ClientResponse;
+import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import moe.tristan.kmdah.mangadex.MangadexApi;
 import moe.tristan.kmdah.model.settings.CacheSettings;
 import moe.tristan.kmdah.model.settings.MangadexSettings;
+import reactor.core.publisher.Mono;
 
 @Service
 public class PingService {
@@ -30,33 +29,32 @@ public class PingService {
         .build()
         .toUri();
 
-    private final RestTemplate restTemplate;
+    private final WebClient webClient;
 
     private final CacheSettings cacheSettings;
     private final MangadexSettings mangadexSettings;
 
     public PingService(
-        RestTemplate restTemplate,
+        WebClient.Builder webClient,
         CacheSettings cacheSettings,
         MangadexSettings mangadexSettings
     ) {
-        this.restTemplate = restTemplate;
+        this.webClient = webClient.build();
         this.cacheSettings = cacheSettings;
         this.mangadexSettings = mangadexSettings;
     }
 
-    public PingResponse ping(Optional<ZonedDateTime> lastCreatedAt) {
-        long poolSpeedMegabitsPerSecond = 300;
-        long networkSpeedBytesPerSecond = poolSpeedMegabitsPerSecond * 1024 * 1024 / 8;
-        if (poolSpeedMegabitsPerSecond == 0L) {
+    public Mono<PingResponse> ping(Optional<ZonedDateTime> lastCreatedAt, DataSize poolSpeed) {
+        long networkSpeedBytesPerSecond = poolSpeed.toBytes();
+        if (networkSpeedBytesPerSecond == 0L) {
             LOGGER.warn("Trying to ping for an empty pool! Requesting 1B/s speed instead.");
             networkSpeedBytesPerSecond = 1L;
         }
 
         PingRequest request = new PingRequest(
-            mangadexSettings.clientSecret(),
+            mangadexSettings.getClientSecret(),
             443,
-            (long) (DataSize.ofGigabytes(cacheSettings.maxSizeGb()).toBytes() * 0.8),
+            (long) (DataSize.ofGigabytes(cacheSettings.getMaxSizeGb()).toBytes() * 0.8),
             networkSpeedBytesPerSecond,
             lastCreatedAt,
             19
@@ -64,25 +62,38 @@ public class PingService {
 
         LOGGER.info("{}", request);
 
-        try {
-            PingResponse pingResponse = restTemplate.postForObject(
-                PING_ENDPOINT,
-                request,
-                PingResponse.class
-            );
-            LOGGER.info("{}", pingResponse);
-            return pingResponse;
-        } catch (Unauthorized e) {
-            throw new IllegalStateException("Unauthorized! Either your secret is wrong, or your server was marked as compromised!");
-        } catch (UnsupportedMediaType e) {
-            throw new IllegalStateException("Content-Type was not set to application/json");
-        } catch (BadRequest e) {
-            throw new IllegalStateException("Json body was malformed!");
-        } catch (Forbidden e) {
-            throw new IllegalStateException("Secret is not valid anymore!");
-        } catch (Exception e) {
-            throw new RuntimeException("Unexpected exception!", e);
-        }
+        return webClient
+            .post()
+            .uri(PING_ENDPOINT)
+            .retrieve()
+            .onStatus(status -> HttpStatus.OK != status, this::onError)
+            .bodyToMono(PingResponse.class);
+    }
+
+    private Mono<? extends Throwable> onError(ClientResponse clientResponse) {
+        return clientResponse
+            .createException()
+            .map(error -> switch (clientResponse.statusCode()) {
+                case UNAUTHORIZED -> new IllegalStateException(
+                    "Unauthorized! Either your secret is wrong, or your server was marked as compromised!", error
+                );
+
+                case UNSUPPORTED_MEDIA_TYPE -> new IllegalStateException(
+                    "Content-Type was not set to application/json", error
+                );
+
+                case BAD_REQUEST -> new IllegalStateException(
+                    "Json body was malformed!", error
+                );
+
+                case FORBIDDEN -> new IllegalStateException(
+                    "Secret is not valid anymore!", error
+                );
+
+                default -> new RuntimeException(
+                    "Unexpected server error response!", error
+                );
+            });
     }
 
 }

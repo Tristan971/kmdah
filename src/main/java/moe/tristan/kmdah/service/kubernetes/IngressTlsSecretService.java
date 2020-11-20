@@ -17,20 +17,20 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 import moe.tristan.kmdah.mangadex.ping.TlsData;
 import moe.tristan.kmdah.model.event.PingResponseReceivedEvent;
-import moe.tristan.kmdah.model.settings.TlsSecretSettings;
+import moe.tristan.kmdah.model.settings.KubernetesTlsSecretSettings;
 
 @Service
 public class IngressTlsSecretService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(IngressTlsSecretService.class);
 
-    private final TlsSecretSettings tlsSecretSettings;
+    private final KubernetesTlsSecretSettings kubernetesTlsSecretSettings;
     private final CoreV1Api coreV1Api;
 
     private TlsData lastTlsData;
 
-    public IngressTlsSecretService(TlsSecretSettings tlsSecretSettings, CoreV1Api kubernetesCoreV1Api) {
-        this.tlsSecretSettings = tlsSecretSettings;
+    public IngressTlsSecretService(KubernetesTlsSecretSettings kubernetesTlsSecretSettings, CoreV1Api kubernetesCoreV1Api) {
+        this.kubernetesTlsSecretSettings = kubernetesTlsSecretSettings;
         this.coreV1Api = kubernetesCoreV1Api;
     }
 
@@ -102,8 +102,8 @@ public class IngressTlsSecretService {
         secret.setType("kubernetes.io/tls");
 
         V1ObjectMeta metadata = new V1ObjectMeta();
-        metadata.setNamespace(requireNonNull(tlsSecretSettings.namespace(), "Tls secret namespace is null."));
-        metadata.setName(requireNonNull(tlsSecretSettings.name(), "Tls secret name is null."));
+        metadata.setNamespace(requireNonNull(kubernetesTlsSecretSettings.namespace(), "Tls secret namespace is null."));
+        metadata.setName(requireNonNull(kubernetesTlsSecretSettings.name(), "Tls secret name is null."));
         secret.setMetadata(metadata);
 
         Map<String, byte[]> secretData = new HashMap<>(3);

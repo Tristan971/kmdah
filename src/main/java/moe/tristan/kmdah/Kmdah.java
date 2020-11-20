@@ -6,10 +6,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @EnableScheduling
-public class KmdahOperator {
+public class Kmdah {
 
     public static void main(String[] args) {
-        SpringApplication.run(KmdahOperator.class);
+        SpringApplication.run(Kmdah.class);
     }
 
 }

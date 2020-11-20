@@ -11,10 +11,6 @@ public enum ImageMode {
         this.pathFragment = pathFragment;
     }
 
-    public final String getPathFragment() {
-        return pathFragment;
-    }
-
     public static ImageMode fromPathFragment(String fragment) {
         if (DATA.getPathFragment().equals(fragment)) {
             return DATA;
@@ -23,6 +19,10 @@ public enum ImageMode {
         } else {
             throw new IllegalArgumentException("Unknown image mode: " + fragment);
         }
+    }
+
+    public final String getPathFragment() {
+        return pathFragment;
     }
 
 }

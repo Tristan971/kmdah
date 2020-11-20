@@ -4,10 +4,11 @@ import java.util.Optional;
 
 import moe.tristan.kmdah.model.ImageContent;
 import moe.tristan.kmdah.model.ImageSpec;
+import reactor.core.publisher.Mono;
 
 public interface ImageCache {
 
-    Optional<ImageContent> findImage(ImageSpec imageSpec);
+    Mono<ImageContent> findImage(ImageSpec imageSpec);
 
     void saveImage(ImageSpec imageSpec, ImageContent imageContent);
 

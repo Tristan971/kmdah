@@ -9,12 +9,14 @@ import moe.tristan.kmdah.cache.VacuumingRequest;
 import moe.tristan.kmdah.cache.VacuumingResult;
 import moe.tristan.kmdah.model.ImageContent;
 import moe.tristan.kmdah.model.ImageSpec;
+import reactor.core.publisher.Mono;
 
 @Component
 public class MongodbImageCache implements ImageCache {
+
     @Override
-    public Optional<ImageContent> findImage(ImageSpec imageSpec) {
-        return Optional.empty();
+    public Mono<ImageContent> findImage(ImageSpec imageSpec) {
+        return Mono.empty();
     }
 
     @Override
@@ -26,4 +28,5 @@ public class MongodbImageCache implements ImageCache {
     public Optional<VacuumingResult> vacuumIfNecessary(VacuumingRequest vacuumingRequest) {
         return Optional.empty();
     }
+
 }

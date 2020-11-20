@@ -1,54 +1,48 @@
 package moe.tristan.kmdah.mangadex.image;
 
+import java.awt.image.DataBuffer;
 import java.net.URI;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpServerErrorException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import io.micrometer.core.annotation.Timed;
+import moe.tristan.kmdah.cache.CacheMode;
+import moe.tristan.kmdah.model.ImageContent;
 import moe.tristan.kmdah.model.ImageSpec;
+import reactor.core.publisher.Mono;
 
 @Service
 public class MangadexImageService {
 
-    private final RestTemplate restTemplate;
+    private final WebClient webClient;
 
-    public MangadexImageService(RestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
+    public MangadexImageService(WebClient.Builder webClient) {
+        this.webClient = webClient.build();
     }
 
-    @Timed
-    public ResponseEntity<byte[]> download(ImageSpec imageRequest) {
+    public Mono<ImageContent> download(ImageSpec imageRequest) {
 
-        URI serverSideUri = UriComponentsBuilder
+        URI upstreamUri = UriComponentsBuilder
             .fromHttpUrl("https://tbd")
             .path("{mode}/{chapter}/{file}")
             .build(
                 imageRequest.mode().getPathFragment(),
-                imageRequest.chapterHash(),
-                imageRequest.filename()
+                imageRequest.chapter(),
+                imageRequest.file()
             );
 
-        ResponseEntity<byte[]> response;
-        try {
-            response = restTemplate.getForEntity(serverSideUri, byte[].class);
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to fetch image from upstream: " + serverSideUri, e);
-        }
-
-        if (!HttpStatus.OK.equals(response.getStatusCode())) {
-            throw new HttpServerErrorException(response.getStatusCode(), "Upstream server returned non-200 answer!");
-        }
-
-        if (response.getBody() == null) {
-            throw new IllegalStateException("Upstream returned an empty body for " + imageRequest);
-        }
-
-        return response;
+        return webClient
+            .get()
+            .uri(upstreamUri)
+            .exchangeToMono(response -> Mono.just(
+                new ImageContent(
+                    response.bodyToFlux(DataBuffer.class),
+                    response.headers().contentType(),
+                    response.headers().contentLength(),
+                    CacheMode.MISS
+                ))
+            );
     }
 
 }

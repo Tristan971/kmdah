@@ -3,7 +3,7 @@ package moe.tristan.kmdah.mangadex.stop;
 import java.net.URI;
 
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import moe.tristan.kmdah.mangadex.MangadexApi;
@@ -18,20 +18,21 @@ public class StopService {
         .build()
         .toUri();
 
+    private final WebClient webClient;
     private final MangadexSettings mangadexSettings;
-    private final RestTemplate restTemplate;
 
-    public StopService(MangadexSettings mangadexSettings, RestTemplate restTemplate) {
+    public StopService(WebClient.Builder webClient, MangadexSettings mangadexSettings) {
+        this.webClient = webClient.build();
         this.mangadexSettings = mangadexSettings;
-        this.restTemplate = restTemplate;
     }
 
     public void stop() {
-        restTemplate.postForObject(
-            STOP_ENDPOINT,
-            new StopRequest(mangadexSettings.clientSecret()),
-            Void.class
-        );
+        webClient
+            .post()
+            .uri(STOP_ENDPOINT)
+            .bodyValue(new StopRequest(mangadexSettings.getClientSecret()))
+            .retrieve()
+            .toBodilessEntity();
     }
 
 }

@@ -7,12 +7,10 @@ import java.util.TimeZone;
 
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
-import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
-import org.springframework.web.client.RestTemplate;
 
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
@@ -31,11 +29,6 @@ public class KmdahConfiguration {
     public Clock utcClock() {
         TimeZone.setDefault(TimeZone.getTimeZone(ZoneOffset.UTC));
         return Clock.systemUTC();
-    }
-
-    @Bean
-    public RestTemplate restTemplate(RestTemplateBuilder restTemplateBuilder) {
-        return restTemplateBuilder.build();
     }
 
     @Bean

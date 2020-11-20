@@ -6,9 +6,9 @@ spring:
     spec: @mangadex.spec@
 
 server:
-  port: ${kmdah.operator.port}
+  port: ${kmdah.web.port}
   shutdown: graceful
-  server-header: kube-mdah ${spring.application.version} (${spring.application.spec}) - ${spring.application.name} - github.com/Tristan971/kube-mdah
+  server-header: kube-mdah ${spring.application.version} (${spring.application.spec}) - github.com/Tristan971/kube-mdah
 
 logging.level:
   root: WARN
@@ -29,24 +29,18 @@ management:
 
 # User configuration
 kmdah:
-  operator:
-    port: ${KMDAH_OPERATOR_PORT:8080}
-    redirect-uri: ${KMDAH_OPERATOR_REDIRECT_URI:http://localhost:8081}
+  cache:
+    max-size-gb: ${KMDAH_CACHE_MAX_SIZE_GB:100}
 
-    mangadex:
-      client-secret: ${KMDAH_MANGADEX_CLIENT_SECRET:super-very-mega-secret}
-      graceful-shutdown-seconds: ${KMDAH_MANGADEX_GRACEFUL_SHUTDOWN_SECONDS:300}
-
+  k8s:
     tls-secret:
-      namespace: ${KMDAH_OPERATOR_TLS_SECRET_NAMESPACE:default}
-      name: ${KMDAH_OPERATOR_TLS_SECRET_NAME:mangadex-at-home-tls-secret}
+      name: ${KMDAH_K8S_TLS_SECRET_NAME:secret-name}
+      namespace: ${KMDAH_K8S_TLS_SECRET_NAMESPACE:default}
 
-    cache:
-      max-size-gb: ${KMDAH_CACHE_MAX_SIZE_GB:200}
+  mangadex:
+    client-secret: ${KMDAH_MANGADEX_CLIENT_SECRET:asuka>rei}
 
-  s3:
-    bucket-name: ${KMDAH_CACHE_BUCKET_NAME:}
-    service-uri: ${KMDAH_CACHE_S3_AUTH_SERVICE_URI:https://kmdah-test.s3.fr-par.scw.cloud}
-    signing-region: ${KMDAH_CACHE_S3_AUTH_SERVICE_REGION:fr-par}
-    access-key-id: ${KMDAH_CACHE_S3_AUTH_ACCESS_KEY_ID:fake-access-key}
-    secret-access-key: ${KMDAH_CACHE_S3_AUTH_SECRET_ACCESS_KEY:fake-secret-key}
+  web:
+    bandwidth-mbps: ${KMDAH_WEB_BANDWIDTH_MBPS:100}
+    port: ${KMDAH_WEB_PORT:8080}
+    graceful-shutdown-seconds: ${KMDAH_WEB_GRACEFUL_SHUTDOWN_SECONDS:60}

@@ -5,13 +5,13 @@ import java.io.File;
 import moe.tristan.kmdah.mangadex.image.ImageMode;
 
 public record ImageSpec(
-    String filename,
-    String chapterHash,
-    ImageMode mode
+    ImageMode mode,
+    String chapter,
+    String file
 ) {
 
     public String getPath() {
-        return String.join(File.separator, chapterHash, mode.getPathFragment(), filename);
+        return String.join(File.separator, chapter, mode.getPathFragment(), file);
     }
 
 }
