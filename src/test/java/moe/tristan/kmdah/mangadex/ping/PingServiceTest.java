@@ -35,8 +35,8 @@ import okhttp3.mockwebserver.RecordedRequest;
         "kmdah.cache.max-size-gb=100"
     }
 )
-@EnableConfigurationProperties({MangadexSettings.class, CacheSettings.class})
 @AutoConfigureWebClient
+@EnableConfigurationProperties({MangadexSettings.class, CacheSettings.class})
 class PingServiceTest {
 
     private final MockWebServerSupport mockWebServerSupport = new MockWebServerSupport();

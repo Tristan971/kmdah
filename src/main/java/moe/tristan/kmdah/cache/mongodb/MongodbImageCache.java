@@ -45,7 +45,7 @@ public class MongodbImageCache implements ImageCache {
             .getResource(filepath)
             .log()
             .flatMap(this::zipResourceAsImageContent)
-            .doOnNext(imageContent -> LOGGER.info("Retrieved {} GridFS as {}", imageSpec, imageContent));
+            .doOnSuccess(imageContent -> LOGGER.info("Retrieved {} from MongoDB~GridFS as {}", imageSpec, imageContent));
     }
 
     @Override
@@ -57,7 +57,7 @@ public class MongodbImageCache implements ImageCache {
 
         return reactiveGridFsTemplate
             .store(imageContent.bytes(), filename, document)
-            .doOnNext(id -> LOGGER.info("Stored {} in GridFS as _id:{} (with metadata: {})", imageSpec, id, document.toString()));
+            .doOnSuccess(id -> LOGGER.info("Stored {} in MongoDB~GridFS as _id:{} with metadata: {}", imageSpec, id, document.toString()));
     }
 
     @Override

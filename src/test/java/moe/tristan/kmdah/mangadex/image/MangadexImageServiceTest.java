@@ -38,7 +38,6 @@ class MangadexImageServiceTest {
     @Autowired
     private MangadexImageService mangadexImageService;
 
-
     @BeforeEach
     void setUp() throws IOException {
         mockWebServerUri = mockWebServerSupport.start();
@@ -54,10 +53,11 @@ class MangadexImageServiceTest {
         MediaType contentType = MediaType.IMAGE_JPEG;
         byte[] content = UUID.randomUUID().toString().getBytes();
 
-        mockWebServerSupport.enqueue(successfulResponseFor(
-            contentType,
-            content
-        ));
+        MockResponse mockResponse = new MockResponse();
+        Buffer buffer = new Buffer().write(content);
+        mockResponse.setBody(buffer);
+        mockResponse.setHeader(HttpHeaders.CONTENT_TYPE, contentType);
+        mockWebServerSupport.enqueue(mockResponse);
 
         ImageSpec spec = new ImageSpec(ImageMode.DATA, "chapter", "file");
 
@@ -102,16 +102,6 @@ class MangadexImageServiceTest {
                     .isInstanceOf(MangadexUpstreamException.class)
                     .hasMessageContaining(failureHttpStatus.toString()))
             .verify();
-    }
-
-    private MockResponse successfulResponseFor(MediaType mediaType, byte[] content) {
-        MockResponse mockResponse = new MockResponse();
-
-        Buffer buffer = new Buffer().write(content);
-        mockResponse.setBody(buffer);
-        mockResponse.setHeader(HttpHeaders.CONTENT_TYPE, mediaType.toString());
-
-        return mockResponse;
     }
 
 }
