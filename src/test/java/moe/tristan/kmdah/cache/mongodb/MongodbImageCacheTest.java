@@ -1,6 +1,10 @@
 package moe.tristan.kmdah.cache.mongodb;
 
+import static java.util.Objects.requireNonNull;
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.UUID;
@@ -42,26 +46,45 @@ class MongodbImageCacheTest {
     void storeAndRetrieveFile(@Autowired ReactiveGridFsTemplate reactiveGridFsTemplate) {
         MongodbImageCache imageCache = new MongodbImageCache(reactiveGridFsTemplate);
 
-        ImageSpec spec = new ImageSpec(ImageMode.DATA, "chapterid", "fileno");
+        ImageSpec sampleSpec = new ImageSpec(ImageMode.DATA, "chapterid", "fileno");
 
         byte[] sampleBytes = UUID.randomUUID().toString().getBytes();
-        MediaType mediaType = MediaType.IMAGE_JPEG;
-        long len = sampleBytes.length;
+        MediaType sampleContentType = MediaType.IMAGE_JPEG;
+        ImageContent sampleImage = sampleContent(sampleBytes, sampleContentType);
+
+        // store
+        Optional<ObjectId> saveResult = imageCache
+            .saveImage(sampleSpec, sampleImage)
+            .blockOptional();
+        assertThat(saveResult).isNotEmpty();
+
+        // retrieve
+        Optional<ImageContent> retrieval = imageCache
+            .findImage(sampleSpec)
+            .blockOptional();
+        assertThat(retrieval).isNotEmpty();
+
+        ImageContent retrieved = retrieval.get();
+        assertThat(retrieved.contentType()).hasValue(sampleContentType);
+        assertThat(retrieved.contentLength()).hasValue(sampleBytes.length);
+        assertThat(retrieved.getCacheMode()).isEqualTo(CacheMode.HIT);
+
+        DataBuffer retrievedBytesBuffer = DataBufferUtils.join(retrieved.bytes()).block();
+        InputStream retrievedBytes = requireNonNull(retrievedBytesBuffer).asInputStream();
+        assertThat(retrievedBytes).hasBinaryContent(sampleBytes);
+    }
+
+    private ImageContent sampleContent(byte[] bytes, MediaType mediaType) {
+        long len = bytes.length;
+
 
         Flux<DataBuffer> bytesBuffer = DataBufferUtils.readInputStream(
-            () -> new ByteArrayInputStream(sampleBytes),
+            () -> new ByteArrayInputStream(bytes),
             new DefaultDataBufferFactory(false),
-            sampleBytes.length / 2 // ensure chunked
+            bytes.length / 2 // ensure chunked
         );
 
-        ImageContent content = new ImageContent(bytesBuffer, Optional.of(mediaType), OptionalLong.of(len), CacheMode.MISS);
-
-        Mono<ObjectId> saveResult = imageCache.saveImage(spec, content);
-
-        StepVerifier
-            .create(saveResult)
-            .expectNextCount(1)
-            .verifyComplete();
+        return new ImageContent(bytesBuffer, Optional.of(mediaType), OptionalLong.of(len), CacheMode.MISS);
     }
 
 }

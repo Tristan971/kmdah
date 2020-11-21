@@ -43,7 +43,7 @@ public class MongodbImageCache implements ImageCache {
             .getResource(filepath)
             .log()
             .flatMap(this::zipResourceAsImageContent)
-            .doOnNext(imageContent -> LOGGER.info("Retrieved {} in GridFS for spec {}", imageContent, imageSpec));
+            .doOnNext(imageContent -> LOGGER.info("Retrieved {} GridFS as {}", imageSpec, imageContent));
     }
 
     @Override
