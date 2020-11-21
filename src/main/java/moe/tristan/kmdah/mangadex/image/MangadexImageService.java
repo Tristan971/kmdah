@@ -44,6 +44,10 @@ public class MangadexImageService {
             .retrieve()
             .toEntityFlux(DataBuffer.class)
             .map(entityFlux -> {
+                if (entityFlux.getStatusCode().is4xxClientError() || entityFlux.getStatusCode().is5xxServerError()) {
+                    throw new MangadexUpstreamException("Upstream returned an error status code: " + entityFlux.getStatusCode());
+                }
+
                 Flux<DataBuffer> bytes = entityFlux.getBody();
 
                 MediaType contentType = entityFlux.getHeaders().getContentType();
@@ -56,7 +60,8 @@ public class MangadexImageService {
                     CacheMode.MISS
                 );
             })
-            .doOnNext(content -> LOGGER.info("Retrieved {} from upstream {} as {}", imageRequest, upstreamServerUri, content));
+            .doOnSuccess(content -> LOGGER.info("Retrieved {} from upstream {} as {}", imageRequest, upstreamServerUri, content))
+            .doOnError(error -> LOGGER.error("Failed to retrieve {} from upstream {} due to an upstream error.", imageRequest, upstreamServerUri, error));
     }
 
 }

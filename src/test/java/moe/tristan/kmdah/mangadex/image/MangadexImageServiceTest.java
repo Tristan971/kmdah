@@ -14,13 +14,18 @@ import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureWebCl
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import moe.tristan.kmdah.cache.CacheMode;
 import moe.tristan.kmdah.model.ImageContent;
 import moe.tristan.kmdah.model.ImageSpec;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
 import okio.Buffer;
 
 @SpringBootTest(classes = MangadexImageService.class)
@@ -48,11 +53,11 @@ class MangadexImageServiceTest {
     }
 
     @Test
-    void onUpstreamSuccess() {
+    void onUpstreamSuccess() throws InterruptedException {
         MediaType contentType = MediaType.IMAGE_JPEG;
         byte[] content = UUID.randomUUID().toString().getBytes();
 
-        mockWebServer.enqueue(responseFor(
+        mockWebServer.enqueue(successfulResponseFor(
             contentType,
             content
         ));
@@ -74,9 +79,35 @@ class MangadexImageServiceTest {
             .orElseThrow()
             .asInputStream();
         assertThat(downloadedBytes).hasBinaryContent(content);
+
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        assertThat(recordedRequest.getMethod()).isEqualTo(HttpMethod.GET.name());
+
+        String expectedUri = "/" + spec.mode().getPathFragment() + "/" + spec.chapter() + "/" + spec.file();
+        assertThat(recordedRequest.getPath()).isEqualTo(expectedUri);
     }
 
-    private MockResponse responseFor(MediaType mediaType, byte[] content) {
+    @Test
+    void onUpstreamFailure() {
+        MockResponse mockResponse = new MockResponse();
+        HttpStatus failureHttpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
+        mockResponse.setResponseCode(failureHttpStatus.value());
+        mockWebServer.enqueue(mockResponse);
+
+        // data-saver is broken every other day amirite :^)
+        ImageSpec whatever = new ImageSpec(ImageMode.DATA_SAVER, "chapter-with", "file-that-fails");
+        Mono<ImageContent> download = mangadexImageService.download(whatever, mockWebServerUri);
+
+        StepVerifier
+            .create(download)
+            .consumeErrorWith(error ->
+                assertThat(error)
+                    .isInstanceOf(MangadexUpstreamException.class)
+                    .hasMessageContaining(failureHttpStatus.toString()))
+            .verify();
+    }
+
+    private MockResponse successfulResponseFor(MediaType mediaType, byte[] content) {
         MockResponse mockResponse = new MockResponse();
 
         Buffer buffer = new Buffer().write(content);
