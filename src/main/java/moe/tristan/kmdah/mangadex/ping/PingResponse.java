@@ -1,8 +1,9 @@
 package moe.tristan.kmdah.mangadex.ping;
 
-import java.net.URL;
 import java.util.Optional;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public record PingResponse(
@@ -13,15 +14,20 @@ public record PingResponse(
     @JsonProperty("latest_build")
     String latestBuild,
 
-    URL url,
+    @JsonProperty("url")
+    String url,
 
     @JsonProperty("token_key")
     String tokenKey,
 
+    @JsonProperty("compromised")
     boolean compromised,
 
+    @JsonProperty("paused")
     boolean paused,
 
+    @JsonProperty("tls")
+    @JsonInclude(Include.NON_EMPTY)
     Optional<TlsData> tls
 
 ) {}

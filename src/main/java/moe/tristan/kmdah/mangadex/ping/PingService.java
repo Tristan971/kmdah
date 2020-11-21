@@ -1,45 +1,41 @@
 package moe.tristan.kmdah.mangadex.ping;
 
-import java.net.URI;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.unit.DataSize;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.util.UriComponentsBuilder;
+import reactor.core.publisher.Mono;
 
 import moe.tristan.kmdah.mangadex.MangadexApi;
 import moe.tristan.kmdah.model.settings.CacheSettings;
 import moe.tristan.kmdah.model.settings.MangadexSettings;
-import reactor.core.publisher.Mono;
 
 @Service
 public class PingService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PingService.class);
 
-    private static final URI PING_ENDPOINT = UriComponentsBuilder
-        .fromHttpUrl(MangadexApi.BASE_URL)
-        .path("/ping")
-        .build()
-        .toUri();
-
     private final WebClient webClient;
 
+    private final MangadexApi mangadexApi;
     private final CacheSettings cacheSettings;
     private final MangadexSettings mangadexSettings;
 
     public PingService(
         WebClient.Builder webClient,
+        MangadexApi mangadexApi,
         CacheSettings cacheSettings,
         MangadexSettings mangadexSettings
     ) {
         this.webClient = webClient.build();
+        this.mangadexApi = mangadexApi;
         this.cacheSettings = cacheSettings;
         this.mangadexSettings = mangadexSettings;
     }
@@ -54,20 +50,22 @@ public class PingService {
         PingRequest request = new PingRequest(
             mangadexSettings.clientSecret(),
             443,
-            (long) (DataSize.ofGigabytes(cacheSettings.maxSizeGb()).toBytes() * 0.8),
+            DataSize.ofGigabytes(cacheSettings.maxSizeGb()).toBytes(),
             networkSpeedBytesPerSecond,
             lastCreatedAt,
             19
         );
 
-        LOGGER.info("{}", request);
-
         return webClient
             .post()
-            .uri(PING_ENDPOINT)
+            .uri(mangadexApi.getApiUrl() + "/ping")
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(request)
             .retrieve()
             .onStatus(status -> HttpStatus.OK != status, this::onError)
-            .bodyToMono(PingResponse.class);
+            .bodyToMono(PingResponse.class)
+            .doOnSuccess(response -> LOGGER.info("Ping {} - Pong {}", request, response))
+            .doOnError(error -> LOGGER.info("Ping {} -> Error!", request, error));
     }
 
     private Mono<? extends Throwable> onError(ClientResponse clientResponse) {
