@@ -52,9 +52,11 @@ public class ImageController {
             .flux()
             .flatMap(image -> {
                 mangadexHeaders.addHeaders(response.getHeaders());
-                image.contentType().ifPresent(response.getHeaders()::setContentType);
+
+                response.getHeaders().setContentType(image.contentType());
                 image.contentLength().ifPresent(response.getHeaders()::setContentLength);
-                response.getHeaders().add("X-Cache-Mode", image.getCacheMode().name());
+
+                response.getHeaders().add("X-Cache-Mode", image.cacheMode().name());
                 return image.bytes();
             });
     }

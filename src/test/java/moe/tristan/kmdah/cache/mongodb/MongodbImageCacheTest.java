@@ -65,9 +65,9 @@ class MongodbImageCacheTest {
         assertThat(retrieval).isNotEmpty();
 
         ImageContent retrieved = retrieval.get();
-        assertThat(retrieved.contentType()).hasValue(sampleContentType);
         assertThat(retrieved.contentLength()).hasValue(sampleBytes.length);
-        assertThat(retrieved.getCacheMode()).isEqualTo(CacheMode.HIT);
+        assertThat(retrieved.contentType()).isEqualTo(sampleContentType);
+        assertThat(retrieved.cacheMode()).isEqualTo(CacheMode.HIT);
 
         DataBuffer retrievedBytesBuffer = DataBufferUtils.join(retrieved.bytes()).block();
         InputStream retrievedBytes = requireNonNull(retrievedBytesBuffer).asInputStream();
@@ -84,7 +84,7 @@ class MongodbImageCacheTest {
             bytes.length / 2 // ensure chunked
         );
 
-        return new ImageContent(bytesBuffer, Optional.of(mediaType), OptionalLong.of(len), CacheMode.MISS);
+        return new ImageContent(bytesBuffer, mediaType, OptionalLong.of(len), CacheMode.MISS);
     }
 
 }

@@ -1,5 +1,7 @@
 package moe.tristan.kmdah.cache.mongodb;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.Optional;
 import java.util.OptionalLong;
 
@@ -51,7 +53,7 @@ public class MongodbImageCache implements ImageCache {
         String filename = imageSpec.getPath();
 
         Document document = new Document();
-        imageContent.contentType().ifPresent(type -> document.put(HttpHeaders.CONTENT_TYPE, type.toString()));
+        document.put(HttpHeaders.CONTENT_TYPE, imageContent.contentType().toString());
 
         return reactiveGridFsTemplate
             .store(imageContent.bytes(), filename, document)
@@ -70,18 +72,15 @@ public class MongodbImageCache implements ImageCache {
                 GridFSFile file = fileAndBuffer.getT1();
                 Flux<DataBuffer> buffer = fileAndBuffer.getT2();
 
-                Optional<MediaType> contentType = Optional.empty();
                 OptionalLong contentLength = OptionalLong.of(file.getLength());
 
                 // parse metadata if exists
                 Document metadata = file.getMetadata();
-                if (metadata != null) {
-                    contentType = Optional.ofNullable(metadata.getString(HttpHeaders.CONTENT_TYPE)).map(MediaType::parseMediaType);
-                }
+                String mediaType = requireNonNull(metadata).getString(HttpHeaders.CONTENT_TYPE);
 
                 return new ImageContent(
                     buffer,
-                    contentType,
+                    MediaType.parseMediaType(mediaType),
                     contentLength,
                     CacheMode.HIT
                 );
