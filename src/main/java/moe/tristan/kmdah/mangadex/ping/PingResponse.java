@@ -1,9 +1,10 @@
 package moe.tristan.kmdah.mangadex.ping;
 
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
+
 import java.util.Optional;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public record PingResponse(
@@ -27,7 +28,7 @@ public record PingResponse(
     boolean paused,
 
     @JsonProperty("tls")
-    @JsonInclude(Include.NON_EMPTY)
+    @JsonInclude(NON_EMPTY)
     Optional<TlsData> tls
 
 ) {}
