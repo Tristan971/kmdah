@@ -2,7 +2,6 @@ package moe.tristan.kmdah.cache.mongodb;
 
 import static java.util.Objects.requireNonNull;
 
-import java.util.Optional;
 import java.util.OptionalLong;
 
 import org.bson.Document;
@@ -10,32 +9,36 @@ import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.mongodb.gridfs.ReactiveGridFsResource;
 import org.springframework.data.mongodb.gridfs.ReactiveGridFsTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.util.unit.DataSize;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import com.mongodb.client.gridfs.model.GridFSFile;
 
 import moe.tristan.kmdah.cache.CacheMode;
-import moe.tristan.kmdah.cache.ImageCache;
+import moe.tristan.kmdah.cache.CachedImageService;
 import moe.tristan.kmdah.cache.VacuumingRequest;
 import moe.tristan.kmdah.cache.VacuumingResult;
 import moe.tristan.kmdah.model.ImageContent;
 import moe.tristan.kmdah.model.ImageSpec;
 
 @Component
-public class MongodbImageCache implements ImageCache {
+public class MongodbCachedImageService implements CachedImageService {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(MongodbImageCache.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MongodbCachedImageService.class);
 
     private final ReactiveGridFsTemplate reactiveGridFsTemplate;
+    private final ReactiveMongoTemplate reactiveMongoTemplate;
 
-    public MongodbImageCache(ReactiveGridFsTemplate reactiveGridFsTemplate) {
+    public MongodbCachedImageService(ReactiveGridFsTemplate reactiveGridFsTemplate, ReactiveMongoTemplate reactiveMongoTemplate) {
         this.reactiveGridFsTemplate = reactiveGridFsTemplate;
+        this.reactiveMongoTemplate = reactiveMongoTemplate;
     }
 
     @Override
@@ -61,8 +64,14 @@ public class MongodbImageCache implements ImageCache {
     }
 
     @Override
-    public Optional<VacuumingResult> vacuumIfNecessary(VacuumingRequest vacuumingRequest) {
-        return Optional.empty();
+    public VacuumingResult vacuum(VacuumingRequest vacuumingRequest) {
+        reactiveMongoTemplate
+            .estimatedCount("fs.chunks")
+            .map(chunkCount -> chunkCount * 255)
+            .map(DataSize::ofBytes)
+            .filter(dataSize -> dataSize.toGigabytes() > vacuumingRequest.targetSize().toGigabytes())
+            .doOnNext(size -> LOGGER.info("Estimated cache size: {}GB", size.toGigabytes()))
+            .map()
     }
 
     private Mono<ImageContent> zipResourceAsImageContent(ReactiveGridFsResource resource) {

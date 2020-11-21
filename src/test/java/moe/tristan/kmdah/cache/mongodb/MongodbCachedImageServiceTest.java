@@ -16,6 +16,7 @@ import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.core.io.buffer.DefaultDataBufferFactory;
+import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.mongodb.gridfs.ReactiveGridFsTemplate;
 import org.springframework.http.MediaType;
 import reactor.core.publisher.Flux;
@@ -28,11 +29,14 @@ import moe.tristan.kmdah.model.ImageContent;
 import moe.tristan.kmdah.model.ImageSpec;
 
 @DataMongoTest
-class MongodbImageCacheTest {
+class MongodbCachedImageServiceTest {
 
     @Test
-    void fileDoesntExist(@Autowired ReactiveGridFsTemplate reactiveGridFsTemplate) {
-        MongodbImageCache imageCache = new MongodbImageCache(reactiveGridFsTemplate);
+    void fileDoesntExist(
+        @Autowired ReactiveGridFsTemplate reactiveGridFsTemplate,
+        @Autowired ReactiveMongoTemplate reactiveMongoTemplate
+    ) {
+        MongodbCachedImageService imageCache = new MongodbCachedImageService(reactiveGridFsTemplate, reactiveMongoTemplate);
 
         Mono<ImageContent> imageSearch = imageCache.findImage(new ImageSpec(ImageMode.DATA, "doesnot", "exist"));
 
@@ -43,8 +47,11 @@ class MongodbImageCacheTest {
     }
 
     @Test
-    void storeAndRetrieveFile(@Autowired ReactiveGridFsTemplate reactiveGridFsTemplate) {
-        MongodbImageCache imageCache = new MongodbImageCache(reactiveGridFsTemplate);
+    void storeAndRetrieveFile(
+        @Autowired ReactiveGridFsTemplate reactiveGridFsTemplate,
+        @Autowired ReactiveMongoTemplate reactiveMongoTemplate
+    ) {
+        MongodbCachedImageService imageCache = new MongodbCachedImageService(reactiveGridFsTemplate, reactiveMongoTemplate);
 
         ImageSpec sampleSpec = new ImageSpec(ImageMode.DATA, "chapterid", "fileno");
 

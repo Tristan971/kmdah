@@ -34,4 +34,19 @@ public record PingRequest(
     @JsonProperty("build_version")
     int specVersion
 
-) {}
+) {
+
+    @Override
+    public String toString() {
+        //noinspection SuspiciousRegexArgument
+        return "PingRequest[" +
+            "secret=" + secret.replaceAll(".", "*") +
+            ", port=" + port +
+            ", diskSpace=" + diskSpace +
+            ", networkSpeed=" + networkSpeed +
+            ", tlsCreatedAt=" + tlsCreatedAt +
+            ", specVersion=" + specVersion +
+            ']';
+    }
+
+}

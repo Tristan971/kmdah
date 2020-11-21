@@ -26,7 +26,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import moe.tristan.kmdah.cache.CacheMode;
-import moe.tristan.kmdah.cache.ImageCache;
+import moe.tristan.kmdah.cache.CachedImageService;
 import moe.tristan.kmdah.mangadex.image.ImageMode;
 import moe.tristan.kmdah.mangadex.image.MangadexImageService;
 import moe.tristan.kmdah.model.ImageContent;
@@ -42,7 +42,7 @@ class ImageServiceTest {
     private CacheModeCounter cacheModeCounter;
 
     @MockBean
-    private ImageCache imageCache;
+    private CachedImageService cachedImageService;
 
     @MockBean
     private MangadexImageService mangadexImageService;
@@ -54,13 +54,16 @@ class ImageServiceTest {
     void onMiss() {
         ImageContent cacheMissContent = sampleContent(CacheMode.MISS);
 
-        when(imageCache.findImage(eq(SPEC))).thenReturn(Mono.empty());
+        when(cachedImageService.findImage(eq(SPEC))).thenReturn(Mono.empty());
         when(mangadexImageService.download(eq(SPEC), any())).thenReturn(Mono.just(cacheMissContent));
 
         StepVerifier
             .create(imageService.findOrFetch(SPEC))
             .consumeNextWith(content -> assertThat(content).isEqualTo(cacheMissContent))
             .verifyComplete();
+
+        verifyCachedCall();
+        verifyUpstreamCall(1);
 
         verifyCacheModeCounted(CacheMode.MISS);
     }
@@ -69,21 +72,51 @@ class ImageServiceTest {
     void onHit() {
         ImageContent cacheHitContent = sampleContent(CacheMode.HIT);
 
-        when(imageCache.findImage(eq(SPEC))).thenReturn(Mono.just(cacheHitContent));
+        when(cachedImageService.findImage(eq(SPEC))).thenReturn(Mono.just(cacheHitContent));
 
         StepVerifier
             .create(imageService.findOrFetch(SPEC))
             .consumeNextWith(content -> assertThat(content).isEqualTo(cacheHitContent))
             .verifyComplete();
 
-        verifyNoInteractions(mangadexImageService);
+        verifyCachedCall();
+        verifyUpstreamCall(0);
 
         verifyCacheModeCounted(CacheMode.HIT);
     }
 
     @Test
     void onFailCached() {
+        ImageContent cacheMissContent = sampleContent(CacheMode.MISS);
 
+        when(cachedImageService.findImage(eq(SPEC))).thenReturn(Mono.error(new IllegalStateException("Some underlying error!")));
+        when(mangadexImageService.download(eq(SPEC), any())).thenReturn(Mono.just(cacheMissContent));
+
+        StepVerifier
+            .create(imageService.findOrFetch(SPEC))
+            .consumeNextWith(content -> assertThat(content).isEqualTo(cacheMissContent))
+            .verifyComplete();
+
+        verifyCachedCall();
+        verifyUpstreamCall(1);
+
+        verifyCacheModeCounted(CacheMode.MISS);
+    }
+
+    @Test
+    void onFailUpstream() {
+        when(cachedImageService.findImage(eq(SPEC))).thenReturn(Mono.empty());
+        when(mangadexImageService.download(eq(SPEC), any())).thenReturn(Mono.error(new IllegalStateException("Upstream error!")));
+
+        StepVerifier
+            .create(imageService.findOrFetch(SPEC))
+            .expectError()
+            .verify();
+
+        verifyCachedCall();
+        verifyUpstreamCall(1);
+
+        verifyNoInteractions(cacheModeCounter);
     }
 
     private static ImageContent sampleContent(CacheMode cacheMode) {
@@ -105,8 +138,16 @@ class ImageServiceTest {
 
     private void verifyCacheModeCounted(CacheMode cacheMode) {
         ArgumentCaptor<CacheMode> cacheModeCaptor = ArgumentCaptor.forClass(CacheMode.class);
-        verify(cacheModeCounter, times(1)).record(cacheModeCaptor.capture());
+        verify(cacheModeCounter).record(cacheModeCaptor.capture());
         assertThat(cacheModeCaptor.getAllValues()).containsExactly(cacheMode);
+    }
+
+    private void verifyCachedCall() {
+        verify(cachedImageService, times(1)).findImage(eq(SPEC));
+    }
+
+    private void verifyUpstreamCall(int times) {
+        verify(mangadexImageService, times(times)).download(eq(SPEC), any());
     }
 
 }

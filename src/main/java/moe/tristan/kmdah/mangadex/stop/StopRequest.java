@@ -7,4 +7,14 @@ public record StopRequest(
     @JsonProperty("secret")
     String secret
 
-) {}
+) {
+
+    @Override
+    public String toString() {
+        //noinspection SuspiciousRegexArgument
+        return "StopRequest[" +
+            "secret=" + secret.replaceAll(".", "*") +
+            ']';
+    }
+
+}
