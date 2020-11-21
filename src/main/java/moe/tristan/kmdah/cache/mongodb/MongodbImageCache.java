@@ -40,24 +40,24 @@ public class MongodbImageCache implements ImageCache {
 
     @Override
     public Mono<ImageContent> findImage(ImageSpec imageSpec) {
-        String filepath = imageSpec.getPath();
+        String filename = specToFilename(imageSpec);
         return reactiveGridFsTemplate
-            .getResource(filepath)
+            .getResource(filename)
             .log()
             .flatMap(this::zipResourceAsImageContent)
-            .doOnSuccess(imageContent -> LOGGER.info("Retrieved {} from MongoDB~GridFS as {}", imageSpec, imageContent));
+            .doOnNext(imageContent -> LOGGER.info("Retrieved {} from MongoDB~GridFS as {}", imageSpec, imageContent));
     }
 
     @Override
     public Mono<ObjectId> saveImage(ImageSpec imageSpec, ImageContent imageContent) {
-        String filename = imageSpec.getPath();
+        String filename = specToFilename(imageSpec);
 
         Document document = new Document();
         document.put(HttpHeaders.CONTENT_TYPE, imageContent.contentType().toString());
 
         return reactiveGridFsTemplate
             .store(imageContent.bytes(), filename, document)
-            .doOnSuccess(id -> LOGGER.info("Stored {} in MongoDB~GridFS as _id:{} with metadata: {}", imageSpec, id, document.toString()));
+            .doOnNext(id -> LOGGER.info("Stored {} in MongoDB~GridFS as _id:{} with metadata: {}", imageSpec, id, document.toString()));
     }
 
     @Override
@@ -85,6 +85,10 @@ public class MongodbImageCache implements ImageCache {
                     CacheMode.HIT
                 );
             });
+    }
+
+    private String specToFilename(ImageSpec spec) {
+        return String.join("/", spec.chapter(), spec.mode().name(), spec.file());
     }
 
 }

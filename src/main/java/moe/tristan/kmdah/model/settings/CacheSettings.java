@@ -6,5 +6,7 @@ import org.springframework.boot.context.properties.ConstructorBinding;
 @ConstructorBinding
 @ConfigurationProperties("kmdah.cache")
 public record CacheSettings(
+
     int maxSizeGb
+
 ) {}
