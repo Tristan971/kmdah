@@ -26,8 +26,8 @@ public class VacuumJob {
         this.cachedImageService = cachedImageService;
     }
 
-    // once per hour
-    @Scheduled(fixedDelay = 3600 * 1000)
+    // once per hour, 3s initial delay
+    @Scheduled(initialDelay = 5000, fixedDelay = 3600 * 1000)
     public void triggerVacuuming() {
         VacuumingRequest vacuumingRequest = new VacuumingRequest(DataSize.ofGigabytes(cacheSettings.maxSizeGb()));
         Optional<VacuumingResult> vacuumingResult = cachedImageService

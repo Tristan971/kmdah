@@ -11,13 +11,14 @@
 
     <groupId>moe.tristan.kmdah</groupId>
     <artifactId>kube-mdah</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>${revision}</version>
     <packaging>jar</packaging>
 
     <name>kube-mdah</name>
     <description>A scalable mangadex client implementation</description>
 
     <properties>
+        <revision>local-SNAPSHOT</revision>
         <java.version>15</java.version>
         <mangadex.spec>19</mangadex.spec>
     </properties>
