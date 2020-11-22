@@ -10,15 +10,20 @@ import java.util.OptionalLong;
 import java.util.UUID;
 
 import org.bson.types.ObjectId;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
+import org.springframework.boot.autoconfigure.data.mongo.MongoReactiveDataAutoConfiguration;
+import org.springframework.boot.autoconfigure.mongo.MongoReactiveAutoConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.core.io.buffer.DefaultDataBufferFactory;
-import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
-import org.springframework.data.mongodb.gridfs.ReactiveGridFsTemplate;
 import org.springframework.http.MediaType;
+import org.springframework.test.annotation.DirtiesContext;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -28,17 +33,36 @@ import moe.tristan.kmdah.mangadex.image.ImageMode;
 import moe.tristan.kmdah.model.ImageContent;
 import moe.tristan.kmdah.model.ImageSpec;
 
-@DataMongoTest
+@SpringBootTest(classes = {
+    MongodbCachedImageService.class,
+    MongoReactiveAutoConfiguration.class,
+    MongoReactiveDataAutoConfiguration.class
+})
+@Testcontainers
+@DirtiesContext
 class MongodbCachedImageServiceTest {
 
-    @Test
-    void fileDoesntExist(
-        @Autowired ReactiveGridFsTemplate reactiveGridFsTemplate,
-        @Autowired ReactiveMongoTemplate reactiveMongoTemplate
-    ) {
-        MongodbCachedImageService imageCache = new MongodbCachedImageService(reactiveGridFsTemplate, reactiveMongoTemplate);
+    @Container
+    private static final GenericContainer<?> MONGODB = new GenericContainer<>("library/mongo:4.4")
+        .withEnv("MONGO_INITDB_ROOT_USERNAME", "kmdah")
+        .withEnv("MONGO_INITDB_ROOT_PASSWORD", "kmdah")
+        .withExposedPorts(27017);
 
-        Mono<ImageContent> imageSearch = imageCache.findImage(new ImageSpec(ImageMode.DATA, "doesnot", "exist"));
+    @Autowired
+    private MongodbCachedImageService mongodbCachedImageService;
+
+    @BeforeAll
+    static void beforeAll() {
+        String mongoHost = MONGODB.getHost();
+        System.setProperty("KMDAH_CACHE_MONGODB_HOST", mongoHost);
+
+        Integer mongoPort = MONGODB.getMappedPort(27017);
+        System.setProperty("KMDAH_CACHE_MONGODB_PORT", String.valueOf(mongoPort));
+    }
+
+    @Test
+    void fileDoesntExist() {
+        Mono<ImageContent> imageSearch = mongodbCachedImageService.findImage(new ImageSpec(ImageMode.DATA, "doesnot", "exist"));
 
         StepVerifier
             .create(imageSearch)
@@ -47,12 +71,7 @@ class MongodbCachedImageServiceTest {
     }
 
     @Test
-    void storeAndRetrieveFile(
-        @Autowired ReactiveGridFsTemplate reactiveGridFsTemplate,
-        @Autowired ReactiveMongoTemplate reactiveMongoTemplate
-    ) {
-        MongodbCachedImageService imageCache = new MongodbCachedImageService(reactiveGridFsTemplate, reactiveMongoTemplate);
-
+    void storeAndRetrieveFile() {
         ImageSpec sampleSpec = new ImageSpec(ImageMode.DATA, "chapterid", "fileno");
 
         byte[] sampleBytes = UUID.randomUUID().toString().getBytes();
@@ -60,13 +79,13 @@ class MongodbCachedImageServiceTest {
         ImageContent sampleImage = sampleContent(sampleBytes, sampleContentType);
 
         // store
-        Optional<ObjectId> saveResult = imageCache
+        Optional<ObjectId> saveResult = mongodbCachedImageService
             .saveImage(sampleSpec, sampleImage)
             .blockOptional();
         assertThat(saveResult).isNotEmpty();
 
         // retrieve
-        Optional<ImageContent> retrieval = imageCache
+        Optional<ImageContent> retrieval = mongodbCachedImageService
             .findImage(sampleSpec)
             .blockOptional();
         assertThat(retrieval).isNotEmpty();

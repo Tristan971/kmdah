@@ -5,6 +5,17 @@ spring:
     version: @project.version@
     spec: @mangadex.spec@
 
+  data:
+    mongodb:
+      host: ${kmdah.cache.mongodb.host}
+      port: ${kmdah.cache.mongodb.port}
+      authentication-database: ${kmdah.cache.mongodb.authentication-database}
+      username: ${kmdah.cache.mongodb.username}
+      password: ${kmdah.cache.mongodb.password}
+
+  config:
+    import: optional:file:${KMDAH_CONFIGURATION:config.yml}
+
 server:
   port: ${kmdah.web.port}
   shutdown: graceful
@@ -25,12 +36,16 @@ management:
         - health
         - prometheus
 
-  metrics.web.client.request.autotime.enabled: false
-
 # User configuration
 kmdah:
   cache:
     max-size-gb: ${KMDAH_CACHE_MAX_SIZE_GB:100}
+    mongodb:
+      host: ${KMDAH_CACHE_MONGODB_HOST:localhost}
+      port: ${KMDAH_CACHE_MONGODB_PORT:27017}
+      authentication-database: ${KMDAH_CACHE_MONGODB_AUTHENTICATION_DATABASE:admin}
+      username: ${KMDAH_CACHE_MONGODB_USERNAME:kmdah}
+      password: ${KMDAH_CACHE_MONGODB_PASSWORD:kmdah}
 
   k8s:
     tls-secret:
