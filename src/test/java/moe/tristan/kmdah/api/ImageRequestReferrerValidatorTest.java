@@ -20,11 +20,11 @@ class ImageRequestReferrerValidatorTest {
     @Test
     void testInvalid() {
         assertThatThrownBy(() -> validator.validate("https://notmangadex.org"))
-            .isInstanceOf(InvalidReferrerException.class)
+            .isInstanceOf(InvalidImageRequestReferrerException.class)
             .hasMessageContaining("https://notmangadex.org");
 
         assertThatThrownBy(() -> validator.validate("not-a-uri"))
-            .isInstanceOf(InvalidReferrerException.class)
+            .isInstanceOf(InvalidImageRequestReferrerException.class)
             .hasMessageContaining("Invalid referrer didn't have a host");
     }
 

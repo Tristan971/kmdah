@@ -23,14 +23,14 @@ public class ImageRequestReferrerValidator {
             URI referrerUri = new URI(referrer);
             String host = referrerUri.getHost();
             if (host == null) {
-                throw new InvalidReferrerException("Invalid referrer didn't have a host for " + referrer);
+                throw new InvalidImageRequestReferrerException("Invalid referrer didn't have a host for " + referrer);
             }
 
             if (!MANGADEX_HOST_MATCHER.matcher(host).find()) {
-                throw new InvalidReferrerException("Invalid Referrer header had unexpected host for " + referrer);
+                throw new InvalidImageRequestReferrerException("Invalid Referrer header had unexpected host for " + referrer);
             }
         } catch (URISyntaxException e) {
-            throw new InvalidReferrerException("Invalid Referrer header was present but not a URI for " + referrer, e);
+            throw new InvalidImageRequestReferrerException("Invalid Referrer header was present but not a URI for " + referrer, e);
         }
     }
 

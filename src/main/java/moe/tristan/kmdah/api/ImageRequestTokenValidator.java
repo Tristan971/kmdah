@@ -5,9 +5,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 @Component
-public class ImageTokenValidator {
+public class ImageRequestTokenValidator {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ImageTokenValidator.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ImageRequestTokenValidator.class);
 
     void validate(String token, String chapter) {
         LOGGER.info("Not validating tokens.");

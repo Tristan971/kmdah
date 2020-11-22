@@ -4,13 +4,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ResponseStatus(code = HttpStatus.FORBIDDEN, reason = "Invalid referrer header.")
-final class InvalidReferrerException extends IllegalArgumentException {
+final class InvalidImageRequestReferrerException extends IllegalArgumentException {
 
-    public InvalidReferrerException(String s) {
+    public InvalidImageRequestReferrerException(String s) {
         super(s);
     }
 
-    public InvalidReferrerException(String message, Throwable cause) {
+    public InvalidImageRequestReferrerException(String message, Throwable cause) {
         super(message, cause);
     }
 
