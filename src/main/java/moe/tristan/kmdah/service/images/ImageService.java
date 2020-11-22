@@ -53,7 +53,7 @@ public class ImageService {
 
     private Mono<ImageContent> fetchFromUpstream(ImageSpec imageSpec) {
         return mangadexImageService
-            .download(imageSpec, "https://tbd")
+            .download(imageSpec, "https://s2.mangadex.org")
             .doOnNext(content -> {
                 LOGGER.info("Cache miss for {} - {}", imageSpec, content);
                 cacheModeCounter.record(CacheMode.MISS);
