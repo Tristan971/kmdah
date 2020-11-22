@@ -11,6 +11,6 @@ public interface CachedImageService {
 
     Mono<?> saveImage(ImageSpec imageSpec, ImageContent imageContent);
 
-    VacuumingResult vacuum(VacuumingRequest vacuumingRequest);
+    Mono<VacuumingResult> vacuum(VacuumingRequest vacuumingRequest);
 
 }

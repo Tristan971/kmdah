@@ -3,13 +3,18 @@ package moe.tristan.kmdah.cache.mongodb;
 import static java.util.Objects.requireNonNull;
 
 import java.util.OptionalLong;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+import org.bson.BsonValue;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.gridfs.ReactiveGridFsResource;
 import org.springframework.data.mongodb.gridfs.ReactiveGridFsTemplate;
 import org.springframework.http.HttpHeaders;
@@ -33,12 +38,15 @@ public class MongodbCachedImageService implements CachedImageService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MongodbCachedImageService.class);
 
-    private final ReactiveGridFsTemplate reactiveGridFsTemplate;
     private final ReactiveMongoTemplate reactiveMongoTemplate;
+    private final ReactiveGridFsTemplate reactiveGridFsTemplate;
 
-    public MongodbCachedImageService(ReactiveGridFsTemplate reactiveGridFsTemplate, ReactiveMongoTemplate reactiveMongoTemplate) {
-        this.reactiveGridFsTemplate = reactiveGridFsTemplate;
+    public MongodbCachedImageService(
+        ReactiveGridFsTemplate reactiveGridFsTemplate,
+        ReactiveMongoTemplate reactiveMongoTemplate
+    ) {
         this.reactiveMongoTemplate = reactiveMongoTemplate;
+        this.reactiveGridFsTemplate = reactiveGridFsTemplate;
     }
 
     @Override
@@ -64,14 +72,13 @@ public class MongodbCachedImageService implements CachedImageService {
     }
 
     @Override
-    public VacuumingResult vacuum(VacuumingRequest vacuumingRequest) {
-        reactiveMongoTemplate
-            .estimatedCount("fs.chunks")
-            .map(chunkCount -> chunkCount * 255)
-            .map(DataSize::ofBytes)
-            .filter(dataSize -> dataSize.toGigabytes() > vacuumingRequest.targetSize().toGigabytes())
-            .doOnNext(size -> LOGGER.info("Estimated cache size: {}GB", size.toGigabytes()))
-            .map()
+    public Mono<VacuumingResult> vacuum(VacuumingRequest vacuumingRequest) {
+        return reactiveMongoTemplate
+            .count(Query.query(Criteria.where("_id").exists(true)), "fs.chunks")
+            .flatMap(count -> {
+                DataSize estimatedSize = DataSize.ofKilobytes(count * 255);
+                return doVacuum(estimatedSize, vacuumingRequest.targetSize());
+            });
     }
 
     private Mono<ImageContent> zipResourceAsImageContent(ReactiveGridFsResource resource) {
@@ -98,6 +105,38 @@ public class MongodbCachedImageService implements CachedImageService {
 
     private String specToFilename(ImageSpec spec) {
         return String.join("/", spec.chapter(), spec.mode().name(), spec.file());
+    }
+
+    private Mono<VacuumingResult> doVacuum(DataSize current, DataSize max) {
+        double loadFactor = (double) current.toBytes() / (double) max.toBytes();
+        LOGGER.info("Cache fill factor: {}% ({}/{}GB)", (int) (loadFactor * 100), current.toGigabytes(), max.toGigabytes());
+
+        if (loadFactor < 1.) {
+            LOGGER.info("No need for vacuuming");
+            return Mono.just(new VacuumingResult(0L, DataSize.ofBytes(0L)));
+        }
+
+        return reactiveMongoTemplate
+            .count(Query.query(Criteria.where("_id").exists(true)), "fs.files")
+            .doOnNext(totalFileCount -> LOGGER.info("Total file count is {}", totalFileCount))
+            .map(totalFileCount -> (long) (totalFileCount - (totalFileCount / loadFactor)))
+            .doOnNext(toDeleteCount -> LOGGER.info("Will attempt deleting {} files", toDeleteCount))
+            .flatMap(toDeleteCount -> reactiveGridFsTemplate
+                .getResources("**")
+                .limitRequest(toDeleteCount)
+                .flatMap(ReactiveGridFsResource::getGridFSFile)
+                .collectList()
+            ).doOnNext(filesToDelete -> LOGGER.info("Collected {} files for deletion", filesToDelete.size()))
+            .flatMap(filesToDelete -> {
+                Set<BsonValue> toDeleteIds = filesToDelete.stream().map(GridFSFile::getId).collect(Collectors.toSet());
+                return reactiveGridFsTemplate
+                    .delete(Query.query(Criteria.where("_id").in(toDeleteIds)))
+                    .doOnSuccess(__ -> LOGGER.info("Successfully deleted files!"))
+                    .thenReturn(new VacuumingResult(
+                        filesToDelete.size(),
+                        DataSize.ofBytes(filesToDelete.stream().map(GridFSFile::getLength).mapToLong(Long::longValue).sum())
+                    ));
+            });
     }
 
 }

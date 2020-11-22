@@ -1,5 +1,7 @@
 package moe.tristan.kmdah.service.vacuum;
 
+import java.util.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -28,12 +30,17 @@ public class VacuumJob {
     @Scheduled(fixedDelay = 3600 * 1000)
     public void triggerVacuuming() {
         VacuumingRequest vacuumingRequest = new VacuumingRequest(DataSize.ofGigabytes(cacheSettings.maxSizeGb()));
-        VacuumingResult vacuumingResult = cachedImageService.vacuum(vacuumingRequest);
-        if (vacuumingResult.deletedFileCount() > 0) {
+        Optional<VacuumingResult> vacuumingResult = cachedImageService
+            .vacuum(vacuumingRequest)
+            .filter(result -> result.deletedFileCount() > 0)
+            .blockOptional();
+
+        if (vacuumingResult.isPresent()) {
+            VacuumingResult result = vacuumingResult.get();
             LOGGER.info(
                 "Vacuuming run done - freed {}MB by deleting {} files",
-                vacuumingResult.freedSpace().toMegabytes(),
-                vacuumingResult.deletedFileCount()
+                result.freedSpace().toMegabytes(),
+                result.deletedFileCount()
             );
         } else {
             LOGGER.info("Vacuuming run finished without any deletion");

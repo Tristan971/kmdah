@@ -10,6 +10,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.util.unit.DataSize;
+import reactor.core.publisher.Mono;
 
 import moe.tristan.kmdah.cache.CachedImageService;
 import moe.tristan.kmdah.cache.VacuumingRequest;
@@ -37,7 +38,7 @@ class VacuumJobTest {
         VacuumingRequest expectedVacuumingRequest = new VacuumingRequest(DataSize.ofGigabytes(cacheSettings.maxSizeGb()));
 
         when(cachedImageService.vacuum(eq(expectedVacuumingRequest)))
-            .thenReturn(new VacuumingResult(5L, DataSize.ofMegabytes(10)));
+            .thenReturn(Mono.just(new VacuumingResult(5L, DataSize.ofMegabytes(10))));
 
         vacuumJob.triggerVacuuming();
 
