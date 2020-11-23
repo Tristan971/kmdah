@@ -54,7 +54,6 @@ public class MongodbCachedImageService implements CachedImageService {
         String filename = specToFilename(imageSpec);
         return reactiveGridFsTemplate
             .getResource(filename)
-            .log()
             .flatMap(this::zipResourceAsImageContent)
             .doOnNext(imageContent -> LOGGER.info("Retrieved {} from MongoDB~GridFS as {}", imageSpec, imageContent));
     }

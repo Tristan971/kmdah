@@ -10,12 +10,12 @@
     </parent>
 
     <groupId>moe.tristan.kmdah</groupId>
-    <artifactId>kube-mdah</artifactId>
+    <artifactId>kmdah</artifactId>
     <version>${revision}</version>
     <packaging>jar</packaging>
 
-    <name>kube-mdah</name>
-    <description>A scalable mangadex client implementation</description>
+    <name>kmdah</name>
+    <description>A scalable mangadex@home client</description>
 
     <properties>
         <revision>local-SNAPSHOT</revision>

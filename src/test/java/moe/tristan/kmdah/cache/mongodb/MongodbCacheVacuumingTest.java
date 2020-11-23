@@ -44,11 +44,13 @@ import moe.tristan.kmdah.model.ImageSpec;
 @DirtiesContext
 class MongodbCacheVacuumingTest {
 
+    private static final int MONGODB_PORT = 27017;
+
     @Container
     private static final GenericContainer<?> MONGODB = new GenericContainer<>("library/mongo:4.4")
         .withEnv("MONGO_INITDB_ROOT_USERNAME", "kmdah")
         .withEnv("MONGO_INITDB_ROOT_PASSWORD", "kmdah")
-        .withExposedPorts(27017);
+        .withExposedPorts(MONGODB_PORT);
 
     @Autowired
     private ReactiveMongoTemplate reactiveMongoTemplate;
@@ -61,7 +63,7 @@ class MongodbCacheVacuumingTest {
         String mongoHost = MONGODB.getHost();
         System.setProperty("KMDAH_CACHE_MONGODB_HOST", mongoHost);
 
-        Integer mongoPort = MONGODB.getMappedPort(27017);
+        Integer mongoPort = MONGODB.getMappedPort(MONGODB_PORT);
         System.setProperty("KMDAH_CACHE_MONGODB_PORT", String.valueOf(mongoPort));
     }
 
