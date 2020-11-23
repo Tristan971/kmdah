@@ -2,6 +2,9 @@ package moe.tristan.kmdah.service.images;
 
 import static reactor.core.publisher.Mono.defer;
 
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -18,6 +21,7 @@ import moe.tristan.kmdah.service.metrics.CacheModeCounter;
 public class ImageService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ImageService.class);
+    private static final Executor CACHE_EXECUTOR = Executors.newWorkStealingPool();
 
     private final CachedImageService cachedImageService;
     private final CacheModeCounter cacheModeCounter;
@@ -54,13 +58,19 @@ public class ImageService {
     private Mono<ImageContent> fetchFromUpstream(ImageSpec imageSpec) {
         return mangadexImageService
             .download(imageSpec, "https://s2.mangadex.org")
-            .doOnNext(content -> {
-                LOGGER.info("Cache miss for {} - {}", imageSpec, content);
+            .map(content -> new ImageContent(
+                content.bytes().share(), // ensure we wrap the underlying flux as a multicast-enabled one
+                content.contentType(),
+                content.contentLength(),
+                content.cacheMode()
+            ))
+            .doFirst(() -> {
+                LOGGER.info("Cache miss for {}", imageSpec);
                 cacheModeCounter.record(CacheMode.MISS);
             })
             .doOnNext(content -> {
-                LOGGER.info("Scheduling caching for {} - {}", imageSpec, content);
-                cachedImageService.saveImage(imageSpec, content);
+                LOGGER.info("Scheduling caching for {}", imageSpec);
+                CACHE_EXECUTOR.execute(() -> cachedImageService.saveImage(imageSpec, content).subscribe());
             });
     }
 

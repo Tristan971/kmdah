@@ -1,5 +1,7 @@
 package moe.tristan.kmdah.mangadex.image;
 
+import static java.util.Objects.requireNonNull;
+
 import java.net.URI;
 import java.util.OptionalLong;
 
@@ -10,7 +12,6 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import moe.tristan.kmdah.cache.CacheMode;
@@ -48,13 +49,11 @@ public class MangadexImageService {
                     throw new MangadexUpstreamException("Upstream returned an error status code: " + entityFlux.getStatusCode());
                 }
 
-                Flux<DataBuffer> bytes = entityFlux.getBody();
-
                 MediaType contentType = entityFlux.getHeaders().getContentType();
                 long contentLength = entityFlux.getHeaders().getContentLength();
 
                 return new ImageContent(
-                    bytes,
+                    requireNonNull(entityFlux.getBody(), "Empty upstream response!"),
                     contentType,
                     contentLength != -1 ? OptionalLong.of(contentLength) : OptionalLong.empty(),
                     CacheMode.MISS
