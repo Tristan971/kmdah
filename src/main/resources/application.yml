@@ -1,0 +1,61 @@
+# Internal configuration
+spring:
+  application:
+    name: @project.artifactId@
+    version: @project.version@
+    spec: @mangadex.spec@
+
+  data:
+    mongodb:
+      host: ${kmdah.cache.mongodb.host}
+      port: ${kmdah.cache.mongodb.port}
+      authentication-database: ${kmdah.cache.mongodb.authentication-database}
+      username: ${kmdah.cache.mongodb.username}
+      password: ${kmdah.cache.mongodb.password}
+
+  config:
+    import: optional:file:${KMDAH_CONFIGURATION:config.yml}
+
+server:
+  port: ${kmdah.web.port}
+  shutdown: graceful
+  server-header: kube-mdah ${spring.application.version} (${spring.application.spec}) - github.com/Tristan971/kube-mdah
+
+logging.level:
+  root: WARN
+  moe.tristan.kmdah: INFO
+
+management:
+  endpoint.health.show-details: always
+  endpoints:
+    enabled-by-default: true
+    web:
+      base-path: /__mon
+      exposure.include:
+        - info
+        - health
+        - prometheus
+
+# User configuration
+kmdah:
+  cache:
+    max-size-gb: ${KMDAH_CACHE_MAX_SIZE_GB:100}
+    mongodb:
+      host: ${KMDAH_CACHE_MONGODB_HOST:localhost}
+      port: ${KMDAH_CACHE_MONGODB_PORT:27017}
+      authentication-database: ${KMDAH_CACHE_MONGODB_AUTHENTICATION_DATABASE:admin}
+      username: ${KMDAH_CACHE_MONGODB_USERNAME:kmdah}
+      password: ${KMDAH_CACHE_MONGODB_PASSWORD:kmdah}
+
+  k8s:
+    tls-secret:
+      name: ${KMDAH_K8S_TLS_SECRET_NAME:secret-name}
+      namespace: ${KMDAH_K8S_TLS_SECRET_NAMESPACE:default}
+
+  mangadex:
+    client-secret: ${KMDAH_MANGADEX_CLIENT_SECRET:asuka>rei}
+
+  web:
+    bandwidth-mbps: ${KMDAH_WEB_BANDWIDTH_MBPS:100}
+    port: ${KMDAH_WEB_PORT:8080}
+    graceful-shutdown-seconds: ${KMDAH_WEB_GRACEFUL_SHUTDOWN_SECONDS:60}

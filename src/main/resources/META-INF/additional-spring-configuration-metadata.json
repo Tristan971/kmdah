@@ -1,0 +1,14 @@
+{
+  "properties": [
+    {
+      "name": "spring.application.version",
+      "type": "java.lang.String",
+      "description": "Runtime version of the kmdah operator."
+    },
+    {
+      "name": "spring.application.spec",
+      "type": "java.lang.Integer",
+      "description": "Version of the mangadex unofficial client specification."
+    }
+  ]
+}

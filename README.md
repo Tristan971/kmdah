@@ -1,4 +1,4 @@
-# kube-mdah
+# kmdah
 
 A distributed mangadex@home (MDAH) client implementation
 
