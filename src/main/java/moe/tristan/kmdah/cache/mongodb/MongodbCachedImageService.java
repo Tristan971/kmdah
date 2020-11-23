@@ -65,10 +65,24 @@ public class MongodbCachedImageService implements CachedImageService {
 
         Document document = new Document();
         document.put(HttpHeaders.CONTENT_TYPE, imageContent.contentType().toString());
+        LOGGER.info("Storing {} in MongoDB~GridFS as {} with metadata: {}", imageSpec, filename, document.toString());
 
         return reactiveGridFsTemplate
             .store(imageContent.bytes(), filename, document)
-            .doOnNext(id -> LOGGER.info("Stored {} in MongoDB~GridFS as _id:{} with metadata: {}", imageSpec, id, document.toString()));
+            .doOnSuccess(objectId -> LOGGER.info(
+                "Stored {} in MongoDB~GridFS as _id:{}/{} with metadata: {}",
+                imageSpec,
+                objectId,
+                filename,
+                document.toString()
+            ))
+            .doOnError(err -> LOGGER.error(
+                "Failed storing {} in MongoFB~GridFS as {} with metadata: {}",
+                imageSpec,
+                filename,
+                document.toString(),
+                err
+            ));
     }
 
     @Override
