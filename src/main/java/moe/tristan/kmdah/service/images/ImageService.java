@@ -58,19 +58,18 @@ public class ImageService {
     private Mono<ImageContent> fetchFromUpstream(ImageSpec imageSpec) {
         return mangadexImageService
             .download(imageSpec, "https://s2.mangadex.org")
-            .map(content -> new ImageContent(
-                content.bytes().share(), // ensure we wrap the underlying flux as a multicast-enabled one
-                content.contentType(),
-                content.contentLength(),
-                content.cacheMode()
-            ))
             .doFirst(() -> {
                 LOGGER.info("Cache miss for {}", imageSpec);
                 cacheModeCounter.record(CacheMode.MISS);
             })
             .doOnNext(content -> {
                 LOGGER.info("Scheduling caching for {}", imageSpec);
-                CACHE_EXECUTOR.execute(() -> cachedImageService.saveImage(imageSpec, content).subscribe());
+                CACHE_EXECUTOR.execute(() ->
+                    cachedImageService
+                        .saveImage(imageSpec, content)
+                        .doOnSuccess(res -> LOGGER.info("Done caching {}", imageSpec))
+                        .subscribe()
+                );
             });
     }
 
