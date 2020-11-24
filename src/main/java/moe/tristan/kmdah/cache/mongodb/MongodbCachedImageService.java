@@ -11,7 +11,6 @@ import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -21,7 +20,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.unit.DataSize;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import com.mongodb.client.gridfs.model.GridFSFile;
@@ -54,7 +52,20 @@ public class MongodbCachedImageService implements CachedImageService {
         String filename = specToFilename(imageSpec);
         return reactiveGridFsTemplate
             .getResource(filename)
-            .flatMap(this::zipResourceAsImageContent)
+            .flatMap(resource -> resource.getGridFSFile().map(gridFsFile -> {
+                OptionalLong contentLength = OptionalLong.of(gridFsFile.getLength());
+
+                // parse metadata if exists
+                Document metadata = gridFsFile.getMetadata();
+                String mediaType = requireNonNull(metadata).getString(HttpHeaders.CONTENT_TYPE);
+
+                return new ImageContent(
+                    resource.getContent().share(),
+                    MediaType.parseMediaType(mediaType),
+                    contentLength,
+                    CacheMode.HIT
+                );
+            }))
             .doOnNext(imageContent -> LOGGER.info("Retrieved {} from MongoDB~GridFS as {}", imageSpec, imageContent));
     }
 
@@ -91,28 +102,6 @@ public class MongodbCachedImageService implements CachedImageService {
             .flatMap(count -> {
                 DataSize estimatedSize = DataSize.ofKilobytes(count * 255);
                 return doVacuum(estimatedSize, vacuumingRequest.targetSize());
-            });
-    }
-
-    private Mono<ImageContent> zipResourceAsImageContent(ReactiveGridFsResource resource) {
-        return Mono
-            .zip(resource.getGridFSFile(), Mono.just(resource.getContent()))
-            .map(fileAndBuffer -> {
-                GridFSFile file = fileAndBuffer.getT1();
-                Flux<DataBuffer> buffer = fileAndBuffer.getT2();
-
-                OptionalLong contentLength = OptionalLong.of(file.getLength());
-
-                // parse metadata if exists
-                Document metadata = file.getMetadata();
-                String mediaType = requireNonNull(metadata).getString(HttpHeaders.CONTENT_TYPE);
-
-                return new ImageContent(
-                    buffer,
-                    MediaType.parseMediaType(mediaType),
-                    contentLength,
-                    CacheMode.HIT
-                );
             });
     }
 
