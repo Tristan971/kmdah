@@ -2,15 +2,13 @@ package moe.tristan.kmdah.service.images;
 
 import static reactor.core.publisher.Mono.defer;
 
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import moe.tristan.kmdah.cache.CacheMode;
 import moe.tristan.kmdah.cache.CachedImageService;
 import moe.tristan.kmdah.mangadex.image.MangadexImageService;
 import moe.tristan.kmdah.model.ImageContent;
@@ -21,7 +19,6 @@ import moe.tristan.kmdah.service.metrics.CacheModeCounter;
 public class ImageService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ImageService.class);
-    private static final Executor CACHE_EXECUTOR = Executors.newWorkStealingPool();
 
     private final CachedImageService cachedImageService;
     private final CacheModeCounter cacheModeCounter;
@@ -43,32 +40,35 @@ public class ImageService {
                 LOGGER.error("Failed pulling {} from cache!", imageSpec, error);
                 return defer(() -> fetchFromUpstream(imageSpec));
             })
-            .switchIfEmpty(defer(() -> fetchFromUpstream(imageSpec)));
+            .switchIfEmpty(defer(() -> fetchFromUpstream(imageSpec)))
+            .doOnNext(content -> {
+                LOGGER.info("Cache {} for {}", content.cacheMode(), imageSpec);
+                cacheModeCounter.record(content.cacheMode());
+            });
     }
 
     private Mono<ImageContent> fetchFromCache(ImageSpec imageSpec) {
-        return cachedImageService
-            .findImage(imageSpec)
-            .doOnNext(content -> {
-                LOGGER.info("Cache hit for {} - {}", imageSpec, content);
-                cacheModeCounter.record(CacheMode.HIT);
-            });
+        return cachedImageService.findImage(imageSpec);
     }
 
     private Mono<ImageContent> fetchFromUpstream(ImageSpec imageSpec) {
         return mangadexImageService
             .download(imageSpec, "https://s2.mangadex.org")
-            .doFirst(() -> {
-                LOGGER.info("Cache miss for {}", imageSpec);
-                cacheModeCounter.record(CacheMode.MISS);
-            })
-            .doOnNext(content -> {
-                LOGGER.info("Scheduling caching for {}", imageSpec);
-                CACHE_EXECUTOR.execute(() ->
-                    cachedImageService
-                        .saveImage(imageSpec, content)
-                        .doOnSuccess(res -> LOGGER.info("Done caching {}", imageSpec))
-                        .subscribe()
+            .map(content -> {
+                Flux<DataBuffer> sourceImageBytes = content.bytes();
+
+                cachedImageService.saveImage(imageSpec, new ImageContent(
+                    Flux.from(sourceImageBytes),
+                    content.contentType(),
+                    content.contentLength(),
+                    content.cacheMode()
+                )).subscribe();
+
+                return new ImageContent(
+                    Flux.from(sourceImageBytes),
+                    content.contentType(),
+                    content.contentLength(),
+                    content.cacheMode()
                 );
             });
     }
