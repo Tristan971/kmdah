@@ -2,7 +2,6 @@ package moe.tristan.kmdah.mangadex.image;
 
 import static java.util.Objects.requireNonNull;
 
-import java.net.URI;
 import java.util.OptionalLong;
 
 import org.slf4j.Logger;
@@ -11,7 +10,6 @@ import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 
 import moe.tristan.kmdah.cache.CacheMode;
@@ -30,18 +28,9 @@ public class MangadexImageService {
     }
 
     public Mono<ImageContent> download(ImageSpec imageRequest, String upstreamServerUri) {
-        URI upstreamUri = UriComponentsBuilder
-            .fromHttpUrl(upstreamServerUri)
-            .path("{mode}/{chapter}/{file}")
-            .build(
-                imageRequest.mode().getPathFragment(),
-                imageRequest.chapter(),
-                imageRequest.file()
-            );
-
         return webClient
             .get()
-            .uri(upstreamUri)
+            .uri(upstreamServerUri + "/{mode}/{chapter}/{file}", imageRequest.mode().getPathFragment(), imageRequest.chapter(), imageRequest.file())
             .retrieve()
             .toEntityFlux(DataBuffer.class)
             .map(entityFlux -> {
