@@ -1,0 +1,35 @@
+version: "3.8"
+
+services:
+  mongo:
+    image: library/mongo:4.4
+    ports:
+      - 27017:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: kmdah
+      MONGO_INITDB_ROOT_PASSWORD: kmdah
+    networks:
+      - kmdah-test
+
+  kmdah:
+    depends_on: [ mongo ]
+    image: sha256:0ca26814cebbbc367705302f0fc22dc91b15bd477c4ae9292101d44efefc6480
+    ports:
+      - 8080:8080
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xms64M -Xmx384M"
+      KMDAH_CACHE_MONGODB_HOST: "mongo"
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: '512M'
+        reservations:
+          cpus: '1'
+          memory: '512M'
+    networks:
+      - kmdah-test
+
+networks:
+  kmdah-test:
+    name: kmdah-test
