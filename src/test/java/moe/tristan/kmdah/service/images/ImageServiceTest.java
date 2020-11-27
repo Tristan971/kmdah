@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayInputStream;
@@ -54,6 +55,7 @@ class ImageServiceTest {
         ImageContent cacheMissContent = sampleContent(CacheMode.MISS);
 
         when(cachedImageService.findImage(eq(SPEC))).thenReturn(Mono.empty());
+        when(cachedImageService.saveImage(eq(SPEC), any())).thenReturn(Mono.empty());
         when(mangadexImageService.download(eq(SPEC), any())).thenReturn(Mono.just(cacheMissContent));
 
         StepVerifier
@@ -89,6 +91,8 @@ class ImageServiceTest {
         ImageContent cacheMissContent = sampleContent(CacheMode.MISS);
 
         when(cachedImageService.findImage(eq(SPEC))).thenReturn(Mono.error(new IllegalStateException("Some underlying error!")));
+        when(cachedImageService.saveImage(eq(SPEC), any())).thenReturn(Mono.empty());
+
         when(mangadexImageService.download(eq(SPEC), any())).thenReturn(Mono.just(cacheMissContent));
 
         StepVerifier
@@ -115,7 +119,7 @@ class ImageServiceTest {
         verifyCachedCall();
         verifyUpstreamCall(1);
 
-        verifyCacheModeCounted(CacheMode.MISS);
+        verifyNoInteractions(cacheModeCounter);
     }
 
     private static ImageContent sampleContent(CacheMode cacheMode) {
