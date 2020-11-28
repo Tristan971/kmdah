@@ -111,6 +111,10 @@
 
         <!-- k8s integration -->
         <dependency>
+            <groupId>org.springframework.integration</groupId>
+            <artifactId>spring-integration-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.kubernetes</groupId>
             <artifactId>client-java</artifactId>
             <version>10.0.0</version>
@@ -143,6 +147,11 @@
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>mockwebserver</artifactId>
             <version>4.9.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-inline</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

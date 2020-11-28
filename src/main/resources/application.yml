@@ -47,6 +47,10 @@ kmdah:
       username: ${KMDAH_CACHE_MONGODB_USERNAME:kmdah}
       password: ${KMDAH_CACHE_MONGODB_PASSWORD:kmdah}
 
+  candidacy:
+    id-generation-method: ${KMDAH_CANDIDACY_ID_GENERATION_METHOD:HOSTNAME}
+    static-id: ${KMDAH_CANDIDACY_STATIC_ID}
+
   k8s:
     tls-secret:
       name: ${KMDAH_K8S_TLS_SECRET_NAME:secret-name}
