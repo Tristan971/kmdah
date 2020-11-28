@@ -13,6 +13,11 @@ spring:
       username: ${kmdah.cache.mongodb.username}
       password: ${kmdah.cache.mongodb.password}
 
+  redis:
+    host: ${kmdah.leadership.redis.host}
+    port: ${kmdah.leadership.redis.port}
+    password: ${kmdah.leadership.redis.password}
+
   config:
     import: optional:file:${KMDAH_CONFIGURATION:config.yml}
 
@@ -47,9 +52,13 @@ kmdah:
       username: ${KMDAH_CACHE_MONGODB_USERNAME:kmdah}
       password: ${KMDAH_CACHE_MONGODB_PASSWORD:kmdah}
 
-  candidacy:
-    id-generation-method: ${KMDAH_CANDIDACY_ID_GENERATION_METHOD:HOSTNAME}
-    static-id: ${KMDAH_CANDIDACY_STATIC_ID}
+  leadership:
+    id-generation-method: ${KMDAH_LEADERSHIP_ID_GENERATION_METHOD:HOSTNAME}
+    static-id: ${KMDAH_LEADERSHIP_STATIC_ID}
+    redis:
+      host: ${KMDAH_LEADERSHIP_REDIS_HOST:localhost}
+      port: ${KMDAH_LEADERSHIP_REDIS_PORT:6379}
+      lock-registry-key: ${KMDAH_LEADERSHIP_REDIS_LOCK_REGISTRY_KEY:kmdah-leadership}
 
   k8s:
     tls-secret:

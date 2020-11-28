@@ -16,24 +16,25 @@ import org.springframework.stereotype.Component;
 public class LeadershipCandidate extends AbstractCandidate {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LeadershipCandidate.class);
+    private static final String LEADERSHIP_ROLE = "kmdah-leadership";
 
-    public LeadershipCandidate(CandidacySettings candidacySettings) {
-        super(resolveId(candidacySettings), null);
+    public LeadershipCandidate(LeadershipSettings leadershipSettings) {
+        super(resolveId(leadershipSettings), LEADERSHIP_ROLE);
         LOGGER.info("Will participate in leadership elections for role [{}] as [{}]", getRole(), getId());
     }
 
     @Override
     public void onGranted(Context ctx) throws InterruptedException {
-
+        LOGGER.info("Was elected leader for {}", ctx.getRole());
     }
 
     @Override
     public void onRevoked(Context ctx) {
-
+        LOGGER.info("Leadership mandate for {} was revoked. No longer elected.", ctx.getRole());
     }
 
-    private static String resolveId(CandidacySettings candidacySettings) {
-        return switch (candidacySettings.idGenerationMethod()) {
+    private static String resolveId(LeadershipSettings leadershipSettings) {
+        return switch (leadershipSettings.idGenerationMethod()) {
             case RANDOM_UUID -> {
                 LOGGER.info("Generating candidacy id from a random UUID");
                 yield UUID.randomUUID().toString();
@@ -45,7 +46,7 @@ public class LeadershipCandidate extends AbstractCandidate {
             case STATIC -> {
                 LOGGER.info("Using static candidacy id");
                 String staticId = requireNonNull(
-                    candidacySettings.staticId(),
+                    leadershipSettings.staticId(),
                     "When using candidacy id generation method STATIC, you must set an explicit id value!"
                 );
                 if (staticId.isBlank()) {

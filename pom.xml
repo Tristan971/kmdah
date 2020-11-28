@@ -109,11 +109,21 @@
             <artifactId>spring-boot-starter-data-mongodb-reactive</artifactId>
         </dependency>
 
-        <!-- k8s integration -->
+        <!-- Distributed leadership -->
         <dependency>
             <groupId>org.springframework.integration</groupId>
             <artifactId>spring-integration-core</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.integration</groupId>
+            <artifactId>spring-integration-redis</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
+        <!-- k8s integration -->
         <dependency>
             <groupId>io.kubernetes</groupId>
             <artifactId>client-java</artifactId>

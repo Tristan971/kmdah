@@ -10,18 +10,18 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
-import moe.tristan.kmdah.service.elections.CandidacySettings.CandidacyIdGenerationMethod;
+import moe.tristan.kmdah.service.elections.LeadershipSettings.CandidateIdGenerationMethod;
 
 class LeadershipCandidateTest {
 
     @Test
     void fromHostname() throws UnknownHostException {
-        CandidacySettings candidacySettings = new CandidacySettings(
-            CandidacyIdGenerationMethod.HOSTNAME,
+        LeadershipSettings leadershipSettings = new LeadershipSettings(
+            CandidateIdGenerationMethod.HOSTNAME,
             "static-id"
         );
 
-        LeadershipCandidate leadershipCandidate = new LeadershipCandidate(candidacySettings);
+        LeadershipCandidate leadershipCandidate = new LeadershipCandidate(leadershipSettings);
 
         String expected = Inet4Address.getLocalHost().getHostName();
         assertThat(leadershipCandidate.getId()).isEqualTo(expected);
@@ -34,9 +34,9 @@ class LeadershipCandidateTest {
             //noinspection ResultOfMethodCallIgnored
             uuid.when(UUID::randomUUID).thenReturn(expected);
 
-            CandidacySettings candidacySettings = new CandidacySettings(CandidacyIdGenerationMethod.RANDOM_UUID, "static-id");
+            LeadershipSettings leadershipSettings = new LeadershipSettings(CandidateIdGenerationMethod.RANDOM_UUID, "static-id");
 
-            LeadershipCandidate leadershipCandidate = new LeadershipCandidate(candidacySettings);
+            LeadershipCandidate leadershipCandidate = new LeadershipCandidate(leadershipSettings);
 
             assertThat(leadershipCandidate.getId()).isEqualTo(expected.toString());
         }
@@ -44,12 +44,12 @@ class LeadershipCandidateTest {
 
     @Test
     void fromStatic() {
-        CandidacySettings candidacySettings = new CandidacySettings(
-            CandidacyIdGenerationMethod.STATIC,
+        LeadershipSettings leadershipSettings = new LeadershipSettings(
+            CandidateIdGenerationMethod.STATIC,
             "static-id"
         );
 
-        LeadershipCandidate leadershipCandidate = new LeadershipCandidate(candidacySettings);
+        LeadershipCandidate leadershipCandidate = new LeadershipCandidate(leadershipSettings);
 
         assertThat(leadershipCandidate.getId()).isEqualTo("static-id");
     }

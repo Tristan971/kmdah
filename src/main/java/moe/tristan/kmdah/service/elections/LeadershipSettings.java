@@ -3,17 +3,17 @@ package moe.tristan.kmdah.service.elections;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConstructorBinding;
 
-@ConfigurationProperties("kmdah.candidacy")
+@ConfigurationProperties("kmdah.leadership")
 @ConstructorBinding
-public record CandidacySettings(
+public record LeadershipSettings(
 
-    CandidacyIdGenerationMethod idGenerationMethod,
+    CandidateIdGenerationMethod idGenerationMethod,
 
     String staticId
 
 ) {
 
-    public enum CandidacyIdGenerationMethod {
+    public enum CandidateIdGenerationMethod {
         STATIC,
         HOSTNAME,
         RANDOM_UUID

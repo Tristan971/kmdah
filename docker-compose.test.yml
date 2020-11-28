@@ -10,9 +10,26 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: kmdah
     networks:
       - kmdah-test
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: '512M'
+
+  redis:
+    image: library/redis:6-alpine
+    ports:
+      - 6379:6379
+    networks:
+      - kmdah-test
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: '200M'
 
   kmdah:
-    depends_on: [ mongo ]
+    depends_on: [ mongo, redis ]
     image: sha256:0ca26814cebbbc367705302f0fc22dc91b15bd477c4ae9292101d44efefc6480
     ports:
       - 8080:8080
@@ -22,9 +39,6 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1'
-          memory: '512M'
-        reservations:
           cpus: '1'
           memory: '512M'
     networks:
