@@ -43,6 +43,9 @@ management:
 
 # User configuration
 kmdah:
+  id:
+    generation-method: ${KMDAH_ID_GENERATION_METHOD:random_uuid}
+
   cache:
     max-size-gb: ${KMDAH_CACHE_MAX_SIZE_GB:100}
     mongodb:
@@ -52,13 +55,11 @@ kmdah:
       username: ${KMDAH_CACHE_MONGODB_USERNAME:kmdah}
       password: ${KMDAH_CACHE_MONGODB_PASSWORD:kmdah}
 
-  leadership:
-    id-generation-method: ${KMDAH_LEADERSHIP_ID_GENERATION_METHOD:HOSTNAME}
-    static-id: ${KMDAH_LEADERSHIP_STATIC_ID}
-    redis:
-      host: ${KMDAH_LEADERSHIP_REDIS_HOST:localhost}
-      port: ${KMDAH_LEADERSHIP_REDIS_PORT:6379}
-      lock-registry-key: ${KMDAH_LEADERSHIP_REDIS_LOCK_REGISTRY_KEY:kmdah-leadership}
+  redis:
+    host: ${KMDAH_LEADERSHIP_REDIS_HOST:localhost}
+    port: ${KMDAH_LEADERSHIP_REDIS_PORT:6379}
+    topic: ${KMDAH_LEADERSHIP_REDIS_TOPIC:kmdah}
+    lock-registry-key: ${KMDAH_LEADERSHIP_REDIS_LOCK_REGISTRY_KEY:kmdah-leadership}
 
   k8s:
     tls-secret:

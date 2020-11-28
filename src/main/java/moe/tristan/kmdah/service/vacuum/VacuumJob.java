@@ -4,7 +4,6 @@ import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.unit.DataSize;
 
@@ -26,8 +25,6 @@ public class VacuumJob {
         this.cachedImageService = cachedImageService;
     }
 
-    // once per hour, 3s initial delay
-    @Scheduled(initialDelay = 5000, fixedDelay = 3600 * 1000)
     public void triggerVacuuming() {
         VacuumingRequest vacuumingRequest = new VacuumingRequest(DataSize.ofGigabytes(cacheSettings.maxSizeGb()));
         Optional<VacuumingResult> vacuumingResult = cachedImageService
