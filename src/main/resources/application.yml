@@ -23,7 +23,7 @@ spring:
 server:
   port: ${kmdah.worker.port}
   shutdown: graceful
-  server-header: kube-mdah ${spring.application.version} (${spring.application.spec}) - github.com/Tristan971/kube-mdah
+  server-header: kmdah ${spring.application.version} (${spring.application.spec}) - github.com/Tristan971/kmdah
 
 logging.level:
   root: WARN
