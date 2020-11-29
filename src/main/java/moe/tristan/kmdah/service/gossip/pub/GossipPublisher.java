@@ -8,26 +8,47 @@ import org.springframework.stereotype.Component;
 import moe.tristan.kmdah.service.gossip.GossipMessage;
 import moe.tristan.kmdah.service.gossip.InstanceId;
 import moe.tristan.kmdah.service.gossip.RedisSettings;
+import moe.tristan.kmdah.service.workers.WorkerInfo;
+import moe.tristan.kmdah.service.workers.WorkerSettings;
 
 @Component
 public class GossipPublisher {
 
     private final InstanceId instanceId;
     private final RedisSettings redisSettings;
+    private final WorkerSettings workerSettings;
     private final RedisTemplate<String, GossipMessage> workerEventsRedisTemplate;
 
-    public GossipPublisher(InstanceId instanceId, RedisSettings redisSettings, RedisTemplate<String, GossipMessage> workerEventsRedisTemplate) {
+    public GossipPublisher(
+        InstanceId instanceId,
+        RedisSettings redisSettings,
+        WorkerSettings workerSettings,
+        RedisTemplate<String, GossipMessage> workerEventsRedisTemplate
+    ) {
         this.instanceId = instanceId;
         this.redisSettings = redisSettings;
+        this.workerSettings = workerSettings;
         this.workerEventsRedisTemplate = workerEventsRedisTemplate;
     }
 
     public void broadcastPing() {
-        workerEventsRedisTemplate.convertAndSend(redisSettings.topic(), new GossipMessage(instanceId.id(), GossipMessageType.PING));
+        workerEventsRedisTemplate.convertAndSend(
+            redisSettings.gossipTopic(),
+            new GossipMessage(
+                new WorkerInfo(instanceId.id(), workerSettings.bandwidthMbps()),
+                GossipMessageType.PING
+            )
+        );
     }
 
     public void broadcastShutdown() {
-        workerEventsRedisTemplate.convertAndSend(redisSettings.topic(), new GossipMessage(instanceId.id(), GossipMessageType.SHUTDOWN));
+        workerEventsRedisTemplate.convertAndSend(
+            redisSettings.gossipTopic(),
+            new GossipMessage(
+                new WorkerInfo(instanceId.id(), workerSettings.bandwidthMbps()),
+                GossipMessageType.SHUTDOWN
+            )
+        );
     }
 
 }

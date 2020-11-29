@@ -22,7 +22,7 @@ public class GossipSubscriberConfiguration {
         redisMessageListenerContainer.setConnectionFactory(redisConnectionFactory);
         redisMessageListenerContainer.addMessageListener(
             new MessageListenerAdapter(gossipSubscriber),
-            ChannelTopic.of(redisSettings.topic())
+            ChannelTopic.of(redisSettings.gossipTopic())
         );
         return redisMessageListenerContainer;
     }

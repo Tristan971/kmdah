@@ -34,8 +34,8 @@ services:
     ports:
       - 8080:8080
     environment:
-      JAVA_TOOL_OPTIONS: "-Xms64M -Xmx384M"
       KMDAH_CACHE_MONGODB_HOST: "mongo"
+      KMDAH_GOSSIP_REDIS_HOST: "redis"
     deploy:
       resources:
         limits:

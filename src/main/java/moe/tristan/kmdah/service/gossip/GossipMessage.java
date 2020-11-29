@@ -2,10 +2,12 @@ package moe.tristan.kmdah.service.gossip;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import moe.tristan.kmdah.service.workers.WorkerInfo;
+
 public record GossipMessage(
 
-    @JsonProperty("instanceId")
-    String instanceId,
+    @JsonProperty("worker")
+    WorkerInfo worker,
 
     @JsonProperty("type")
     GossipMessageType type

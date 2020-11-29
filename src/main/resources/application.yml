@@ -14,21 +14,23 @@ spring:
       password: ${kmdah.cache.mongodb.password}
 
   redis:
-    host: ${kmdah.redis.host}
-    port: ${kmdah.redis.port}
+    host: ${kmdah.gossip.redis.host}
+    port: ${kmdah.gossip.redis.port}
 
   config:
     import: optional:file:${KMDAH_CONFIGURATION:config.yml}
 
 server:
-  port: ${kmdah.web.port}
+  port: ${kmdah.worker.port}
   shutdown: graceful
   server-header: kube-mdah ${spring.application.version} (${spring.application.spec}) - github.com/Tristan971/kube-mdah
 
 logging.level:
   root: WARN
   moe.tristan.kmdah: INFO
-  org.springframework.data.convert.CustomConversions: ERROR
+  org.springframework:
+    data.convert.CustomConversions: ERROR
+    integration.leader: INFO
 
 management:
   endpoint.health.show-details: always
@@ -43,8 +45,6 @@ management:
 
 # User configuration
 kmdah:
-  gossip:
-    id-generation-strategy: ${KMDAH_ID_GENERATION_METHOD:random_uuid}
 
   cache:
     max-size-gb: ${KMDAH_CACHE_MAX_SIZE_GB:100}
@@ -55,11 +55,13 @@ kmdah:
       username: ${KMDAH_CACHE_MONGODB_USERNAME:kmdah}
       password: ${KMDAH_CACHE_MONGODB_PASSWORD:kmdah}
 
-  redis:
-    host: ${KMDAH_LEADERSHIP_REDIS_HOST:localhost}
-    port: ${KMDAH_LEADERSHIP_REDIS_PORT:6379}
-    topic: ${KMDAH_LEADERSHIP_REDIS_TOPIC:kmdah}
-    lock-registry-key: ${KMDAH_LEADERSHIP_REDIS_LOCK_REGISTRY_KEY:kmdah-leadership}
+  gossip:
+    id-generation-strategy: ${KMDAH_GOSSIP_ID_GENERATION_METHOD:random_uuid}
+    redis:
+      host: ${KMDAH_GOSSIP_REDIS_HOST:localhost}
+      port: ${KMDAH_GOSSIP_REDIS_PORT:6379}
+      gossip-topic: ${KMDAH_GOSSIP_REDIS_TOPIC:kmdah}
+      lock-registry-key: ${KMDAH_GOSSIP_REDIS_LOCK_REGISTRY_KEY:kmdah-leadership}
 
   k8s:
     tls-secret:
@@ -69,7 +71,6 @@ kmdah:
   mangadex:
     client-secret: ${KMDAH_MANGADEX_CLIENT_SECRET:asuka>rei}
 
-  web:
-    bandwidth-mbps: ${KMDAH_WEB_BANDWIDTH_MBPS:100}
-    port: ${KMDAH_WEB_PORT:8080}
-    graceful-shutdown-seconds: ${KMDAH_WEB_GRACEFUL_SHUTDOWN_SECONDS:60}
+  worker:
+    port: ${KMDAH_WORKER_PORT:8080}
+    bandwidth-mbps: ${KMDAH_WORKER_BANDWIDTH_MBPS:100}

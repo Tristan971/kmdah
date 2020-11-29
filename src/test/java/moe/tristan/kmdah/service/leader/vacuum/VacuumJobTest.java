@@ -1,4 +1,4 @@
-package moe.tristan.kmdah.service.vacuum;
+package moe.tristan.kmdah.service.leader.vacuum;
 
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -40,7 +40,7 @@ class VacuumJobTest {
         when(cachedImageService.vacuum(eq(expectedVacuumingRequest)))
             .thenReturn(Mono.just(new VacuumingResult(5L, DataSize.ofMegabytes(10))));
 
-        vacuumJob.triggerVacuuming();
+        vacuumJob.run();
 
         verify(cachedImageService).vacuum(eq(expectedVacuumingRequest));
     }

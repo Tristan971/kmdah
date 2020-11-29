@@ -13,7 +13,11 @@ public class GossipConfiguration {
     @Bean
     InstanceId instanceId(GossipSettings gossipSettings) {
         String id = InstanceId.generateId(gossipSettings.idGenerationStrategy());
-        LOGGER.info("Assigned id {} to this instance by {} strategy", id, gossipSettings.idGenerationStrategy());
+        if (id == null || id.isBlank()) {
+            throw new IllegalStateException("Instance id [" + id + "] is not valid!");
+        }
+
+        LOGGER.info("Assigned id [{}] to this instance by [{}] strategy", id, gossipSettings.idGenerationStrategy());
         return new InstanceId(id);
     }
 

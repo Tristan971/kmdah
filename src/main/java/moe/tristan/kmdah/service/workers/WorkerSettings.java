@@ -4,13 +4,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConstructorBinding;
 
 @ConstructorBinding
-@ConfigurationProperties("kmdah.web")
-public record NetworkSettings(
+@ConfigurationProperties("kmdah.worker")
+public record WorkerSettings(
 
     int port,
 
-    int bandwidthMbps,
-
-    int gracefulShutdownSeconds
+    int bandwidthMbps
 
 ) {}

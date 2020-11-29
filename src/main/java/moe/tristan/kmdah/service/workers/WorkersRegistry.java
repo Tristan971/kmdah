@@ -1,44 +1,70 @@
 package moe.tristan.kmdah.service.workers;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import moe.tristan.kmdah.service.gossip.GossipMessage;
 
 @Component
 public class WorkersRegistry {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(WorkersRegistry.class);
 
-    private final ObjectMapper objectMapper;
-    private final Map<String, Instant> knownWorkers;
+    private final Map<WorkerInfo, Instant> knownWorkers;
 
-    public WorkersRegistry(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
+    public WorkersRegistry() {
         this.knownWorkers = new ConcurrentHashMap<>();
     }
 
-    void registerWorker(String uuid) {
-        Instant previous = knownWorkers.put(uuid, Instant.now());
-        if (previous == null) {
-            LOGGER.info("Registered worker [{}] (known workers: [{}])", uuid, knownWorkers.keySet());
-        } else {
-            LOGGER.info("Received heartbeat from [{}]", uuid);
+    public long getTotalBandwidthMbps() {
+        return knownWorkers
+            .keySet()
+            .stream()
+            .mapToLong(WorkerInfo::bandwidthMbps)
+            .reduce(Long::sum)
+            .orElse(1L);
+    }
+
+    @EventListener(GossipMessage.class)
+    public void receiveGossip(GossipMessage gossipMessage) {
+        switch (gossipMessage.type()) {
+            case PING -> registerWorker(gossipMessage.worker());
+            case SHUTDOWN -> unregisterWorker(gossipMessage.worker());
         }
     }
 
-    void unregisterWorker(String uuid) {
-        Instant worker = knownWorkers.remove(uuid);
-        if (worker == null) {
-            LOGGER.warn("Tried unregistering [{}], but it wasn't registered!", uuid);
+    void registerWorker(WorkerInfo workerInfo) {
+        Instant previous = knownWorkers.put(workerInfo, Instant.now());
+        if (previous == null) {
+            LOGGER.info("Registered worker [{}]", workerInfo.id());
+            logWorkersState();
         } else {
-            LOGGER.info("Unregistered [{}] (known workers: [{}])", uuid, knownWorkers.keySet());
+            LOGGER.info("Received heartbeat from [{}]", workerInfo.id());
         }
+    }
+
+    void unregisterWorker(WorkerInfo workerInfo) {
+        Instant worker = knownWorkers.remove(workerInfo);
+        if (worker == null) {
+            LOGGER.warn("Tried unregistering [{}], but it wasn't registered!", workerInfo.id());
+        } else {
+            LOGGER.info("Unregistered [{}]", workerInfo.id());
+            logWorkersState();
+        }
+    }
+
+    void logWorkersState() {
+        List<String> workerList = knownWorkers.keySet().stream().map(WorkerInfo::id).sorted().collect(Collectors.toList());
+        long totalBandwidthMbps = getTotalBandwidthMbps();
+        LOGGER.info("Worker registry now contains: {} for a total of {}Mbps of bandwidth", workerList, totalBandwidthMbps);
     }
 
 }

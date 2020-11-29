@@ -4,7 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConstructorBinding;
 
 @ConstructorBinding
-@ConfigurationProperties("kmdah.redis")
+@ConfigurationProperties("kmdah.gossip.redis")
 public record RedisSettings(
 
     String host,
@@ -13,6 +13,6 @@ public record RedisSettings(
 
     String lockRegistryKey,
 
-    String topic
+    String gossipTopic
 
 ) {}
