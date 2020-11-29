@@ -1,6 +1,7 @@
 package moe.tristan.kmdah.mangadex.ping;
 
-import java.time.ZonedDateTime;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -14,8 +15,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import moe.tristan.kmdah.mangadex.MangadexApi;
-import moe.tristan.kmdah.service.images.cache.CacheSettings;
 import moe.tristan.kmdah.mangadex.MangadexSettings;
+import moe.tristan.kmdah.service.images.cache.CacheSettings;
 
 @Service
 public class PingService {
@@ -40,7 +41,7 @@ public class PingService {
         this.mangadexSettings = mangadexSettings;
     }
 
-    public Mono<PingResponse> ping(Optional<ZonedDateTime> lastCreatedAt, DataSize poolSpeed) {
+    public Mono<PingResponse> ping(Optional<LocalDateTime> lastCreatedAt, DataSize poolSpeed) {
         long networkSpeedBytesPerSecond = poolSpeed.toBytes();
         if (networkSpeedBytesPerSecond == 0L) {
             LOGGER.warn("Trying to ping for an empty pool! Requesting 1B/s speed instead.");
@@ -52,7 +53,7 @@ public class PingService {
             443,
             DataSize.ofGigabytes(cacheSettings.maxSizeGb()).toBytes(),
             networkSpeedBytesPerSecond,
-            lastCreatedAt,
+            lastCreatedAt.map(ldt -> ldt.atZone(ZoneOffset.UTC)),
             19
         );
 

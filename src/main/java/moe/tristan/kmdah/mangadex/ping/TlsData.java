@@ -21,4 +21,15 @@ public record TlsData(
     @JsonProperty("certificate")
     String certificate
 
-) {}
+) {
+
+    @Override
+    public String toString() {
+        return "TlsData[" +
+            "createdAt=" + createdAt +
+            ", privateKey=*** (" + privateKey.length() + ")" +
+            ", certificate=*** (" + certificate.length() + ")" +
+            ']';
+    }
+
+}

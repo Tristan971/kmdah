@@ -29,8 +29,7 @@ public class WorkersRegistry {
             .keySet()
             .stream()
             .mapToLong(WorkerInfo::bandwidthMbps)
-            .reduce(Long::sum)
-            .orElse(1L);
+            .sum();
     }
 
     @EventListener(GossipMessage.class)

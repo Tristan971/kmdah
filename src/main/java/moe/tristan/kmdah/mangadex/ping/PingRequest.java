@@ -38,9 +38,8 @@ public record PingRequest(
 
     @Override
     public String toString() {
-        //noinspection SuspiciousRegexArgument
         return "PingRequest[" +
-            "secret=" + secret.replaceAll(".", "*") +
+            "secret=***" +
             ", port=" + port +
             ", diskSpace=" + diskSpace +
             ", networkSpeed=" + networkSpeed +
