@@ -2,15 +2,22 @@
 
 A distributed mangadex@home (MDAH) client implementation
 
-## Design
+## Architecture and prerequisites
 
-An operator node serves as heartbeat for the mangadex API to keep the client registered, and dynamically update the client settings of the distributed client.
+![Architecture](docs/architecture.svg)
 
-This operator node can then be used as a soft load-balancer for the worker nodes to register against.
+kmdah is a distributed-first implementation which ensures that instances can always start, stop or lose connectivity.
 
-This is achieved either through a load-balancer (once the MDAH backend supports host ip overriding), or by issuing temporary redirect responses to incoming
-requests, effectively acting as a "soft" load-balancer.
+To achieve this, we ensure they all have a uniquely identifying name. Then they use Redis both for cross-instance
+leadership elections, discovery and synchronisation.
 
----
+### Discovery, leadership and synchronisation
 
-Rest of the documentation is tbd until done.
+On start-up each instance broadcasts its identifier through redis PubSub, and keeps doing so for its whole lifetime.
+All instances listen for such events and keep a local registry of known peers. This ensures that each instance is 
+always ready to pick up leadership if it ever needs to.
+
+On the topic of leadership, elections happen constantly, using Redis. It relies on Spring Integration's
+RedisLockRegistry, and thus effectively is an expiring lock that is acquired on a first-come first-served
+basis. Because it is expirable, a "dead" leader that didn't release it properly will not cause the cluster
+to deadlock.
