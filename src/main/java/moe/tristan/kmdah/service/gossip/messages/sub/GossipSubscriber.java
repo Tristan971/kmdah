@@ -1,4 +1,4 @@
-package moe.tristan.kmdah.service.gossip.sub;
+package moe.tristan.kmdah.service.gossip.messages.sub;
 
 import java.io.IOException;
 
@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import moe.tristan.kmdah.service.gossip.GossipMessage;
+import moe.tristan.kmdah.service.gossip.messages.GossipMessage;
 
 /**
  * Forwards redis cluster-wide gossip events through the local Spring event bus

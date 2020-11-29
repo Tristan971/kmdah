@@ -1,4 +1,4 @@
-package moe.tristan.kmdah.service.gossip.sub;
+package moe.tristan.kmdah.service.gossip.messages.sub;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

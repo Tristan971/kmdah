@@ -1,4 +1,4 @@
-package moe.tristan.kmdah.service.gossip.pub;
+package moe.tristan.kmdah.service.gossip.messages.pub;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,7 +8,7 @@ import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSeriali
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import moe.tristan.kmdah.service.gossip.GossipMessage;
+import moe.tristan.kmdah.service.gossip.messages.GossipMessage;
 
 @Configuration
 public class GossipPublisherConfiguration {

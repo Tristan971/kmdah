@@ -12,7 +12,7 @@ import reactor.core.Disposable;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
-import moe.tristan.kmdah.service.gossip.pub.GossipPublisher;
+import moe.tristan.kmdah.service.gossip.messages.pub.GossipPublisher;
 
 @Component
 public class KmdahLifecycle implements SmartLifecycle {

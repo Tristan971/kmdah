@@ -11,7 +11,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-import moe.tristan.kmdah.service.gossip.GossipMessage;
+import moe.tristan.kmdah.service.gossip.messages.WorkerPingEvent;
+import moe.tristan.kmdah.service.gossip.messages.WorkerShutdownEvent;
 
 @Component
 public class WorkersRegistry {
@@ -32,30 +33,24 @@ public class WorkersRegistry {
             .sum();
     }
 
-    @EventListener(GossipMessage.class)
-    public void receiveGossip(GossipMessage gossipMessage) {
-        switch (gossipMessage.type()) {
-            case PING -> registerWorker(gossipMessage.worker());
-            case SHUTDOWN -> unregisterWorker(gossipMessage.worker());
-        }
-    }
-
-    void registerWorker(WorkerInfo workerInfo) {
-        Instant previous = knownWorkers.put(workerInfo, Instant.now());
+    @EventListener(WorkerPingEvent.class)
+    public void registerWorker(WorkerPingEvent pingEvent) {
+        Instant previous = knownWorkers.put(pingEvent.worker(), Instant.now());
         if (previous == null) {
-            LOGGER.info("Registered worker [{}]", workerInfo.id());
+            LOGGER.info("Registered worker [{}]", pingEvent.worker().id());
             logWorkersState();
         } else {
-            LOGGER.info("Received heartbeat from [{}]", workerInfo.id());
+            LOGGER.info("Received heartbeat from [{}]", pingEvent.worker().id());
         }
     }
 
-    void unregisterWorker(WorkerInfo workerInfo) {
-        Instant worker = knownWorkers.remove(workerInfo);
+    @EventListener(WorkerShutdownEvent.class)
+    public void unregisterWorker(WorkerShutdownEvent shutdownEvent) {
+        Instant worker = knownWorkers.remove(shutdownEvent.worker());
         if (worker == null) {
-            LOGGER.warn("Tried unregistering [{}], but it wasn't registered!", workerInfo.id());
+            LOGGER.warn("Tried unregistering [{}], but it wasn't registered!", shutdownEvent.worker().id());
         } else {
-            LOGGER.info("Unregistered [{}]", workerInfo.id());
+            LOGGER.info("Unregistered [{}]", shutdownEvent.worker().id());
             logWorkersState();
         }
     }
