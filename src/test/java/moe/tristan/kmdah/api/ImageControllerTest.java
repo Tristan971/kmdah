@@ -26,11 +26,15 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import moe.tristan.kmdah.cache.CacheMode;
+import moe.tristan.kmdah.service.images.cache.CacheMode;
 import moe.tristan.kmdah.mangadex.image.ImageMode;
-import moe.tristan.kmdah.model.ImageContent;
-import moe.tristan.kmdah.model.ImageSpec;
+import moe.tristan.kmdah.service.images.ImageContent;
+import moe.tristan.kmdah.service.images.ImageSpec;
 import moe.tristan.kmdah.service.images.ImageService;
+import moe.tristan.kmdah.service.images.validation.ImageRequestReferrerValidator;
+import moe.tristan.kmdah.service.images.validation.ImageRequestTokenValidator;
+import moe.tristan.kmdah.service.images.validation.InvalidImageRequestReferrerException;
+import moe.tristan.kmdah.service.images.validation.InvalidImageRequestTokenException;
 
 @WebFluxTest(ImageController.class)
 class ImageControllerTest {

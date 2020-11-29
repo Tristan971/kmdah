@@ -21,9 +21,9 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import moe.tristan.kmdah.MockWebServerSupport;
-import moe.tristan.kmdah.cache.CacheMode;
-import moe.tristan.kmdah.model.ImageContent;
-import moe.tristan.kmdah.model.ImageSpec;
+import moe.tristan.kmdah.service.images.cache.CacheMode;
+import moe.tristan.kmdah.service.images.ImageContent;
+import moe.tristan.kmdah.service.images.ImageSpec;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.RecordedRequest;
 import okio.Buffer;

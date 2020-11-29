@@ -12,10 +12,10 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.util.unit.DataSize;
 import reactor.core.publisher.Mono;
 
-import moe.tristan.kmdah.cache.CachedImageService;
-import moe.tristan.kmdah.cache.VacuumingRequest;
-import moe.tristan.kmdah.cache.VacuumingResult;
-import moe.tristan.kmdah.model.settings.CacheSettings;
+import moe.tristan.kmdah.service.images.cache.CachedImageService;
+import moe.tristan.kmdah.service.images.cache.VacuumingRequest;
+import moe.tristan.kmdah.service.images.cache.VacuumingResult;
+import moe.tristan.kmdah.service.images.cache.CacheSettings;
 
 @SpringBootTest(
     classes = VacuumJob.class,

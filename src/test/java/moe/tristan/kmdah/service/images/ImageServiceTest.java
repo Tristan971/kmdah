@@ -25,12 +25,10 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import moe.tristan.kmdah.cache.CacheMode;
-import moe.tristan.kmdah.cache.CachedImageService;
+import moe.tristan.kmdah.service.images.cache.CacheMode;
+import moe.tristan.kmdah.service.images.cache.CachedImageService;
 import moe.tristan.kmdah.mangadex.image.ImageMode;
 import moe.tristan.kmdah.mangadex.image.MangadexImageService;
-import moe.tristan.kmdah.model.ImageContent;
-import moe.tristan.kmdah.model.ImageSpec;
 import moe.tristan.kmdah.service.metrics.CacheModeCounter;
 
 @SpringBootTest(classes = ImageService.class)

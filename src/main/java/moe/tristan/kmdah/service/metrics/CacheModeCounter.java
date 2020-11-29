@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.MeterBinder;
-import moe.tristan.kmdah.cache.CacheMode;
+import moe.tristan.kmdah.service.images.cache.CacheMode;
 
 @Component
 public class CacheModeCounter implements MeterBinder {

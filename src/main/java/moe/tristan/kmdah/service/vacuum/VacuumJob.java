@@ -7,10 +7,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.util.unit.DataSize;
 
-import moe.tristan.kmdah.cache.CachedImageService;
-import moe.tristan.kmdah.cache.VacuumingRequest;
-import moe.tristan.kmdah.cache.VacuumingResult;
-import moe.tristan.kmdah.model.settings.CacheSettings;
+import moe.tristan.kmdah.service.images.cache.CachedImageService;
+import moe.tristan.kmdah.service.images.cache.VacuumingRequest;
+import moe.tristan.kmdah.service.images.cache.VacuumingResult;
+import moe.tristan.kmdah.service.images.cache.CacheSettings;
 
 @Component
 public class VacuumJob {

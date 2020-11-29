@@ -23,8 +23,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import moe.tristan.kmdah.MockWebServerSupport;
 import moe.tristan.kmdah.mangadex.MangadexApi;
-import moe.tristan.kmdah.model.settings.CacheSettings;
-import moe.tristan.kmdah.model.settings.MangadexSettings;
+import moe.tristan.kmdah.service.images.cache.CacheSettings;
+import moe.tristan.kmdah.mangadex.MangadexSettings;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.RecordedRequest;
 

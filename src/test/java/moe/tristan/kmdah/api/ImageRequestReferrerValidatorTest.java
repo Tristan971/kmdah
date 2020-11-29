@@ -4,6 +4,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.junit.jupiter.api.Test;
 
+import moe.tristan.kmdah.service.images.validation.ImageRequestReferrerValidator;
+import moe.tristan.kmdah.service.images.validation.InvalidImageRequestReferrerException;
+
 class ImageRequestReferrerValidatorTest {
 
     private final ImageRequestReferrerValidator validator = new ImageRequestReferrerValidator();

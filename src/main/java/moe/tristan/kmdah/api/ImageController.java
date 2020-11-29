@@ -10,8 +10,10 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 
 import moe.tristan.kmdah.mangadex.image.ImageMode;
-import moe.tristan.kmdah.model.ImageSpec;
+import moe.tristan.kmdah.service.images.ImageSpec;
 import moe.tristan.kmdah.service.images.ImageService;
+import moe.tristan.kmdah.service.images.validation.ImageRequestReferrerValidator;
+import moe.tristan.kmdah.service.images.validation.ImageRequestTokenValidator;
 
 @RestController
 public class ImageController {

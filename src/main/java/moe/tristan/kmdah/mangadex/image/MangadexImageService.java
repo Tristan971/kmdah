@@ -12,9 +12,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import moe.tristan.kmdah.cache.CacheMode;
-import moe.tristan.kmdah.model.ImageContent;
-import moe.tristan.kmdah.model.ImageSpec;
+import moe.tristan.kmdah.service.images.cache.CacheMode;
+import moe.tristan.kmdah.service.images.ImageContent;
+import moe.tristan.kmdah.service.images.ImageSpec;
 
 @Service
 public class MangadexImageService {

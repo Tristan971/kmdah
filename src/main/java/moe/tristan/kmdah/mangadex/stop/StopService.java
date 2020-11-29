@@ -9,7 +9,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import moe.tristan.kmdah.mangadex.MangadexApi;
-import moe.tristan.kmdah.model.settings.MangadexSettings;
+import moe.tristan.kmdah.mangadex.MangadexSettings;
 
 @Service
 public class StopService {

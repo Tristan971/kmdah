@@ -14,9 +14,8 @@ spring:
       password: ${kmdah.cache.mongodb.password}
 
   redis:
-    host: ${kmdah.leadership.redis.host}
-    port: ${kmdah.leadership.redis.port}
-    password: ${kmdah.leadership.redis.password}
+    host: ${kmdah.redis.host}
+    port: ${kmdah.redis.port}
 
   config:
     import: optional:file:${KMDAH_CONFIGURATION:config.yml}
@@ -29,6 +28,7 @@ server:
 logging.level:
   root: WARN
   moe.tristan.kmdah: INFO
+  org.springframework.data.convert.CustomConversions: ERROR
 
 management:
   endpoint.health.show-details: always
@@ -43,8 +43,8 @@ management:
 
 # User configuration
 kmdah:
-  id:
-    generation-method: ${KMDAH_ID_GENERATION_METHOD:random_uuid}
+  gossip:
+    id-generation-strategy: ${KMDAH_ID_GENERATION_METHOD:random_uuid}
 
   cache:
     max-size-gb: ${KMDAH_CACHE_MAX_SIZE_GB:100}
