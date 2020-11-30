@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.OptionalLong;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.bson.BsonValue;
@@ -24,12 +25,12 @@ import reactor.core.publisher.Mono;
 
 import com.mongodb.client.gridfs.model.GridFSFile;
 
+import moe.tristan.kmdah.service.images.ImageContent;
+import moe.tristan.kmdah.service.images.ImageSpec;
 import moe.tristan.kmdah.service.images.cache.CacheMode;
 import moe.tristan.kmdah.service.images.cache.CachedImageService;
 import moe.tristan.kmdah.service.images.cache.VacuumingRequest;
 import moe.tristan.kmdah.service.images.cache.VacuumingResult;
-import moe.tristan.kmdah.service.images.ImageContent;
-import moe.tristan.kmdah.service.images.ImageSpec;
 
 @Component
 public class MongodbCachedImageService implements CachedImageService {
@@ -49,9 +50,10 @@ public class MongodbCachedImageService implements CachedImageService {
 
     @Override
     public Mono<ImageContent> findImage(ImageSpec imageSpec) {
-        String filename = specToFilename(imageSpec);
+        String filenamePattern = specToFilename(imageSpec) + "-*";
         return reactiveGridFsTemplate
-            .getResource(filename)
+            .getResources(filenamePattern)
+            .next()
             .flatMap(resource -> resource.getGridFSFile().map(gridFsFile -> {
                 OptionalLong contentLength = OptionalLong.of(gridFsFile.getLength());
 
@@ -71,7 +73,7 @@ public class MongodbCachedImageService implements CachedImageService {
 
     @Override
     public Mono<ObjectId> saveImage(ImageSpec imageSpec, ImageContent imageContent) {
-        String filename = specToFilename(imageSpec);
+        String filename = specToFilename(imageSpec) + "-" + UUID.randomUUID().toString();
 
         Document document = new Document();
         document.put(HttpHeaders.CONTENT_TYPE, imageContent.contentType().toString());

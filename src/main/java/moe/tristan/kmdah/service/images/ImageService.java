@@ -9,8 +9,8 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import moe.tristan.kmdah.service.images.cache.CachedImageService;
 import moe.tristan.kmdah.mangadex.image.MangadexImageService;
+import moe.tristan.kmdah.service.images.cache.CachedImageService;
 import moe.tristan.kmdah.service.metrics.CacheModeCounter;
 
 @Service
