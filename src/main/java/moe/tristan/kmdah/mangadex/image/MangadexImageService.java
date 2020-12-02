@@ -42,7 +42,7 @@ public class MangadexImageService {
                 long contentLength = entityFlux.getHeaders().getContentLength();
 
                 return new ImageContent(
-                    requireNonNull(entityFlux.getBody(), "Empty upstream response!").share(),
+                    requireNonNull(entityFlux.getBody(), "Empty upstream response!"),
                     contentType,
                     contentLength != -1 ? OptionalLong.of(contentLength) : OptionalLong.empty(),
                     CacheMode.MISS

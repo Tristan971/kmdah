@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -59,7 +60,8 @@ public class ImageService {
             .map(content -> {
                 Flux<DataBuffer> multicaster = content
                     .bytes()
-                    .publish(1)
+                    .map(DataBufferUtils::retain)
+                    .publish()
                     .autoConnect(2);
 
                 cachedImageService.saveImage(
