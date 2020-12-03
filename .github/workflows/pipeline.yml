@@ -43,6 +43,13 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.CR_PAT }}
 
+      - name: Login to Scaleway Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: rg.fr-par.scw.cloud
+          username: tristandeloche
+          password: ${{ secrets.SCW_SECRET_TOKEN }}
+
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
@@ -53,5 +60,7 @@ jobs:
           tags: |
             tristandeloche/kmdah:latest
             tristandeloche/kmdah:0.1.0
-            ghcr.io/Tristan971/kmdah:latest
-            ghcr.io/Tristan971/kmdah:0.1.0
+            ghcr.io/tristan971/kmdah:latest
+            ghcr.io/tristan971/kmdah:0.1.0
+            rg.fr-par.scw.cloud/tristandeloche/kmdah:latest
+            rg.fr-par.scw.cloud/tristandeloche/kmdah:0.1.0
