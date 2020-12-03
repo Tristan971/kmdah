@@ -44,7 +44,7 @@ public class PingService {
     public Mono<PingResponse> ping(Optional<LocalDateTime> lastCreatedAt, DataSize poolSpeed) {
         long networkSpeedBytesPerSecond = poolSpeed.toBytes();
         if (networkSpeedBytesPerSecond == 0L) {
-            LOGGER.warn("Trying to ping for an empty pool! Requesting 1B/s speed instead.");
+            LOGGER.info("Worker pool is empty, requesting 1B/s network speed");
             networkSpeedBytesPerSecond = 1L;
         }
 

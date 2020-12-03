@@ -37,6 +37,7 @@ services:
       KMDAH_MANGADEX_CLIENT_SECRET: "${KMDAH_MANGADEX_CLIENT_SECRET}"
       KMDAH_CACHE_MONGODB_HOST: "mongo"
       KMDAH_GOSSIP_REDIS_HOST: "redis"
+      KMDAH_K8S_TLS_SECRET_AUTO_UPDATE: "false"
     deploy:
       resources:
         limits:

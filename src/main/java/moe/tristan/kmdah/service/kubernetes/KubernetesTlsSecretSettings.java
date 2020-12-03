@@ -9,6 +9,8 @@ public record KubernetesTlsSecretSettings(
 
     String name,
 
-    String namespace
+    String namespace,
+
+    boolean autoUpdate
 
 ) {}

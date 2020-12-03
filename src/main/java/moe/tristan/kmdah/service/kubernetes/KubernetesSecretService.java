@@ -34,7 +34,11 @@ public class KubernetesSecretService {
 
     @EventListener(TlsDataReceivedEvent.class)
     public void pingReceived(TlsDataReceivedEvent event) {
-        this.syncTlsData(event.tlsData());
+        if (kubernetesTlsSecretSettings.autoUpdate()) {
+            this.syncTlsData(event.tlsData());
+        } else {
+            LOGGER.info("Kubernetes secret auto-update disabled - ignoring TlsData");
+        }
     }
 
     private void syncTlsData(TlsData tlsData) {
