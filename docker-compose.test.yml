@@ -30,7 +30,7 @@ services:
 
   kmdah:
     depends_on: [ mongo, redis ]
-    image: tristandeloche/kmdah:local-SNAPSHOT
+    image: tristandeloche/kmdah:latest
     ports:
       - 8080:8080
     environment:
