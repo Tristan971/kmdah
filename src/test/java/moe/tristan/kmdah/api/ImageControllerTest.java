@@ -11,8 +11,6 @@ import java.util.OptionalLong;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -26,11 +24,11 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import moe.tristan.kmdah.service.images.cache.CacheMode;
 import moe.tristan.kmdah.mangadex.image.ImageMode;
 import moe.tristan.kmdah.service.images.ImageContent;
-import moe.tristan.kmdah.service.images.ImageSpec;
 import moe.tristan.kmdah.service.images.ImageService;
+import moe.tristan.kmdah.service.images.ImageSpec;
+import moe.tristan.kmdah.service.images.cache.CacheMode;
 import moe.tristan.kmdah.service.images.validation.ImageRequestReferrerValidator;
 import moe.tristan.kmdah.service.images.validation.ImageRequestTokenValidator;
 import moe.tristan.kmdah.service.images.validation.InvalidImageRequestReferrerException;
@@ -48,12 +46,14 @@ class ImageControllerTest {
     @MockBean
     private ImageRequestReferrerValidator imageRequestReferrerValidator;
 
+    @MockBean
+    private ImageControllerHeaders imageControllerHeaders;
+
     @Autowired
     private WebTestClient webTestClient;
 
-    @ParameterizedTest
-    @EnumSource(CacheMode.class)
-    void onSuccess(CacheMode cacheMode) {
+    @Test
+    void onSuccess() {
         String token = "sampletoken";
         String referrer = "referrer";
 
@@ -62,7 +62,7 @@ class ImageControllerTest {
         String expectedContent = UUID.randomUUID().toString();
         MediaType mediaType = MediaType.IMAGE_PNG;
 
-        ImageContent sampleContent = sampleContent(expectedContent.getBytes(), mediaType, OptionalLong.empty(), cacheMode);
+        ImageContent sampleContent = sampleContent(expectedContent.getBytes(), mediaType, OptionalLong.empty());
 
         when(imageService.findOrFetch(eq(sample))).thenReturn(Mono.just(sampleContent));
 
@@ -71,10 +71,8 @@ class ImageControllerTest {
             .uri("/{token}/{mode}/{chapter}/{file}", token, sample.mode().getPathFragment(), sample.chapter(), sample.file())
             .header(HttpHeaders.REFERER, referrer)
             .exchange()
-            .expectHeader().valueEquals("X-Cache-Mode", cacheMode.name())
             .expectBody(String.class)
             .consumeWith(result -> {
-                validateMangadexHeadersPresent(result.getResponseHeaders());
                 String content = result.getResponseBody();
                 assertThat(content).isEqualTo(expectedContent);
             });
@@ -133,27 +131,7 @@ class ImageControllerTest {
             .expectStatus().isEqualTo(HttpStatus.FORBIDDEN);
     }
 
-    private void validateMangadexHeadersPresent(HttpHeaders headers) {
-        assertThat(headers.get(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN))
-            .containsExactly("https://mangadex.org");
-
-        assertThat(headers.get(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS))
-            .containsExactly("*");
-
-        assertThat(headers.get(HttpHeaders.CACHE_CONTROL))
-            .containsExactly("public/ max-age=1209600");
-
-        assertThat(headers.get("Timing-Allow-Origin"))
-            .containsExactly("https://mangadex.org");
-
-        assertThat(headers.get("X-Content-Type-Options"))
-            .containsExactly("nosniff");
-
-        assertThat(headers.get("X-Content-Type-Options"))
-            .containsExactly("nosniff");
-    }
-
-    private ImageContent sampleContent(byte[] contentBytes, MediaType mediaType, OptionalLong contentLength, CacheMode cacheMode) {
+    private ImageContent sampleContent(byte[] contentBytes, MediaType mediaType, OptionalLong contentLength) {
         Flux<DataBuffer> content = DataBufferUtils.readInputStream(
             () -> new ByteArrayInputStream(contentBytes),
             DefaultDataBufferFactory.sharedInstance,
@@ -164,7 +142,7 @@ class ImageControllerTest {
             content,
             mediaType,
             contentLength,
-            cacheMode
+            CacheMode.HIT
         );
     }
 

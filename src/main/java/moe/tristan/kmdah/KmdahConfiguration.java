@@ -4,7 +4,10 @@ import java.time.Clock;
 import java.time.ZoneOffset;
 import java.util.TimeZone;
 
+import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
+import org.springframework.boot.web.reactive.server.ConfigurableReactiveWebServerFactory;
+import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -25,6 +28,22 @@ public class KmdahConfiguration {
     @Bean
     public Scheduler scheduler() {
         return Schedulers.boundedElastic();
+    }
+
+    @Configuration
+    public static class ServerHeaderCustomizer implements WebServerFactoryCustomizer<ConfigurableReactiveWebServerFactory> {
+
+        private final ServerProperties serverProperties;
+
+        public ServerHeaderCustomizer(ServerProperties serverProperties) {
+            this.serverProperties = serverProperties;
+        }
+
+        @Override
+        public void customize(ConfigurableReactiveWebServerFactory factory) {
+            factory.setServerHeader(serverProperties.getServerHeader());
+        }
+
     }
 
 }

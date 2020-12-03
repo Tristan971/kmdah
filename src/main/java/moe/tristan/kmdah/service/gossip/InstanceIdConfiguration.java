@@ -6,9 +6,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class GossipConfiguration {
+public class InstanceIdConfiguration {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(GossipConfiguration.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(InstanceIdConfiguration.class);
 
     @Bean
     InstanceId instanceId(GossipSettings gossipSettings) {
