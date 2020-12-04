@@ -77,7 +77,8 @@ public class LeaderActivities {
             if (job == null) {
                 LOGGER.warn("Activity [{}] cannot be stopped because it had no previously started job!", activity.getName());
             } else {
-                job.dispose();
+                job.dispose(); // stop scheduler
+                activity.stop(); // execute teardown logic of activity
                 LOGGER.info("Stopped activity [{}]", activity.getName());
             }
         });

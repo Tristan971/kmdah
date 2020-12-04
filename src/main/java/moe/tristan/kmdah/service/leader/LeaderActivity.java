@@ -10,4 +10,7 @@ public interface LeaderActivity extends Runnable {
 
     Duration getPeriod();
 
+    default void stop() {
+    }
+
 }

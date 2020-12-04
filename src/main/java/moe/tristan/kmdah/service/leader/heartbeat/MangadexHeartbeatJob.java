@@ -11,6 +11,7 @@ import org.springframework.util.unit.DataSize;
 
 import moe.tristan.kmdah.mangadex.ping.PingService;
 import moe.tristan.kmdah.mangadex.ping.TlsData;
+import moe.tristan.kmdah.mangadex.stop.StopService;
 import moe.tristan.kmdah.service.gossip.messages.pub.GossipPublisher;
 import moe.tristan.kmdah.service.kubernetes.TlsDataReceivedEvent;
 import moe.tristan.kmdah.service.leader.LeaderActivity;
@@ -20,14 +21,22 @@ import moe.tristan.kmdah.service.workers.WorkersRegistry;
 public class MangadexHeartbeatJob implements LeaderActivity {
 
     private final PingService pingService;
+    private final StopService stopService;
     private final GossipPublisher gossipPublisher;
     private final WorkersRegistry workersRegistry;
     private final ApplicationEventPublisher applicationEventPublisher;
 
     private final AtomicReference<LocalDateTime> lastCreatedAt = new AtomicReference<>();
 
-    public MangadexHeartbeatJob(PingService pingService, GossipPublisher gossipPublisher, WorkersRegistry workersRegistry, ApplicationEventPublisher applicationEventPublisher) {
+    public MangadexHeartbeatJob(
+        PingService pingService,
+        StopService stopService,
+        GossipPublisher gossipPublisher,
+        WorkersRegistry workersRegistry,
+        ApplicationEventPublisher applicationEventPublisher
+    ) {
         this.pingService = pingService;
+        this.stopService = stopService;
         this.gossipPublisher = gossipPublisher;
         this.workersRegistry = workersRegistry;
         this.applicationEventPublisher = applicationEventPublisher;
@@ -66,6 +75,11 @@ public class MangadexHeartbeatJob implements LeaderActivity {
 
             gossipPublisher.broadcastImageServer(response.imageServer());
         });
+    }
+
+    @Override
+    public void stop() {
+        stopService.stop().subscribe();
     }
 
 }

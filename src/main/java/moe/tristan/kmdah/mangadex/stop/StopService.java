@@ -34,7 +34,7 @@ public class StopService {
             .bodyValue(new StopRequest(mangadexSettings.clientSecret()))
             .retrieve()
             .toBodilessEntity()
-            .doOnSuccess(res -> LOGGER.info("Stop request successfully sent (acknowledged by backend: {})", res.getStatusCode()))
+            .doOnSuccess(res -> LOGGER.info("Stop request successful (acknowledged by backend: {})", res.getStatusCode()))
             .doOnError(err -> LOGGER.error("Stop request failed due to an error.", err));
     }
 
