@@ -46,17 +46,17 @@ public class KubernetesSecretService {
             LOGGER.debug("Unchanged TlsData");
         }
 
-        LOGGER.info("New TlsData - syncing tls cert secret");
+        LOGGER.info("New TlsData - syncing tls cert secret as {}/{}", kubernetesTlsSecretSettings.namespace(), kubernetesTlsSecretSettings.name());
 
         V1Secret secret = buildSecretFromTlsData(tlsData);
 
         V1Secret result;
         try {
             result = createSecret(secret);
-        } catch (ApiException createException) {
+        } catch (Throwable createException) {
             try {
                 result = updateSecret(secret);
-            } catch (ApiException updateException) {
+            } catch (Throwable updateException) {
                 updateException.printStackTrace();
                 throw new IllegalStateException(
                     "Could not "
