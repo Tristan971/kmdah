@@ -14,7 +14,7 @@ import reactor.core.publisher.Mono;
 import moe.tristan.kmdah.mangadex.image.MangadexImageService;
 import moe.tristan.kmdah.service.gossip.messages.LeaderImageServerEvent;
 import moe.tristan.kmdah.service.images.cache.CachedImageService;
-import moe.tristan.kmdah.service.metrics.CacheModeCounter;
+import moe.tristan.kmdah.service.metrics.ImageMetrics;
 
 @Service
 public class ImageService {
@@ -22,31 +22,33 @@ public class ImageService {
     private static final Logger LOGGER = LoggerFactory.getLogger(ImageService.class);
 
     private final CachedImageService cachedImageService;
-    private final CacheModeCounter cacheModeCounter;
     private final MangadexImageService mangadexImageService;
+    private final ImageMetrics imageMetrics;
 
     private String upstreamServerUri = "https://s2.mangadex.org";
 
     public ImageService(
         CachedImageService cachedImageService,
-        CacheModeCounter cacheModeCounter,
-        MangadexImageService mangadexImageService
+        MangadexImageService mangadexImageService,
+        ImageMetrics imageMetrics
     ) {
         this.cachedImageService = cachedImageService;
-        this.cacheModeCounter = cacheModeCounter;
         this.mangadexImageService = mangadexImageService;
+        this.imageMetrics = imageMetrics;
     }
 
     public Mono<ImageContent> findOrFetch(ImageSpec imageSpec) {
+        long startSearch = System.nanoTime();
+
         return fetchFromCache(imageSpec)
             .onErrorResume(error -> {
                 LOGGER.error("Failed pulling {} from cache!", imageSpec, error);
                 return defer(() -> fetchFromUpstream(imageSpec));
             })
             .switchIfEmpty(defer(() -> fetchFromUpstream(imageSpec)))
-            .doOnNext(content -> {
+            .doOnSuccess(content -> {
                 LOGGER.info("Cache {} for {}", content.cacheMode(), imageSpec);
-                cacheModeCounter.record(content.cacheMode());
+                imageMetrics.recordSearch(startSearch, content.cacheMode());
             });
     }
 
@@ -64,15 +66,19 @@ public class ImageService {
                     .publish()
                     .autoConnect(2);
 
-                cachedImageService.saveImage(
-                    imageSpec,
-                    new ImageContent(
-                        multicaster,
-                        content.contentType(),
-                        content.contentLength(),
-                        content.cacheMode()
+                long startSave = System.nanoTime();
+                cachedImageService
+                    .saveImage(
+                        imageSpec,
+                        new ImageContent(
+                            multicaster,
+                            content.contentType(),
+                            content.contentLength(),
+                            content.cacheMode()
+                        )
                     )
-                ).subscribe();
+                    .doOnSuccess(__ -> imageMetrics.recordSave(startSave))
+                    .subscribe();
 
                 return new ImageContent(
                     multicaster,

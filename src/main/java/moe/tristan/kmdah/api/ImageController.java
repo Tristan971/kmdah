@@ -10,22 +10,30 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 
 import moe.tristan.kmdah.mangadex.image.ImageMode;
-import moe.tristan.kmdah.service.images.ImageContent;
 import moe.tristan.kmdah.service.images.ImageService;
 import moe.tristan.kmdah.service.images.ImageSpec;
 import moe.tristan.kmdah.service.images.validation.ImageRequestReferrerValidator;
 import moe.tristan.kmdah.service.images.validation.ImageRequestTokenValidator;
+import moe.tristan.kmdah.service.metrics.ImageMetrics;
 
 @RestController
 public class ImageController {
 
     private final ImageService imageService;
+    private final ImageMetrics imageMetrics;
     private final ImageControllerHeaders controllerHeaders;
     private final ImageRequestTokenValidator tokenValidator;
     private final ImageRequestReferrerValidator referrerValidator;
 
-    public ImageController(ImageService imageService, ImageRequestTokenValidator tokenValidator, ImageControllerHeaders controllerHeaders, ImageRequestReferrerValidator referrerValidator) {
+    public ImageController(
+        ImageService imageService,
+        ImageMetrics imageMetrics,
+        ImageRequestTokenValidator tokenValidator,
+        ImageControllerHeaders controllerHeaders,
+        ImageRequestReferrerValidator referrerValidator
+    ) {
         this.imageService = imageService;
+        this.imageMetrics = imageMetrics;
         this.tokenValidator = tokenValidator;
         this.controllerHeaders = controllerHeaders;
         this.referrerValidator = referrerValidator;
@@ -60,10 +68,18 @@ public class ImageController {
 
         ImageSpec imageRequest = new ImageSpec(ImageMode.fromPathFragment(imageMode), chapterHash, fileName);
 
+        long startServe = System.nanoTime();
+
         return imageService
             .findOrFetch(imageRequest)
             .doOnNext(content -> controllerHeaders.addHeaders(response.getHeaders(), content))
-            .flatMapMany(ImageContent::bytes);
+            .flatMapMany(content -> {
+                long startLoad = System.nanoTime();
+                return content
+                    .bytes()
+                    .doOnComplete(() -> imageMetrics.recordLoad(startLoad, content.cacheMode()))
+                    .doOnComplete(() -> imageMetrics.recordServe(startServe, content.cacheMode()));
+            });
     }
 
 }

@@ -2,10 +2,10 @@ package moe.tristan.kmdah.service.images;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayInputStream;
@@ -25,11 +25,11 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import moe.tristan.kmdah.service.images.cache.CacheMode;
-import moe.tristan.kmdah.service.images.cache.CachedImageService;
 import moe.tristan.kmdah.mangadex.image.ImageMode;
 import moe.tristan.kmdah.mangadex.image.MangadexImageService;
-import moe.tristan.kmdah.service.metrics.CacheModeCounter;
+import moe.tristan.kmdah.service.images.cache.CacheMode;
+import moe.tristan.kmdah.service.images.cache.CachedImageService;
+import moe.tristan.kmdah.service.metrics.ImageMetrics;
 
 @SpringBootTest(classes = ImageService.class)
 class ImageServiceTest {
@@ -37,13 +37,13 @@ class ImageServiceTest {
     private static final ImageSpec SPEC = new ImageSpec(ImageMode.DATA, "chapter", "file");
 
     @MockBean
-    private CacheModeCounter cacheModeCounter;
-
-    @MockBean
     private CachedImageService cachedImageService;
 
     @MockBean
     private MangadexImageService mangadexImageService;
+
+    @MockBean
+    private ImageMetrics imageMetrics;
 
     @Autowired
     private ImageService imageService;
@@ -116,8 +116,6 @@ class ImageServiceTest {
 
         verifyCachedCall();
         verifyUpstreamCall(1);
-
-        verifyNoInteractions(cacheModeCounter);
     }
 
     private static ImageContent sampleContent(CacheMode cacheMode) {
@@ -139,7 +137,7 @@ class ImageServiceTest {
 
     private void verifyCacheModeCounted(CacheMode cacheMode) {
         ArgumentCaptor<CacheMode> cacheModeCaptor = ArgumentCaptor.forClass(CacheMode.class);
-        verify(cacheModeCounter).record(cacheModeCaptor.capture());
+        verify(imageMetrics).recordSearch(anyLong(), cacheModeCaptor.capture());
         assertThat(cacheModeCaptor.getAllValues()).containsExactly(cacheMode);
     }
 
