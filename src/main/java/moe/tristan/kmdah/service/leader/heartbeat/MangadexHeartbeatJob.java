@@ -26,6 +26,7 @@ public class MangadexHeartbeatJob implements LeaderActivity {
     private final WorkersRegistry workersRegistry;
     private final ApplicationEventPublisher applicationEventPublisher;
 
+    private final AtomicReference<DataSize> lastPoolSpeed = new AtomicReference<>();
     private final AtomicReference<LocalDateTime> lastCreatedAt = new AtomicReference<>();
 
     public MangadexHeartbeatJob(
@@ -59,10 +60,18 @@ public class MangadexHeartbeatJob implements LeaderActivity {
 
     @Override
     public void run() {
+        DataSize poolSpeed = DataSize.ofMegabytes(workersRegistry.getTotalBandwidthMbps() / 8);
+
         pingService.ping(
             Optional.ofNullable(lastCreatedAt.get()),
-            DataSize.ofMegabytes(workersRegistry.getTotalBandwidthMbps() / 8)
-        ).subscribe(response -> {
+            poolSpeed
+        ).doFirst(() -> {
+            if (!poolSpeed.equals(lastPoolSpeed.get())) {
+                stopService.stop().subscribe();
+            }
+        }).subscribe(response -> {
+            lastPoolSpeed.set(poolSpeed);
+
             Optional<TlsData> tlsData = response.tls();
 
             // store last-created-at
