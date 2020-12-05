@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.util.unit.DataSize;
@@ -19,6 +21,8 @@ import moe.tristan.kmdah.service.workers.WorkersRegistry;
 
 @Component
 public class MangadexHeartbeatJob implements LeaderActivity {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(MangadexHeartbeatJob.class);
 
     private final PingService pingService;
     private final StopService stopService;
@@ -55,21 +59,29 @@ public class MangadexHeartbeatJob implements LeaderActivity {
 
     @Override
     public Duration getPeriod() {
-        return Duration.ofSeconds(15);
+        return Duration.ofSeconds(10);
     }
 
     @Override
     public void run() {
         DataSize poolSpeed = DataSize.ofMegabytes(workersRegistry.getTotalBandwidthMbps() / 8);
 
+        if (poolSpeed.toBytes() == 0L) {
+            LOGGER.info("Worker pool empty, awaiting workers before sending pings.");
+            return;
+        }
+
+        DataSize lastPoolSpeedRef = lastPoolSpeed.get();
+        if (lastPoolSpeedRef != null && !poolSpeed.equals(lastPoolSpeedRef)) {
+            LOGGER.info("Worker pool speed changed [{} -> {}], triggering a stop before the updated ping", lastPoolSpeedRef, poolSpeed);
+            stopService.stop().block();
+            return;
+        }
+
         pingService.ping(
             Optional.ofNullable(lastCreatedAt.get()),
             poolSpeed
-        ).doFirst(() -> {
-            if (!poolSpeed.equals(lastPoolSpeed.get())) {
-                stopService.stop().subscribe();
-            }
-        }).subscribe(response -> {
+        ).doOnSuccess(response -> {
             lastPoolSpeed.set(poolSpeed);
 
             Optional<TlsData> tlsData = response.tls();
@@ -83,12 +95,12 @@ public class MangadexHeartbeatJob implements LeaderActivity {
             tlsData.map(TlsDataReceivedEvent::new).ifPresent(applicationEventPublisher::publishEvent);
 
             gossipPublisher.broadcastImageServer(response.imageServer());
-        });
+        }).blockOptional(Duration.ofSeconds(5L));
     }
 
     @Override
     public void stop() {
-        stopService.stop().subscribe();
+        stopService.stop().block();
     }
 
 }

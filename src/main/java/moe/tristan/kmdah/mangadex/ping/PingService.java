@@ -65,8 +65,9 @@ public class PingService {
             .retrieve()
             .onStatus(status -> HttpStatus.OK != status, this::onError)
             .bodyToMono(PingResponse.class)
-            .doOnSuccess(response -> LOGGER.info("Ping {} - Pong {}", request, response))
-            .doOnError(error -> LOGGER.info("Ping {} -> Error!", request, error));
+            .doFirst(() -> LOGGER.info("Ping {}", request))
+            .doOnSuccess(response -> LOGGER.info("Pong {}", response))
+            .doOnError(error -> LOGGER.info("Error during heartbeat", error));
     }
 
     private Mono<? extends Throwable> onError(ClientResponse clientResponse) {

@@ -51,7 +51,13 @@ public class LeaderActivities {
     private void startJobs() {
         leaderActivities.forEach(activity -> {
             Disposable job = scheduler.schedulePeriodically(
-                activity,
+                () -> {
+                    try {
+                        activity.run();
+                    } catch (Throwable e) {
+                        LOGGER.error("Activity {} threw an error", activity.getName(), e);
+                    }
+                },
                 activity.getInitialDelay().toSeconds(),
                 activity.getPeriod().toSeconds(),
                 TimeUnit.SECONDS
@@ -75,11 +81,21 @@ public class LeaderActivities {
         leaderActivities.forEach(activity -> {
             Disposable job = jobs.get(activity.getName());
             if (job == null) {
-                LOGGER.warn("Activity [{}] cannot be stopped because it had no previously started job!", activity.getName());
+                LOGGER.debug("Activity [{}] cannot be stopped because it had no previously started job!", activity.getName());
             } else {
-                job.dispose(); // stop scheduler
-                activity.stop(); // execute teardown logic of activity
-                LOGGER.info("Stopped activity [{}]", activity.getName());
+                try {
+                    job.dispose(); // stop scheduler
+                    LOGGER.info("[{}] unscheduled", activity.getName());
+                } catch (Throwable e) {
+                    LOGGER.error("[{}] Failed unscheduling!", activity.getName(), e);
+                }
+
+                try {
+                    activity.stop(); // execute teardown logic of activity
+                    LOGGER.info("[{}] stopped", activity.getName());
+                } catch (Throwable e) {
+                    LOGGER.error("[{}] Failed stopping!", activity.getName(), e);
+                }
             }
         });
         jobs.clear();

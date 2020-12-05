@@ -40,7 +40,7 @@ public class WorkersRegistry {
             LOGGER.info("Registered worker [{}]", pingEvent.worker().id());
             logWorkersState();
         } else {
-            LOGGER.info("Received heartbeat from [{}]", pingEvent.worker().id());
+            LOGGER.debug("Received heartbeat from [{}]", pingEvent.worker().id());
         }
     }
 
