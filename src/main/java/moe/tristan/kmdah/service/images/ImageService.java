@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
+import org.springframework.core.io.buffer.DefaultDataBuffer;
+import org.springframework.core.io.buffer.DefaultDataBufferFactory;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -62,9 +64,15 @@ public class ImageService {
             .map(content -> {
                 Flux<DataBuffer> multicaster = content
                     .bytes()
-                    .map(DataBufferUtils::retain)
+                    .map(dbuf -> {
+                        DefaultDataBuffer allocated = DefaultDataBufferFactory.sharedInstance.allocateBuffer(dbuf.capacity());
+                        allocated.write(dbuf);
+                        DataBufferUtils.release(dbuf);
+                        return (DataBuffer) allocated;
+                    })
                     .publish()
-                    .autoConnect(2);
+                    .autoConnect(2)
+                    .transformDeferred(flux -> flux.map(dbf -> DefaultDataBufferFactory.sharedInstance.wrap(dbf.asByteBuffer())));
 
                 long startSave = System.nanoTime();
                 cachedImageService
