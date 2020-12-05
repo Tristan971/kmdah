@@ -74,6 +74,7 @@ public class MangadexHeartbeatJob implements LeaderActivity {
         DataSize lastPoolSpeedRef = lastPoolSpeed.get();
         if (lastPoolSpeedRef != null && !poolSpeed.equals(lastPoolSpeedRef)) {
             LOGGER.info("Worker pool speed changed [{} -> {}], triggering a stop before the updated ping", lastPoolSpeedRef, poolSpeed);
+            lastPoolSpeed.set(poolSpeed);
             stopService.stop().block();
             return;
         }
