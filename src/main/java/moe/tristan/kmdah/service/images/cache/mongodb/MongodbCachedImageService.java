@@ -1,10 +1,11 @@
 package moe.tristan.kmdah.service.images.cache.mongodb;
 
 import static java.util.Objects.requireNonNull;
+import static org.springframework.data.mongodb.core.query.Query.query;
+import static org.springframework.data.mongodb.gridfs.GridFsCriteria.whereFilename;
 
 import java.util.OptionalLong;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.bson.BsonValue;
@@ -12,6 +13,7 @@ import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -50,10 +52,13 @@ public class MongodbCachedImageService implements CachedImageService {
 
     @Override
     public Mono<ImageContent> findImage(ImageSpec imageSpec) {
-        String filenamePattern = specToFilename(imageSpec) + "-*";
+        String filename = specToFilename(imageSpec);
         return reactiveGridFsTemplate
-            .getResources(filenamePattern)
-            .next()
+            .getResource(filename)
+            .onErrorResume(IncorrectResultSizeDataAccessException.class, err -> {
+                LOGGER.error("Found multiple files at path {} - evicting all preemptively: {}", filename, err.getMessage());
+                return reactiveGridFsTemplate.delete(query(whereFilename().is(filename))).then(Mono.empty());
+            })
             .flatMap(resource -> resource.getGridFSFile().map(gridFsFile -> {
                 OptionalLong contentLength = OptionalLong.of(gridFsFile.getLength());
 
@@ -73,7 +78,7 @@ public class MongodbCachedImageService implements CachedImageService {
 
     @Override
     public Mono<ObjectId> saveImage(ImageSpec imageSpec, ImageContent imageContent) {
-        String filename = specToFilename(imageSpec) + "-" + UUID.randomUUID().toString();
+        String filename = specToFilename(imageSpec);
 
         Document document = new Document();
         document.put(HttpHeaders.CONTENT_TYPE, imageContent.contentType().toString());
