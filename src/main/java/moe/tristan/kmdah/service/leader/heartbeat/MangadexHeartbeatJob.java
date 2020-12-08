@@ -30,7 +30,6 @@ public class MangadexHeartbeatJob implements LeaderActivity {
     private final WorkersRegistry workersRegistry;
     private final ApplicationEventPublisher applicationEventPublisher;
 
-    private final AtomicReference<DataSize> lastPoolSpeed = new AtomicReference<>();
     private final AtomicReference<LocalDateTime> lastCreatedAt = new AtomicReference<>();
 
     public MangadexHeartbeatJob(
@@ -71,20 +70,10 @@ public class MangadexHeartbeatJob implements LeaderActivity {
             return;
         }
 
-        DataSize lastPoolSpeedRef = lastPoolSpeed.get();
-        if (lastPoolSpeedRef != null && !poolSpeed.equals(lastPoolSpeedRef)) {
-            LOGGER.info("Worker pool speed changed [{} -> {}], triggering a stop before the updated ping", lastPoolSpeedRef, poolSpeed);
-            lastPoolSpeed.set(poolSpeed);
-            stopService.stop().block();
-            return;
-        }
-
         pingService.ping(
             Optional.ofNullable(lastCreatedAt.get()),
             poolSpeed
         ).doOnSuccess(response -> {
-            lastPoolSpeed.set(poolSpeed);
-
             Optional<TlsData> tlsData = response.tls();
 
             // store last-created-at
@@ -101,7 +90,13 @@ public class MangadexHeartbeatJob implements LeaderActivity {
 
     @Override
     public void stop() {
-        stopService.stop().block();
+        long otherWorkers = workersRegistry.getOtherWorkersCount();
+        if (otherWorkers == 0L) {
+            LOGGER.info("There are no other workers confidently known, requesting a stop to the backend.");
+            stopService.stop().block();
+        } else {
+            LOGGER.info("There are {} other workers available, not issuing backend stop.", otherWorkers);
+        }
     }
 
 }

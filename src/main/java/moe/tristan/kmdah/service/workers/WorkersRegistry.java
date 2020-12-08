@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
+import moe.tristan.kmdah.service.gossip.InstanceId;
 import moe.tristan.kmdah.service.gossip.messages.WorkerPingEvent;
 import moe.tristan.kmdah.service.gossip.messages.WorkerShutdownEvent;
 
@@ -19,9 +20,11 @@ public class WorkersRegistry {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(WorkersRegistry.class);
 
+    private final InstanceId instanceId;
     private final Map<WorkerInfo, Instant> knownWorkers;
 
-    public WorkersRegistry() {
+    public WorkersRegistry(InstanceId instanceId) {
+        this.instanceId = instanceId;
         this.knownWorkers = new ConcurrentHashMap<>();
     }
 
@@ -31,6 +34,14 @@ public class WorkersRegistry {
             .stream()
             .mapToLong(WorkerInfo::bandwidthMbps)
             .sum();
+    }
+
+    public long getOtherWorkersCount() {
+        return knownWorkers
+            .keySet()
+            .stream()
+            .filter(workerInfo -> !instanceId.id().equals(workerInfo.id()))
+            .count();
     }
 
     @EventListener(WorkerPingEvent.class)
