@@ -1,5 +1,7 @@
 package moe.tristan.kmdah.mangadex;
 
+import java.net.Inet4Address;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConstructorBinding;
 
@@ -7,6 +9,7 @@ import org.springframework.boot.context.properties.ConstructorBinding;
 @ConfigurationProperties("kmdah.mangadex")
 public record MangadexSettings(
 
-    String clientSecret
+    String clientSecret,
+    Inet4Address loadBalancerIp
 
 ) {}

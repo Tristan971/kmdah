@@ -17,6 +17,9 @@ public record PingRequest(
     @JsonProperty("secret")
     String secret,
 
+    @JsonProperty("ip_address")
+    String ipAddress,
+
     @JsonProperty("port")
     int port,
 
@@ -40,6 +43,7 @@ public record PingRequest(
     public String toString() {
         return "PingRequest[" +
             "secret=***" +
+            ", ipAddress=" + ipAddress +
             ", port=" + port +
             ", diskSpace=" + diskSpace +
             ", networkSpeed=" + networkSpeed +

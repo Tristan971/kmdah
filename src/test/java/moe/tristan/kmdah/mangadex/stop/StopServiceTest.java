@@ -31,7 +31,10 @@ import okhttp3.mockwebserver.RecordedRequest;
 
 @SpringBootTest(
     classes = StopService.class,
-    properties = "kmdah.mangadex.client-secret=secret"
+    properties = {
+        "kmdah.mangadex.client-secret=secret",
+        "kmdah.mangadex.load-balancer-ip=192.168.0.1"
+    }
 )
 @AutoConfigureWebClient
 @EnableConfigurationProperties(MangadexSettings.class)

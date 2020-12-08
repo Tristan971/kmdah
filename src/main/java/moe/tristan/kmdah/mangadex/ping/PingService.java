@@ -50,6 +50,7 @@ public class PingService {
 
         PingRequest request = new PingRequest(
             mangadexSettings.clientSecret(),
+            mangadexSettings.loadBalancerIp().getHostAddress(),
             443,
             DataSize.ofGigabytes(cacheSettings.maxSizeGb()).toBytes(),
             networkSpeedBytesPerSecond,

@@ -23,8 +23,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import moe.tristan.kmdah.MockWebServerSupport;
 import moe.tristan.kmdah.mangadex.MangadexApi;
-import moe.tristan.kmdah.service.images.cache.CacheSettings;
 import moe.tristan.kmdah.mangadex.MangadexSettings;
+import moe.tristan.kmdah.service.images.cache.CacheSettings;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.RecordedRequest;
 
@@ -32,6 +32,7 @@ import okhttp3.mockwebserver.RecordedRequest;
     classes = PingService.class,
     properties = {
         "kmdah.mangadex.client-secret=secret",
+        "kmdah.mangadex.load-balancer-ip=192.168.0.1",
         "kmdah.cache.max-size-gb=100"
     }
 )
@@ -73,6 +74,7 @@ class PingServiceTest {
 
         PingRequest expectedRequest = new PingRequest(
             mangadexSettings.clientSecret(),
+            mangadexSettings.loadBalancerIp().getHostAddress(),
             443,
             DataSize.ofGigabytes(cacheSettings.maxSizeGb()).toBytes(),
             poolSpeed.toBytes(),

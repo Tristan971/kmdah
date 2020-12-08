@@ -26,6 +26,7 @@ class PingRequestTest {
     void withoutTlsCreatedAt() throws JsonProcessingException, JSONException {
         PingRequest request = new PingRequest(
             "secret",
+            "192.168.0.1",
             443,
             1234L,
             4567L,
@@ -37,6 +38,7 @@ class PingRequestTest {
         String expected = """
             {
               "secret": "secret",
+              "ip_address": "192.168.0.1",
               "port": 443,
               "disk_space": 1234,
               "network_speed": 4567,
@@ -57,6 +59,7 @@ class PingRequestTest {
 
         PingRequest request = new PingRequest(
             "secret",
+            "192.168.0.1",
             443,
             1234L,
             4567L,
@@ -69,6 +72,7 @@ class PingRequestTest {
             {
               "secret": "secret",
               "port": 443,
+              "ip_address": "192.168.0.1",
               "disk_space": 1234,
               "network_speed": 4567,
               "tls_created_at": "1996-01-10T12:00:00.000000000Z",
