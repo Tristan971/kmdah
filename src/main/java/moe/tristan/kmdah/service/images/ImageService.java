@@ -12,6 +12,7 @@ import org.springframework.core.io.buffer.DefaultDataBufferFactory;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import moe.tristan.kmdah.mangadex.image.MangadexImageService;
 import moe.tristan.kmdah.service.gossip.messages.LeaderImageServerEvent;
@@ -86,6 +87,7 @@ public class ImageService {
                         )
                     )
                     .doOnSuccess(__ -> imageMetrics.recordSave(startSave))
+                    .subscribeOn(Schedulers.parallel())
                     .subscribe();
 
                 return new ImageContent(

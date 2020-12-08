@@ -17,7 +17,7 @@ import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.gridfs.ReactiveGridFsResource;
+import org.springframework.data.mongodb.gridfs.GridFsCriteria;
 import org.springframework.data.mongodb.gridfs.ReactiveGridFsTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -105,7 +105,7 @@ public class MongodbCachedImageService implements CachedImageService {
     @Override
     public Mono<VacuumingResult> vacuum(VacuumingRequest vacuumingRequest) {
         return reactiveMongoTemplate
-            .count(Query.query(Criteria.where("_id").exists(true)), "fs.chunks")
+            .estimatedCount("fs.chunks")
             .flatMap(count -> {
                 DataSize estimatedSize = DataSize.ofKilobytes(count * 255);
                 return doVacuum(estimatedSize, vacuumingRequest.targetSize());
@@ -126,21 +126,20 @@ public class MongodbCachedImageService implements CachedImageService {
         }
 
         return reactiveMongoTemplate
-            .count(Query.query(Criteria.where("_id").exists(true)), "fs.files")
-            .doOnNext(totalFileCount -> LOGGER.info("Total file count is {}", totalFileCount))
+            .estimatedCount("fs.files")
+            .doOnNext(totalFileCount -> LOGGER.info("Estimated file count is {}", totalFileCount))
             .map(totalFileCount -> (long) (totalFileCount - (totalFileCount / loadFactor)))
             .doOnNext(toDeleteCount -> LOGGER.info("Will attempt deleting {} files", toDeleteCount))
             .flatMap(toDeleteCount -> reactiveGridFsTemplate
-                .getResources("**")
+                .find(Query.query(GridFsCriteria.whereFilename().exists(true)))
                 .limitRequest(toDeleteCount)
-                .flatMap(ReactiveGridFsResource::getGridFSFile)
                 .collectList()
             ).doOnNext(filesToDelete -> LOGGER.info("Collected {} files for deletion", filesToDelete.size()))
             .flatMap(filesToDelete -> {
                 Set<BsonValue> toDeleteIds = filesToDelete.stream().map(GridFSFile::getId).collect(Collectors.toSet());
                 return reactiveGridFsTemplate
                     .delete(Query.query(Criteria.where("_id").in(toDeleteIds)))
-                    .doOnSuccess(__ -> LOGGER.info("Successfully deleted files!"))
+                    .doOnSuccess(__ -> LOGGER.info("Successfully deleted {} files!", toDeleteIds.size()))
                     .thenReturn(new VacuumingResult(
                         filesToDelete.size(),
                         DataSize.ofBytes(filesToDelete.stream().map(GridFSFile::getLength).mapToLong(Long::longValue).sum())

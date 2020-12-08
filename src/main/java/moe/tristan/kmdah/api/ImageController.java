@@ -78,7 +78,7 @@ public class ImageController {
                 return content
                     .bytes()
                     .doOnComplete(() -> imageMetrics.recordLoad(startLoad, content.cacheMode()))
-                    .doOnComplete(() -> imageMetrics.recordServe(startServe, content.cacheMode()));
+                    .doOnSubscribe(__ -> imageMetrics.recordServe(startServe, content.cacheMode()));
             });
     }
 

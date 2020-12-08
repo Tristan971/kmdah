@@ -44,21 +44,28 @@ public class VacuumJob implements LeaderActivity {
 
     @Override
     public void run() {
+        long startTime = System.nanoTime();
+
         VacuumingRequest vacuumingRequest = new VacuumingRequest(DataSize.ofGigabytes(cacheSettings.maxSizeGb()));
         Optional<VacuumingResult> vacuumingResult = cachedImageService
             .vacuum(vacuumingRequest)
             .filter(result -> result.deletedFileCount() > 0)
             .blockOptional();
 
+        long endTime = System.nanoTime();
+        Duration duration = Duration.ofNanos(endTime - startTime);
+
         if (vacuumingResult.isPresent()) {
             VacuumingResult result = vacuumingResult.get();
             LOGGER.info(
-                "Vacuuming run done - freed {}MB by deleting {} files",
+                "Vacuuming run done - freed {}MB by deleting {} files ({}s {}ms)",
                 result.freedSpace().toMegabytes(),
-                result.deletedFileCount()
+                result.deletedFileCount(),
+                duration.toSecondsPart(),
+                duration.toMillisPart()
             );
         } else {
-            LOGGER.info("Vacuuming run finished without any deletion");
+            LOGGER.info("Vacuuming run finished without any deletion ({}s {}ms)", duration.toSecondsPart(), duration.toMillisPart());
         }
     }
 
