@@ -13,11 +13,11 @@ import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.gridfs.GridFsCriteria;
+import org.springframework.data.mongodb.gridfs.ReactiveGridFsResource;
 import org.springframework.data.mongodb.gridfs.ReactiveGridFsTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -54,25 +54,21 @@ public class MongodbCachedImageService implements CachedImageService {
     public Mono<ImageContent> findImage(ImageSpec imageSpec) {
         String filename = specToFilename(imageSpec);
         return reactiveGridFsTemplate
-            .getResource(filename)
-            .onErrorResume(IncorrectResultSizeDataAccessException.class, err -> {
-                LOGGER.error("Found multiple files at path {} - evicting all preemptively: {}", filename, err.getMessage());
-                return reactiveGridFsTemplate.delete(query(whereFilename().is(filename))).then(Mono.empty());
-            })
-            .flatMap(resource -> resource.getGridFSFile().map(gridFsFile -> {
-                OptionalLong contentLength = OptionalLong.of(gridFsFile.getLength());
+            .findFirst(query(whereFilename().is(filename)))
+            .map(gridFSFile -> {
+                OptionalLong contentLength = OptionalLong.of(gridFSFile.getLength());
 
                 // parse metadata if exists
-                Document metadata = gridFsFile.getMetadata();
+                Document metadata = gridFSFile.getMetadata();
                 String mediaType = requireNonNull(metadata).getString(HttpHeaders.CONTENT_TYPE);
 
                 return new ImageContent(
-                    resource.getContent().share(),
+                    reactiveGridFsTemplate.getResource(gridFSFile).flatMapMany(ReactiveGridFsResource::getContent).share(),
                     MediaType.parseMediaType(mediaType),
                     contentLength,
                     CacheMode.HIT
                 );
-            }))
+            })
             .doOnNext(imageContent -> LOGGER.info("Retrieved {} from MongoDB~GridFS as {}", imageSpec, imageContent));
     }
 
