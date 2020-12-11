@@ -82,8 +82,8 @@ class MongodbCacheVacuumingTest {
 
     @Test
     void vacuumNecessary() {
-        long originalFileCount = 100;
-        long maxFileCount = 20;
+        long originalFileCount = 1000;
+        long maxFileCount = 200;
         long expectedDeletedCount = originalFileCount - maxFileCount;
 
         // go for chunk:file 1:1 mapping (to simplify the test)
@@ -106,7 +106,7 @@ class MongodbCacheVacuumingTest {
     }
 
     private void fillCacheToSize(DataSize targetSize) {
-        int numberOfFilesToCreate = 100;
+        int numberOfFilesToCreate = (int) (targetSize.toKilobytes() / 255);
         long perFile = targetSize.toBytes() / numberOfFilesToCreate;
 
         byte[] fileBytes = new byte[(int) perFile];

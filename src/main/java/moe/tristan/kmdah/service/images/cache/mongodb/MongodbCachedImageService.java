@@ -5,27 +5,19 @@ import static org.springframework.data.mongodb.core.query.Query.query;
 import static org.springframework.data.mongodb.gridfs.GridFsCriteria.whereFilename;
 
 import java.util.OptionalLong;
-import java.util.Set;
-import java.util.stream.Collectors;
 
-import org.bson.BsonValue;
-import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.gridfs.GridFsCriteria;
 import org.springframework.data.mongodb.gridfs.ReactiveGridFsResource;
 import org.springframework.data.mongodb.gridfs.ReactiveGridFsTemplate;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.unit.DataSize;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
-import com.mongodb.client.gridfs.model.GridFSFile;
 
 import moe.tristan.kmdah.service.images.ImageContent;
 import moe.tristan.kmdah.service.images.ImageSpec;
@@ -58,9 +50,7 @@ public class MongodbCachedImageService implements CachedImageService {
             .map(gridFSFile -> {
                 OptionalLong contentLength = OptionalLong.of(gridFSFile.getLength());
 
-                // parse metadata if exists
-                Document metadata = gridFSFile.getMetadata();
-                String mediaType = requireNonNull(metadata).getString(HttpHeaders.CONTENT_TYPE);
+                String mediaType = requireNonNull(gridFSFile.getMetadata()).getString("_contentType");
 
                 return new ImageContent(
                     reactiveGridFsTemplate.getResource(gridFSFile).flatMapMany(ReactiveGridFsResource::getContent).share(),
@@ -69,31 +59,29 @@ public class MongodbCachedImageService implements CachedImageService {
                     CacheMode.HIT
                 );
             })
-            .doOnNext(imageContent -> LOGGER.info("Retrieved {} from MongoDB~GridFS as {}", imageSpec, imageContent));
+            .doOnNext(imageContent -> LOGGER.debug("Retrieved {} from MongoDB~GridFS as {}", imageSpec, imageContent));
     }
 
     @Override
     public Mono<ObjectId> saveImage(ImageSpec imageSpec, ImageContent imageContent) {
         String filename = specToFilename(imageSpec);
 
-        Document document = new Document();
-        document.put(HttpHeaders.CONTENT_TYPE, imageContent.contentType().toString());
-        LOGGER.info("Storing {} in MongoDB~GridFS as {} with metadata: {}", imageSpec, filename, document.toString());
+        LOGGER.debug("Storing {} in MongoDB~GridFS as {} with content type: {}", imageSpec, filename, imageContent.contentType());
 
         return reactiveGridFsTemplate
-            .store(imageContent.bytes(), filename, document)
-            .doOnSuccess(objectId -> LOGGER.info(
-                "Stored {} in MongoDB~GridFS as _id:{}/{} with metadata: {}",
+            .store(imageContent.bytes(), filename, imageContent.contentType().toString())
+            .doOnSuccess(objectId -> LOGGER.debug(
+                "Stored {} in MongoDB~GridFS as _id:{}/{} with content type: {}",
                 imageSpec,
                 objectId,
                 filename,
-                document.toString()
+                imageContent.contentType()
             ))
             .doOnError(err -> LOGGER.error(
-                "Failed storing {} in MongoFB~GridFS as {} with metadata: {}",
+                "Failed storing {} in MongoFB~GridFS as {} with content type: {}",
                 imageSpec,
                 filename,
-                document.toString(),
+                imageContent.contentType(),
                 err
             ));
     }
@@ -102,9 +90,33 @@ public class MongodbCachedImageService implements CachedImageService {
     public Mono<VacuumingResult> vacuum(VacuumingRequest vacuumingRequest) {
         return reactiveMongoTemplate
             .estimatedCount("fs.chunks")
-            .flatMap(count -> {
-                DataSize estimatedSize = DataSize.ofKilobytes(count * 255);
-                return doVacuum(estimatedSize, vacuumingRequest.targetSize());
+            .flatMap(estimatedChunkCount -> {
+                DataSize current = DataSize.ofKilobytes(estimatedChunkCount * 255);
+                DataSize max = vacuumingRequest.targetSize();
+
+                double loadFactor = (double) current.toBytes() / (double) max.toBytes();
+                LOGGER.info("Cache fill factor: {}% ({}/{}GB)", (int) (loadFactor * 100), current.toGigabytes(), max.toGigabytes());
+
+                if (loadFactor < 1.) {
+                    LOGGER.info("No need for vacuuming");
+                    return Mono.just(new VacuumingResult(0L, DataSize.ofBytes(0L)));
+                }
+
+                return reactiveMongoTemplate
+                    .estimatedCount("fs.files")
+                    .doOnNext(totalFileCount -> LOGGER.info("Estimated file count is {}", totalFileCount))
+                    .map(totalFileCount -> (long) (totalFileCount - (totalFileCount / loadFactor)))
+                    .flatMap(toDeleteCount -> {
+                        int batchSize = 100;
+                        int batchCount = Math.toIntExact(toDeleteCount / batchSize);
+                        LOGGER.info("Vacuum will run in {} batches of {} deletions, for a total of {} files", batchCount, batchSize, toDeleteCount);
+
+                        return Flux
+                            .range(1, batchCount)
+                            .doOnNext(batchId -> LOGGER.info("Vacuum batch [{}/{}]...", batchId, batchCount))
+                            .flatMapSequential(batchId -> deleteRandomGridfsFiles(batchSize), 1)
+                            .then(Mono.just(new VacuumingResult(toDeleteCount, DataSize.ofBytes(current.toBytes() - max.toBytes()))));
+                    });
             });
     }
 
@@ -112,35 +124,9 @@ public class MongodbCachedImageService implements CachedImageService {
         return String.join("/", spec.chapter(), spec.mode().name(), spec.file());
     }
 
-    private Mono<VacuumingResult> doVacuum(DataSize current, DataSize max) {
-        double loadFactor = (double) current.toBytes() / (double) max.toBytes();
-        LOGGER.info("Cache fill factor: {}% ({}/{}GB)", (int) (loadFactor * 100), current.toGigabytes(), max.toGigabytes());
-
-        if (loadFactor < 1.) {
-            LOGGER.info("No need for vacuuming");
-            return Mono.just(new VacuumingResult(0L, DataSize.ofBytes(0L)));
-        }
-
-        return reactiveMongoTemplate
-            .estimatedCount("fs.files")
-            .doOnNext(totalFileCount -> LOGGER.info("Estimated file count is {}", totalFileCount))
-            .map(totalFileCount -> (long) (totalFileCount - (totalFileCount / loadFactor)))
-            .doOnNext(toDeleteCount -> LOGGER.info("Will attempt deleting {} files", toDeleteCount))
-            .flatMap(toDeleteCount -> reactiveGridFsTemplate
-                .find(Query.query(GridFsCriteria.whereFilename().exists(true)))
-                .limitRequest(toDeleteCount)
-                .collectList()
-            ).doOnNext(filesToDelete -> LOGGER.info("Collected {} files for deletion", filesToDelete.size()))
-            .flatMap(filesToDelete -> {
-                Set<BsonValue> toDeleteIds = filesToDelete.stream().map(GridFSFile::getId).collect(Collectors.toSet());
-                return reactiveGridFsTemplate
-                    .delete(Query.query(Criteria.where("_id").in(toDeleteIds)))
-                    .doOnSuccess(__ -> LOGGER.info("Successfully deleted {} files!", toDeleteIds.size()))
-                    .thenReturn(new VacuumingResult(
-                        filesToDelete.size(),
-                        DataSize.ofBytes(filesToDelete.stream().map(GridFSFile::getLength).mapToLong(Long::longValue).sum())
-                    ));
-            });
+    private Mono<Void> deleteRandomGridfsFiles(int n) {
+        Query query = query(whereFilename().exists(true)).limit(n);
+        return reactiveGridFsTemplate.delete(query);
     }
 
 }

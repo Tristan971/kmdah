@@ -58,9 +58,11 @@ public class VacuumJob implements LeaderActivity {
         if (vacuumingResult.isPresent()) {
             VacuumingResult result = vacuumingResult.get();
             LOGGER.info(
-                "Vacuuming run done - freed {}MB by deleting {} files ({}s {}ms)",
+                "Vacuuming run done - freed {}MB by deleting {} files ({}h {}m {}s {}ms)",
                 result.freedSpace().toMegabytes(),
                 result.deletedFileCount(),
+                duration.toHoursPart(),
+                duration.toMinutes(),
                 duration.toSecondsPart(),
                 duration.toMillisPart()
             );
