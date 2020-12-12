@@ -10,7 +10,7 @@ public class ImageRequestTokenValidator {
     private static final Logger LOGGER = LoggerFactory.getLogger(ImageRequestTokenValidator.class);
 
     public void validate(String token, String chapter) {
-        LOGGER.info("Not validating tokens.");
+        LOGGER.debug("Not validating tokens.");
     }
 
 }
