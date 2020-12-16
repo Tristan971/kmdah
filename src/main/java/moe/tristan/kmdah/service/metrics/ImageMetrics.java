@@ -15,12 +15,13 @@ public class ImageMetrics {
     private static final String METRICS_PREFIX = "kmdah_image_";
 
     private static final String OP_SERVE_IMAGE = METRICS_PREFIX + "serve";
-
     private static final String OP_SEARCH_IMAGE = METRICS_PREFIX + "search";
     private static final String OP_DOWNLOAD_IMAGE = METRICS_PREFIX + "load";
     private static final String OP_STORE_IMAGE = METRICS_PREFIX + "store";
 
+
     private static final String CACHE_MODE_TAG_KEY = "cache_mode";
+    private static final String COUNTRY_CACHE_TAG_KEY = "country";
 
     private final MeterRegistry meterRegistry;
 

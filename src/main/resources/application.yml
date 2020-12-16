@@ -54,6 +54,11 @@ kmdah:
       username: ${KMDAH_CACHE_MONGODB_USERNAME:kmdah}
       password: ${KMDAH_CACHE_MONGODB_PASSWORD:kmdah}
 
+  geoip:
+    enabled: ${KMDAH_GEOIP_ENABLED:false}
+    ip-header: ${KMDAH_GEOPIP_IP_HEADER:X-Forwarded-For}
+    license-key: ${KMDAH_GEOIP_LICENSE_KEY:unset}
+
   gossip:
     id-generation-strategy: ${KMDAH_GOSSIP_ID_GENERATION_METHOD:random_uuid}
     redis:
