@@ -9,8 +9,6 @@ public record GeoIpSettings(
 
     boolean enabled,
 
-    String ipHeader,
-
     String licenseKey
 
 ) {}

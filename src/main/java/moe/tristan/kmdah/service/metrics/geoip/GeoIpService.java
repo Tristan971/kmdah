@@ -1,6 +1,5 @@
 package moe.tristan.kmdah.service.metrics.geoip;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Optional;
 
@@ -9,9 +8,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import com.maxmind.geoip2.DatabaseReader;
-import com.maxmind.geoip2.exception.GeoIp2Exception;
-import com.maxmind.geoip2.model.AbstractCountryResponse;
-import com.maxmind.geoip2.record.Country;
 
 @Component
 public class GeoIpService {
@@ -30,14 +26,16 @@ public class GeoIpService {
         }
     }
 
-    public Optional<String> resolveCountryCode(InetAddress inetAddress) {
+    public Optional<String> resolveCountryCode(String address) {
         if (databaseReader == null) {
-            throw new IllegalStateException("Cannot resolve IP address' country when the GeoIp support is not enabled!");
+            return Optional.empty();
         } else {
             try {
-                return databaseReader.tryCountry(inetAddress).map(AbstractCountryResponse::getCountry).map(Country::getIsoCode);
-            } catch (IOException | GeoIp2Exception e) {
-                throw new IllegalStateException("Couldn't resolve country for " + inetAddress);
+                InetAddress inetAddress = InetAddress.getByName(address);
+                return Optional.of(databaseReader.country(inetAddress).getCountry().getIsoCode());
+            } catch (Throwable e) {
+                LOGGER.error("Couldn't resolve country for ip: {} - {}", address, e.getMessage());
+                return Optional.empty();
             }
         }
     }

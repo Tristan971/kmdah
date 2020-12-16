@@ -34,6 +34,7 @@ import moe.tristan.kmdah.service.images.validation.ImageRequestTokenValidator;
 import moe.tristan.kmdah.service.images.validation.InvalidImageRequestReferrerException;
 import moe.tristan.kmdah.service.images.validation.InvalidImageRequestTokenException;
 import moe.tristan.kmdah.service.metrics.ImageMetrics;
+import moe.tristan.kmdah.service.metrics.geoip.GeoIpMetrics;
 
 @WebFluxTest(ImageController.class)
 class ImageControllerTest {
@@ -49,6 +50,9 @@ class ImageControllerTest {
 
     @MockBean
     private ImageControllerHeaders imageControllerHeaders;
+
+    @MockBean
+    private GeoIpMetrics geoIpMetrics;
 
     @MockBean
     private ImageMetrics imageMetrics;

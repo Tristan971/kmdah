@@ -19,9 +19,7 @@ public class ImageMetrics {
     private static final String OP_DOWNLOAD_IMAGE = METRICS_PREFIX + "load";
     private static final String OP_STORE_IMAGE = METRICS_PREFIX + "store";
 
-
     private static final String CACHE_MODE_TAG_KEY = "cache_mode";
-    private static final String COUNTRY_CACHE_TAG_KEY = "country";
 
     private final MeterRegistry meterRegistry;
 

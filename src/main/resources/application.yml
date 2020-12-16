@@ -23,6 +23,7 @@ spring:
 server:
   port: ${kmdah.worker.port}
   shutdown: graceful
+  forward-headers-strategy: framework
 
 logging.level:
   root: WARN
@@ -56,7 +57,6 @@ kmdah:
 
   geoip:
     enabled: ${KMDAH_GEOIP_ENABLED:false}
-    ip-header: ${KMDAH_GEOPIP_IP_HEADER:X-Forwarded-For}
     license-key: ${KMDAH_GEOIP_LICENSE_KEY:unset}
 
   gossip:
