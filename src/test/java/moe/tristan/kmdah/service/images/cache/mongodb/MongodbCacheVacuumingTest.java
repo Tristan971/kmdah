@@ -92,6 +92,16 @@ class MongodbCacheVacuumingTest {
 
         fillCacheToSize(usedSize);
 
+        // force collection stats to be up to date
+        reactiveMongoTemplate.executeCommand(
+            """
+                {
+                    "validate": "fs.chunks",
+                    "full": true
+                }
+                """
+        ).blockOptional().orElseThrow();
+
         VacuumingResult vacuum = mongodbCachedImageService
             .vacuum(new VacuumingRequest(maxSize))
             .blockOptional()

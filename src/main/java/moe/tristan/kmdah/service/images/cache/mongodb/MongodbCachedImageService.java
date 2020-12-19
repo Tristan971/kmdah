@@ -34,10 +34,7 @@ public class MongodbCachedImageService implements CachedImageService {
     private final ReactiveMongoTemplate reactiveMongoTemplate;
     private final ReactiveGridFsTemplate reactiveGridFsTemplate;
 
-    public MongodbCachedImageService(
-        ReactiveGridFsTemplate reactiveGridFsTemplate,
-        ReactiveMongoTemplate reactiveMongoTemplate
-    ) {
+    public MongodbCachedImageService(ReactiveGridFsTemplate reactiveGridFsTemplate, ReactiveMongoTemplate reactiveMongoTemplate) {
         this.reactiveMongoTemplate = reactiveMongoTemplate;
         this.reactiveGridFsTemplate = reactiveGridFsTemplate;
     }
@@ -88,36 +85,41 @@ public class MongodbCachedImageService implements CachedImageService {
 
     @Override
     public Mono<VacuumingResult> vacuum(VacuumingRequest vacuumingRequest) {
-        return reactiveMongoTemplate
-            .estimatedCount("fs.chunks")
-            .flatMap(estimatedChunkCount -> {
-                DataSize current = DataSize.ofKilobytes(estimatedChunkCount * 255);
-                DataSize max = vacuumingRequest.targetSize();
-
-                double loadFactor = (double) current.toBytes() / (double) max.toBytes();
-                LOGGER.info("Cache fill factor: {}% ({}/{}GB)", (int) (loadFactor * 100), current.toGigabytes(), max.toGigabytes());
-
-                if (loadFactor < 1.) {
-                    LOGGER.info("No need for vacuuming");
-                    return Mono.just(new VacuumingResult(0L, DataSize.ofBytes(0L)));
+        return reactiveMongoTemplate.executeCommand(
+            """
+                {
+                    "collStats": "fs.chunks"
                 }
+                """
+        ).flatMap(collStats -> {
+            int numBytesStorageUsed = collStats.getInteger("storageSize");
+            DataSize current = DataSize.ofBytes(numBytesStorageUsed);
+            DataSize max = vacuumingRequest.targetSize();
 
-                return reactiveMongoTemplate
-                    .estimatedCount("fs.files")
-                    .doOnNext(totalFileCount -> LOGGER.info("Estimated file count is {}", totalFileCount))
-                    .map(totalFileCount -> (long) (totalFileCount - (totalFileCount / loadFactor)))
-                    .flatMap(toDeleteCount -> {
-                        int batchSize = 100;
-                        int batchCount = Math.toIntExact(toDeleteCount / batchSize);
-                        LOGGER.info("Vacuum will run in {} batches of {} deletions, for a total of {} files", batchCount, batchSize, toDeleteCount);
+            double loadFactor = (double) current.toBytes() / (double) max.toBytes();
+            LOGGER.info("Cache fill factor: {}% ({}/{}GB)", (int) (loadFactor * 100), current.toGigabytes(), max.toGigabytes());
 
-                        return Flux
-                            .range(1, batchCount)
-                            .doOnNext(batchId -> LOGGER.info("Vacuum batch [{}/{}]...", batchId, batchCount))
-                            .flatMapSequential(batchId -> deleteRandomGridfsFiles(batchSize), 1)
-                            .then(Mono.just(new VacuumingResult(toDeleteCount, DataSize.ofBytes(current.toBytes() - max.toBytes()))));
-                    });
-            });
+            if (loadFactor < 1.) {
+                LOGGER.info("No need for vacuuming");
+                return Mono.just(new VacuumingResult(0L, DataSize.ofBytes(0L)));
+            }
+
+            return reactiveMongoTemplate
+                .estimatedCount("fs.files")
+                .doOnNext(totalFileCount -> LOGGER.info("Estimated file count is {}", totalFileCount))
+                .map(totalFileCount -> (long) (totalFileCount - (totalFileCount / loadFactor)))
+                .flatMap(toDeleteCount -> {
+                    int batchSize = 100;
+                    int batchCount = Math.toIntExact(toDeleteCount / batchSize);
+                    LOGGER.info("Vacuum will run in {} batches of {} deletions, for a total of {} files", batchCount, batchSize, toDeleteCount);
+
+                    return Flux
+                        .range(1, batchCount)
+                        .doOnNext(batchId -> LOGGER.info("Vacuum batch [{}/{}]...", batchId, batchCount))
+                        .flatMapSequential(batchId -> deleteRandomGridfsFiles(batchSize), 1)
+                        .then(Mono.just(new VacuumingResult(toDeleteCount, DataSize.ofBytes(current.toBytes() - max.toBytes()))));
+                });
+        });
     }
 
     private String specToFilename(ImageSpec spec) {

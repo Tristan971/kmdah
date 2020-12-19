@@ -49,7 +49,13 @@ public class MangadexImageService {
                 );
             })
             .doOnSuccess(content -> LOGGER.info("Retrieved {} from upstream {} as {}", imageRequest, upstreamServerUri, content))
-            .doOnError(error -> LOGGER.error("Failed to retrieve {} from upstream {} due to an upstream error.", imageRequest, upstreamServerUri, error));
+            .doOnError(error -> LOGGER.error(
+                "Failed to retrieve {} from upstream {} due to an error: {}",
+                imageRequest,
+                upstreamServerUri,
+                error.getMessage(),
+                error
+            ));
     }
 
 }
