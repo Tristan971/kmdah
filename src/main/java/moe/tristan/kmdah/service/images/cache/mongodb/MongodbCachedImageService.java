@@ -92,8 +92,8 @@ public class MongodbCachedImageService implements CachedImageService {
                 }
                 """
         ).flatMap(collStats -> {
-            int numBytesStorageUsed = collStats.getInteger("storageSize");
-            DataSize current = DataSize.ofBytes(numBytesStorageUsed);
+            Number numBytesStorageUsed = collStats.get("storageSize", Number.class);
+            DataSize current = DataSize.ofBytes(numBytesStorageUsed.longValue());
             DataSize max = vacuumingRequest.targetSize();
 
             double loadFactor = (double) current.toBytes() / (double) max.toBytes();
