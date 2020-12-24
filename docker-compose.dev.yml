@@ -1,0 +1,49 @@
+# This example is not suitable for usage in live clients
+# indeed it completely ignores SSL termination, and is rather meant for
+# development and testing purposes
+---
+version: "3.8"
+
+services:
+  mongo:
+    container_name: kmdah_mongo
+    image: library/mongo:4.4
+    ports:
+      - 27017:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: kmdah
+      MONGO_INITDB_ROOT_PASSWORD: kmdah
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: '512M'
+
+  redis:
+    container_name: kmdah_redis
+    image: library/redis:6-alpine
+    ports:
+      - 6379:6379
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: '200M'
+
+  varnish:
+    container_name: kmdah_varnish
+    image: library/varnish:6
+    ports:
+      - 8180:80
+    environment:
+      VARNISH_SIZE: "100M" # default is 100M already, but we might as well be explicit
+    volumes:
+      - type: bind
+        source: ${PWD}/docs/deploying/varnish/default.vcl
+        target: /etc/varnish/default.vcl
+        read_only: true
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: '200M'
