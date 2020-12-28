@@ -1,19 +1,17 @@
 vcl 4.1;
 
 backend kmdah {
-    .host = "host.docker.internal";
+    // replace with appropriate values for x-container communication
+    .host = "kmdah";
     .port = "8080";
 }
 
 sub vcl_recv {
     // we have only the kmdah backend
-    set req.backend_hint = default;
+    set req.backend_hint = kmdah;
 
     // we never care about cookies
     unset req.http.cookie;
-
-    // proxy client ip to backend for geoip when needed
-    set req.http.X-Forwarded-For = client.ip;
 
     // don't cache __ paths, which are for healthchecks, prometheus and debugging
     if (req.url ~ "^/__") {
@@ -24,6 +22,10 @@ sub vcl_recv {
     if (req.url ~ "^(/.+){4}") {
         set req.url = regsub(req.url, "^/(.+)/(.+)/(.+)/(.+)", "/\2/\3/\4");
     }
+}
+
+sub vcl_backend_response {
+    set beresp.do_stream = true;
 }
 
 sub vcl_deliver {
