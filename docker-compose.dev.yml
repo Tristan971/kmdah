@@ -47,23 +47,3 @@ services:
       resources:
         limits:
           memory: '1G'
-
-  varnish:
-    container_name: kmdah_varnish
-    image: library/varnish:6
-    depends_on:
-      - kmdah
-    ports:
-      - 8180:80
-    environment:
-      VARNISH_SIZE: "100M" # default is 100M already, but we might as well be explicit
-    volumes:
-      - type: bind
-        source: ${PWD}/docs/deploying/varnish/default.vcl
-        target: /etc/varnish/default.vcl
-        read_only: true
-    deploy:
-      resources:
-        limits:
-          cpus: '0.3'
-          memory: '200M'
