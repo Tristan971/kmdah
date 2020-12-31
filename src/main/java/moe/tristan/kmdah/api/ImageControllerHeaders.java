@@ -26,6 +26,7 @@ public class ImageControllerHeaders {
         headers.add(HttpHeaders.CACHE_CONTROL, "public/ max-age=1209600");
         headers.add("Timing-Allow-Origin", "https://mangadex.org");
         headers.add("X-Content-Type-Options", "nosniff");
+        headers.add("X-Cache", imageContent.cacheMode().name());
 
         // match for expected headers
         headers.setContentType(imageContent.contentType());

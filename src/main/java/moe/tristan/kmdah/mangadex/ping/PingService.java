@@ -55,7 +55,7 @@ public class PingService {
             DataSize.ofGigabytes(cacheSettings.maxSizeGb()).toBytes(),
             networkSpeedBytesPerSecond,
             lastCreatedAt.map(ldt -> ldt.atZone(ZoneOffset.UTC)),
-            19
+            MangadexApi.SPEC_VERSION
         );
 
         return webClient

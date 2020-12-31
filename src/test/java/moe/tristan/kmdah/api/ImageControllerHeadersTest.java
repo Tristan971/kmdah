@@ -64,6 +64,8 @@ class ImageControllerHeadersTest {
     }
 
     private void validateCacheMode(HttpHeaders headers, CacheMode cacheMode) {
+        assertThat(headers.get("X-Cache"))
+            .containsExactly(cacheMode.name());
         assertThat(headers.get("X-Cache-Mode"))
             .containsExactly(cacheMode.name());
     }
