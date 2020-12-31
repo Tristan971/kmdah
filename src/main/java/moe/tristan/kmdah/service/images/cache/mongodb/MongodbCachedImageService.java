@@ -9,6 +9,7 @@ import java.util.OptionalLong;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.gridfs.ReactiveGridFsResource;
@@ -127,7 +128,9 @@ public class MongodbCachedImageService implements CachedImageService {
     }
 
     private Mono<Void> deleteRandomGridfsFiles(int n) {
-        Query query = query(whereFilename().exists(true)).limit(n);
+        Query query = query(whereFilename().exists(true))
+            .with(Sort.by(Sort.Order.asc("uploadDate")))
+            .limit(n);
         return reactiveGridFsTemplate.delete(query);
     }
 
