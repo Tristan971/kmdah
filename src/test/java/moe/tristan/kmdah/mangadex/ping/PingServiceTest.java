@@ -79,7 +79,7 @@ class PingServiceTest {
             DataSize.ofGigabytes(cacheSettings.maxSizeGb()).toBytes(),
             poolSpeed.toBytes(),
             Optional.empty(),
-            19
+            20
         );
 
         PingResponse expectedResponse = new PingResponse(

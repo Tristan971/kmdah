@@ -15,7 +15,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import reactor.core.publisher.Flux;
 
-import moe.tristan.kmdah.mangadex.MangadexApi;
 import moe.tristan.kmdah.service.gossip.InstanceId;
 import moe.tristan.kmdah.service.images.ImageContent;
 import moe.tristan.kmdah.service.images.cache.CacheMode;
@@ -25,11 +24,15 @@ import moe.tristan.kmdah.service.images.cache.CacheMode;
         ImageControllerHeaders.class,
         ImageControllerHeadersTest.SampleInstanceIdConfiguration.class
     },
-    properties = "spring.application.version=" + ImageControllerHeadersTest.VERSION
+    properties = {
+        "spring.application.version=" + ImageControllerHeadersTest.VERSION,
+        "spring.application.spec=" + ImageControllerHeadersTest.SPEC
+    }
 )
 class ImageControllerHeadersTest {
 
     public static final String VERSION = "sample-version";
+    public static final String SPEC = "69";
 
     @Autowired
     private InstanceId instanceId;
@@ -53,7 +56,7 @@ class ImageControllerHeadersTest {
     }
 
     private void validateServerHeader(HttpHeaders headers) {
-        String expected = "kmdah " + VERSION + " (" + MangadexApi.SPEC_VERSION + ") - github.com/Tristan971/kmdah";
+        String expected = "kmdah " + VERSION + " (" + SPEC + ") - github.com/Tristan971/kmdah";
         assertThat(headers.get(HttpHeaders.SERVER))
             .containsExactly(expected);
     }

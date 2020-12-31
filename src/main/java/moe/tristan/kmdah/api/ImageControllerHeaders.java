@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 
-import moe.tristan.kmdah.mangadex.MangadexApi;
 import moe.tristan.kmdah.service.gossip.InstanceId;
 import moe.tristan.kmdah.service.images.ImageContent;
 
@@ -14,9 +13,13 @@ public class ImageControllerHeaders {
     private final InstanceId instanceId;
     private final String serverHeader;
 
-    public ImageControllerHeaders(InstanceId instanceId, @Value("${spring.application.version}") String version) {
+    public ImageControllerHeaders(
+        InstanceId instanceId,
+        @Value("${spring.application.version}") String version,
+        @Value("${spring.application.spec}") String spec
+    ) {
         this.instanceId = instanceId;
-        this.serverHeader = "kmdah " + version + " (" + MangadexApi.SPEC_VERSION + ") - github.com/Tristan971/kmdah";
+        this.serverHeader = "kmdah " + version + " (" + spec + ") - github.com/Tristan971/kmdah";
     }
 
     public void addHeaders(HttpHeaders headers, ImageContent imageContent) {

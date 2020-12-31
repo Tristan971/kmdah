@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -26,17 +27,21 @@ public class PingService {
     private final WebClient webClient;
 
     private final MangadexApi mangadexApi;
+    private final int mangadexSpecVersion;
+
     private final CacheSettings cacheSettings;
     private final MangadexSettings mangadexSettings;
 
     public PingService(
         WebClient.Builder webClient,
         MangadexApi mangadexApi,
+        @Value("${spring.application.spec}") int mangadexSpecVersion,
         CacheSettings cacheSettings,
         MangadexSettings mangadexSettings
     ) {
         this.webClient = webClient.build();
         this.mangadexApi = mangadexApi;
+        this.mangadexSpecVersion = mangadexSpecVersion;
         this.cacheSettings = cacheSettings;
         this.mangadexSettings = mangadexSettings;
     }
@@ -55,7 +60,7 @@ public class PingService {
             DataSize.ofGigabytes(cacheSettings.maxSizeGb()).toBytes(),
             networkSpeedBytesPerSecond,
             lastCreatedAt.map(ldt -> ldt.atZone(ZoneOffset.UTC)),
-            MangadexApi.SPEC_VERSION
+            mangadexSpecVersion
         );
 
         return webClient
