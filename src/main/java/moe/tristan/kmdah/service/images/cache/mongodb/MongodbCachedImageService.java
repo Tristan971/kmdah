@@ -1,5 +1,6 @@
 package moe.tristan.kmdah.service.images.cache.mongodb;
 
+import static java.lang.Math.toIntExact;
 import static java.util.Objects.requireNonNull;
 import static org.springframework.data.mongodb.core.query.Query.query;
 import static org.springframework.data.mongodb.gridfs.GridFsCriteria.whereFilename;
@@ -10,6 +11,7 @@ import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.gridfs.ReactiveGridFsResource;
@@ -17,7 +19,6 @@ import org.springframework.data.mongodb.gridfs.ReactiveGridFsTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.unit.DataSize;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import moe.tristan.kmdah.service.images.ImageContent;
@@ -110,14 +111,9 @@ public class MongodbCachedImageService implements CachedImageService {
                 .doOnNext(totalFileCount -> LOGGER.info("Estimated file count is {}", totalFileCount))
                 .map(totalFileCount -> (long) (totalFileCount - (totalFileCount / loadFactor)))
                 .flatMap(toDeleteCount -> {
-                    int batchSize = 100;
-                    int batchCount = Math.toIntExact(toDeleteCount / batchSize);
-                    LOGGER.info("Vacuum will run in {} batches of {} deletions, for a total of {} files", batchCount, batchSize, toDeleteCount);
+                    LOGGER.info("Vacuum will delete {} files", toDeleteCount);
 
-                    return Flux
-                        .range(1, batchCount)
-                        .doOnNext(batchId -> LOGGER.info("Vacuum batch [{}/{}]...", batchId, batchCount))
-                        .flatMapSequential(batchId -> deleteRandomGridfsFiles(batchSize), 1)
+                    return deleteRandomGridfsFiles(toIntExact(toDeleteCount))
                         .then(Mono.just(new VacuumingResult(toDeleteCount, DataSize.ofBytes(current.toBytes() - max.toBytes()))));
                 });
         });
@@ -129,7 +125,7 @@ public class MongodbCachedImageService implements CachedImageService {
 
     private Mono<Void> deleteRandomGridfsFiles(int n) {
         Query query = query(whereFilename().exists(true))
-            .with(Sort.by(Sort.Order.asc("uploadDate")))
+            .with(Sort.by(Order.asc("uploadDate")))
             .limit(n);
         return reactiveGridFsTemplate.delete(query);
     }
