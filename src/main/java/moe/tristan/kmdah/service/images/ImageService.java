@@ -83,6 +83,7 @@ public class ImageService {
                             multicaster,
                             content.contentType(),
                             content.contentLength(),
+                            content.lastModified(),
                             content.cacheMode()
                         )
                     )
@@ -94,6 +95,7 @@ public class ImageService {
                     multicaster,
                     content.contentType(),
                     content.contentLength(),
+                    content.lastModified(),
                     content.cacheMode()
                 );
             });

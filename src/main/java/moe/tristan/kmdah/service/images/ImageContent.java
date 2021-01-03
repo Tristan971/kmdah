@@ -1,5 +1,6 @@
 package moe.tristan.kmdah.service.images;
 
+import java.time.Instant;
 import java.util.OptionalLong;
 
 import org.springframework.core.io.buffer.DataBuffer;
@@ -15,6 +16,8 @@ public record ImageContent(
     MediaType contentType,
 
     OptionalLong contentLength,
+
+    Instant lastModified,
 
     CacheMode cacheMode
 

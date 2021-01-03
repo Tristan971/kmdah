@@ -30,6 +30,7 @@ public class ImageControllerHeaders {
         headers.add("Timing-Allow-Origin", "https://mangadex.org");
         headers.add("X-Content-Type-Options", "nosniff");
         headers.add("X-Cache", imageContent.cacheMode().name());
+        headers.setLastModified(imageContent.lastModified().toEpochMilli());
 
         // match for expected headers
         headers.setContentType(imageContent.contentType());

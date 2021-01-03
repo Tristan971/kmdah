@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayInputStream;
+import java.time.Instant;
 import java.util.OptionalLong;
 import java.util.UUID;
 
@@ -131,6 +132,7 @@ class ImageServiceTest {
             dataBufferFlux,
             MediaType.IMAGE_PNG,
             OptionalLong.of(bytes.length),
+            Instant.now(),
             cacheMode
         );
     }

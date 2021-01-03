@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.OptionalLong;
 
 import org.bson.types.ObjectId;
@@ -76,7 +77,7 @@ class MongodbCachedImageServiceTest {
 
         byte[] sampleBytes = requireNonNull(getClass().getClassLoader().getResourceAsStream("ref.jpg")).readAllBytes();
         MediaType sampleContentType = MediaType.IMAGE_JPEG;
-        ImageContent sampleImage = sampleContent(sampleBytes, sampleContentType);
+        ImageContent sampleImage = sampleContent(sampleBytes, sampleContentType, Instant.now());
 
         // store
         ObjectId saveResult = mongodbCachedImageService.saveImage(sampleSpec, sampleImage).blockOptional().orElseThrow();
@@ -94,7 +95,7 @@ class MongodbCachedImageServiceTest {
         assertThat(retrievedBytes).isEqualTo(sampleBytes);
     }
 
-    private ImageContent sampleContent(byte[] bytes, MediaType mediaType) {
+    private ImageContent sampleContent(byte[] bytes, MediaType mediaType, Instant lastModified) {
         long len = bytes.length;
 
         Flux<DataBuffer> bytesBuffer = DataBufferUtils.readInputStream(
@@ -103,7 +104,7 @@ class MongodbCachedImageServiceTest {
             bytes.length / 2 // ensure chunked
         );
 
-        return new ImageContent(bytesBuffer, mediaType, OptionalLong.of(len), CacheMode.MISS);
+        return new ImageContent(bytesBuffer, mediaType, OptionalLong.of(len), lastModified, CacheMode.MISS);
     }
 
 }

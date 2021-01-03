@@ -2,6 +2,9 @@ package moe.tristan.kmdah.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.OptionalLong;
 import java.util.UUID;
 
@@ -31,8 +34,9 @@ import moe.tristan.kmdah.service.images.cache.CacheMode;
 )
 class ImageControllerHeadersTest {
 
-    public static final String VERSION = "sample-version";
-    public static final String SPEC = "69";
+    static final String VERSION = "sample-version";
+    static final String SPEC = "69";
+    private static final Instant LAST_MODIFIED = LocalDate.of(1996, 1, 10).atStartOfDay().toInstant(ZoneOffset.UTC);
 
     @Autowired
     private InstanceId instanceId;
@@ -45,7 +49,7 @@ class ImageControllerHeadersTest {
     void validateHeadersByCacheMode(CacheMode cacheMode) {
         HttpHeaders headers = new HttpHeaders();
 
-        ImageContent content = new ImageContent(Flux.empty(), MediaType.IMAGE_JPEG, OptionalLong.of(1L), cacheMode);
+        ImageContent content = new ImageContent(Flux.empty(), MediaType.IMAGE_JPEG, OptionalLong.of(1L), LAST_MODIFIED, cacheMode);
         imageControllerHeaders.addHeaders(headers, content);
 
         validateInstanceId(headers, instanceId);
@@ -95,6 +99,9 @@ class ImageControllerHeadersTest {
 
         assertThat(headers.get("X-Content-Type-Options"))
             .containsExactly("nosniff");
+
+        assertThat(Instant.ofEpochMilli(headers.getLastModified()))
+            .isEqualTo(LAST_MODIFIED);
     }
 
     @TestConfiguration

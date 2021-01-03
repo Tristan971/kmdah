@@ -5,6 +5,7 @@ import static java.util.Objects.requireNonNull;
 import static org.springframework.data.mongodb.core.query.Query.query;
 import static org.springframework.data.mongodb.gridfs.GridFsCriteria.whereFilename;
 
+import java.time.Instant;
 import java.util.OptionalLong;
 
 import org.bson.types.ObjectId;
@@ -50,11 +51,13 @@ public class MongodbCachedImageService implements CachedImageService {
                 OptionalLong contentLength = OptionalLong.of(gridFSFile.getLength());
 
                 String mediaType = requireNonNull(gridFSFile.getMetadata()).getString("_contentType");
+                Instant lastModified = gridFSFile.getUploadDate().toInstant();
 
                 return new ImageContent(
                     reactiveGridFsTemplate.getResource(gridFSFile).flatMapMany(ReactiveGridFsResource::getContent).share(),
                     MediaType.parseMediaType(mediaType),
                     contentLength,
+                    lastModified,
                     CacheMode.HIT
                 );
             })

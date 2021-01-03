@@ -2,6 +2,7 @@ package moe.tristan.kmdah.mangadex.image;
 
 import static java.util.Objects.requireNonNull;
 
+import java.time.Instant;
 import java.util.OptionalLong;
 
 import org.slf4j.Logger;
@@ -12,9 +13,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import moe.tristan.kmdah.service.images.cache.CacheMode;
 import moe.tristan.kmdah.service.images.ImageContent;
 import moe.tristan.kmdah.service.images.ImageSpec;
+import moe.tristan.kmdah.service.images.cache.CacheMode;
 
 @Service
 public class MangadexImageService {
@@ -41,10 +42,16 @@ public class MangadexImageService {
                 MediaType contentType = entityFlux.getHeaders().getContentType();
                 long contentLength = entityFlux.getHeaders().getContentLength();
 
+                long upstreamLastModified = entityFlux.getHeaders().getLastModified();
+                Instant lastModified = upstreamLastModified != -1
+                    ? Instant.ofEpochMilli(upstreamLastModified)
+                    : Instant.now();
+
                 return new ImageContent(
                     requireNonNull(entityFlux.getBody(), "Empty upstream response!"),
                     contentType,
                     contentLength != -1 ? OptionalLong.of(contentLength) : OptionalLong.empty(),
+                    lastModified,
                     CacheMode.MISS
                 );
             })

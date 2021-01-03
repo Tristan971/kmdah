@@ -3,6 +3,7 @@ package moe.tristan.kmdah.service.images.cache.mongodb;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.ByteArrayInputStream;
+import java.time.Instant;
 import java.util.OptionalLong;
 import java.util.Random;
 
@@ -122,12 +123,14 @@ class MongodbCacheVacuumingTest {
         byte[] fileBytes = new byte[(int) perFile];
         new Random().nextBytes(fileBytes);
 
+        Instant now = Instant.now();
         for (int i = 0; i < numberOfFilesToCreate; i++) {
             ImageSpec spec = new ImageSpec(ImageMode.DATA, "test", "file-" + i);
             ImageContent content = new ImageContent(
                 makeRandomFileContent(fileBytes),
                 MediaType.IMAGE_PNG,
                 OptionalLong.of(fileBytes.length),
+                now,
                 CacheMode.MISS
             );
 
