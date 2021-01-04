@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.SmartLifecycle;
+import org.springframework.integration.support.leader.LockRegistryLeaderInitiator;
 import org.springframework.stereotype.Component;
 import reactor.core.Disposable;
 import reactor.core.scheduler.Scheduler;
@@ -20,12 +21,17 @@ public class KmdahLifecycle implements SmartLifecycle {
     private static final Logger LOGGER = LoggerFactory.getLogger(KmdahLifecycle.class);
 
     private final GossipPublisher gossipPublisher;
+    private final LockRegistryLeaderInitiator lockRegistryLeaderInitiator;
 
     private final Scheduler scheduler = Schedulers.boundedElastic();
     private final AtomicReference<Disposable> gossipPingJob = new AtomicReference<>();
 
-    public KmdahLifecycle(GossipPublisher gossipPublisher) {
+    public KmdahLifecycle(
+        GossipPublisher gossipPublisher,
+        LockRegistryLeaderInitiator lockRegistryLeaderInitiator
+    ) {
         this.gossipPublisher = gossipPublisher;
+        this.lockRegistryLeaderInitiator = lockRegistryLeaderInitiator;
     }
 
     @Override
@@ -41,6 +47,10 @@ public class KmdahLifecycle implements SmartLifecycle {
 
     @Override
     public void stop() {
+        // app gives up leadership itself, to ensure that it happens before the
+        // redis connection is closed (in which case it might not communicate
+        // itself going down, or give up the lock directly)
+        lockRegistryLeaderInitiator.stop();
         Optional.ofNullable(gossipPingJob.get()).ifPresent(disposable -> {
             disposable.dispose();
             gossipPublisher.broadcastShutdown();

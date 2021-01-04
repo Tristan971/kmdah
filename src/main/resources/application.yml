@@ -20,7 +20,7 @@ spring:
   config:
     import: optional:file:${KMDAH_CONFIGURATION:config.yml}
   profiles:
-    active: ${KMDAH_CACHE_BACKEND}
+    active: ${kmdah.cache.backend}
 
 server:
   port: ${kmdah.worker.port}
@@ -49,6 +49,7 @@ management:
 kmdah:
 
   cache:
+    backend: ${KMDAH_CACHE_BACKEND:none}
     max-size-gb: ${KMDAH_CACHE_MAX_SIZE_GB:100}
 
     filesystem:
