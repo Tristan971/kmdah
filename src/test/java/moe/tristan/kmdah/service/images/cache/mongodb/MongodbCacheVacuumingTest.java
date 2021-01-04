@@ -10,8 +10,6 @@ import java.util.Random;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.data.mongo.MongoReactiveDataAutoConfiguration;
-import org.springframework.boot.autoconfigure.mongo.MongoReactiveAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
@@ -21,6 +19,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.util.unit.DataSize;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -29,20 +28,17 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import moe.tristan.kmdah.service.images.cache.CacheMode;
-import moe.tristan.kmdah.service.images.cache.VacuumingRequest;
-import moe.tristan.kmdah.service.images.cache.VacuumingResult;
 import moe.tristan.kmdah.mangadex.image.ImageMode;
 import moe.tristan.kmdah.service.images.ImageContent;
 import moe.tristan.kmdah.service.images.ImageSpec;
+import moe.tristan.kmdah.service.images.cache.CacheMode;
+import moe.tristan.kmdah.service.images.cache.VacuumingRequest;
+import moe.tristan.kmdah.service.images.cache.VacuumingResult;
 
-@SpringBootTest(classes = {
-    MongodbCachedImageService.class,
-    MongoReactiveAutoConfiguration.class,
-    MongoReactiveDataAutoConfiguration.class
-})
 @Testcontainers
 @DirtiesContext
+@ActiveProfiles("cache-mongodb")
+@SpringBootTest(classes = MongodbConfiguration.class)
 class MongodbCacheVacuumingTest {
 
     private static final int MONGODB_PORT = 27017;

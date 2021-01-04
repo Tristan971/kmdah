@@ -48,6 +48,10 @@ kmdah:
 
   cache:
     max-size-gb: ${KMDAH_CACHE_MAX_SIZE_GB:100}
+
+    filesystem:
+      root-dir: ${KMDAH_CACHE_FILESYSTEM_ROOT_DIR:}
+
     mongodb:
       host: ${KMDAH_CACHE_MONGODB_HOST:localhost}
       port: ${KMDAH_CACHE_MONGODB_PORT:27017}

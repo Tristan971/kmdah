@@ -12,14 +12,13 @@ import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.data.mongo.MongoReactiveDataAutoConfiguration;
-import org.springframework.boot.autoconfigure.mongo.MongoReactiveAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.core.io.buffer.DefaultDataBufferFactory;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -27,18 +26,15 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import moe.tristan.kmdah.service.images.cache.CacheMode;
 import moe.tristan.kmdah.mangadex.image.ImageMode;
 import moe.tristan.kmdah.service.images.ImageContent;
 import moe.tristan.kmdah.service.images.ImageSpec;
+import moe.tristan.kmdah.service.images.cache.CacheMode;
 
-@SpringBootTest(classes = {
-    MongodbCachedImageService.class,
-    MongoReactiveAutoConfiguration.class,
-    MongoReactiveDataAutoConfiguration.class
-})
 @Testcontainers
 @DirtiesContext
+@ActiveProfiles("cache-mongodb")
+@SpringBootTest(classes = MongodbConfiguration.class)
 class MongodbCachedImageServiceTest {
 
     private static final int MONGODB_PORT = 27017;

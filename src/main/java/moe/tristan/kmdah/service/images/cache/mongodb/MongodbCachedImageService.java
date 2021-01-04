@@ -18,7 +18,6 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.gridfs.ReactiveGridFsResource;
 import org.springframework.data.mongodb.gridfs.ReactiveGridFsTemplate;
 import org.springframework.http.MediaType;
-import org.springframework.stereotype.Component;
 import org.springframework.util.unit.DataSize;
 import reactor.core.publisher.Mono;
 
@@ -29,7 +28,6 @@ import moe.tristan.kmdah.service.images.cache.CachedImageService;
 import moe.tristan.kmdah.service.images.cache.VacuumingRequest;
 import moe.tristan.kmdah.service.images.cache.VacuumingResult;
 
-@Component
 public class MongodbCachedImageService implements CachedImageService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MongodbCachedImageService.class);
