@@ -19,6 +19,8 @@ spring:
 
   config:
     import: optional:file:${KMDAH_CONFIGURATION:config.yml}
+  profiles:
+    active: ${KMDAH_CACHE_BACKEND}
 
 server:
   port: ${kmdah.worker.port}

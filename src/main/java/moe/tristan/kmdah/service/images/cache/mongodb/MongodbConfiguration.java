@@ -11,7 +11,7 @@ import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.mongodb.gridfs.ReactiveGridFsTemplate;
 
 @Configuration
-@Profile("cache-mongodb")
+@Profile("mongodb")
 @EnableConfigurationProperties(MongodbSettings.class)
 @Import(value = {
     MongoReactiveAutoConfiguration.class,

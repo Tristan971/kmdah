@@ -33,7 +33,7 @@ import moe.tristan.kmdah.service.images.cache.CacheMode;
 
 @Testcontainers
 @DirtiesContext
-@ActiveProfiles("cache-mongodb")
+@ActiveProfiles("mongodb")
 @SpringBootTest(classes = MongodbConfiguration.class)
 class MongodbCachedImageServiceTest {
 
