@@ -7,8 +7,10 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -124,20 +126,11 @@ public class FilesystemCachedImageService implements CachedImageService, HealthI
         Path file = specToPath(imageSpec);
         Path tmpFile = file.getParent().resolve(file.getFileName().toString() + ".tmp");
 
-        if (Files.exists(file) || Files.exists(tmpFile)) {
+        Optional<Path> concurrentWriteWitness = Stream.of(file, tmpFile).filter(Files::exists).findFirst();
+        if (concurrentWriteWitness.isPresent()) {
             LOGGER.warn(
                 "File already exists at {} for image {}. Dropping upstream response to avoid concurrent writes.",
-                file.toAbsolutePath().toString(),
-                imageSpec
-            );
-            // just subscribe to the stream as a noop and return empty save result
-            return imageContent.bytes().then();
-        }
-
-        if (Files.exists(tmpFile)) {
-            LOGGER.warn(
-                "Buffer file already exists at {} for image {}. Dropping upstream response to avoid concurrent writes.",
-                tmpFile.toAbsolutePath().toString(),
+                concurrentWriteWitness.get().toString(),
                 imageSpec
             );
             // just subscribe to the stream as a noop and return empty save result
