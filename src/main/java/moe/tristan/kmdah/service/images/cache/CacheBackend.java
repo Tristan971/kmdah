@@ -3,5 +3,5 @@ package moe.tristan.kmdah.service.images.cache;
 public enum CacheBackend {
     FILESYSTEM,
     MONGODB,
-    NONE
+    CACHE_BACKEND_UNSET
 }

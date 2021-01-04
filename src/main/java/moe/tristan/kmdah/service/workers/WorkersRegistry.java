@@ -8,6 +8,8 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.actuate.health.Health;
+import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
@@ -16,7 +18,7 @@ import moe.tristan.kmdah.service.gossip.messages.WorkerPingEvent;
 import moe.tristan.kmdah.service.gossip.messages.WorkerShutdownEvent;
 
 @Component
-public class WorkersRegistry {
+public class WorkersRegistry implements HealthIndicator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(WorkersRegistry.class);
 
@@ -70,6 +72,18 @@ public class WorkersRegistry {
         List<String> workerList = knownWorkers.keySet().stream().map(WorkerInfo::id).sorted().collect(Collectors.toList());
         long totalBandwidthMbps = getTotalBandwidthMbps();
         LOGGER.info("Worker registry now contains: {} for a total of {}Mbps of bandwidth", workerList, totalBandwidthMbps);
+    }
+
+    @Override
+    public Health health() {
+        if (knownWorkers.size() == 0) {
+            return Health
+                .outOfService()
+                .withDetail("reason", "No other workers known, potentially not in sync with leader")
+                .build();
+        } else {
+            return Health.up().build();
+        }
     }
 
 }

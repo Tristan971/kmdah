@@ -49,7 +49,7 @@ management:
 kmdah:
 
   cache:
-    backend: ${KMDAH_CACHE_BACKEND:none}
+    backend: ${KMDAH_CACHE_BACKEND:cache_backend_unset}
     max-size-gb: ${KMDAH_CACHE_MAX_SIZE_GB:100}
 
     filesystem:
