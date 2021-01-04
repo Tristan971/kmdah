@@ -142,8 +142,7 @@ public class FilesystemCachedImageService implements CachedImageService, HealthI
             .then(DataBufferUtils.write(
                 imageContent.bytes(),
                 tmpFile,
-                StandardOpenOption.CREATE,
-                StandardOpenOption.TRUNCATE_EXISTING,
+                StandardOpenOption.CREATE_NEW,
                 StandardOpenOption.WRITE
             )).doOnSuccess(__ -> {
                 try {
