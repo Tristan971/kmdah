@@ -9,10 +9,10 @@ import java.time.Instant;
 import java.util.OptionalLong;
 import java.util.UUID;
 
-import javax.annotation.PostConstruct;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.actuate.health.Health;
+import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.core.io.buffer.DefaultDataBufferFactory;
@@ -27,7 +27,7 @@ import moe.tristan.kmdah.service.images.cache.CachedImageService;
 import moe.tristan.kmdah.service.images.cache.VacuumingRequest;
 import moe.tristan.kmdah.service.images.cache.VacuumingResult;
 
-public class FilesystemCachedImageService implements CachedImageService {
+public class FilesystemCachedImageService implements CachedImageService, HealthIndicator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FilesystemCachedImageService.class);
 
@@ -35,16 +35,17 @@ public class FilesystemCachedImageService implements CachedImageService {
 
     public FilesystemCachedImageService(FilesystemSettings filesystemSettings) {
         this.filesystemSettings = filesystemSettings;
+
+        LOGGER.info("Initializing in filesystem mode with rootDir: {}", filesystemSettings.rootDir());
+        validateRootDirHealth();
+        LOGGER.info("Successfully validated rootDir {} for usage as cache filesystem!", filesystemSettings.rootDir());
     }
 
-    @PostConstruct
-    void validateRootDir() {
+    void validateRootDirHealth() {
         Path rootDir = filesystemSettings.rootDir();
         if (rootDir == null || rootDir.toString().isBlank()) {
             throw new IllegalStateException("Filesystem mode requires setting kmdah.cache.filesystem.rootDir but none was set!");
         }
-
-        LOGGER.info("Initializing in filesystem mode with rootDir: {}", rootDir);
 
         if (!rootDir.isAbsolute()) {
             throw new IllegalStateException("rootDir should be an absolute path!");
@@ -81,8 +82,6 @@ public class FilesystemCachedImageService implements CachedImageService {
         } catch (IOException e) {
             throw new IllegalStateException("rootDir cannot be deleted from!", e);
         }
-
-        LOGGER.info("Successfully validated rootDir {} for usage as cache filesystem!", rootDir);
     }
 
     @Override
@@ -120,7 +119,7 @@ public class FilesystemCachedImageService implements CachedImageService {
     }
 
     @Override
-    public Mono<Path> saveImage(ImageSpec imageSpec, ImageContent imageContent) {
+    public Mono<?> saveImage(ImageSpec imageSpec, ImageContent imageContent) {
         Path file = specToPath(imageSpec);
 
         if (Files.exists(file)) {
@@ -133,13 +132,15 @@ public class FilesystemCachedImageService implements CachedImageService {
             return imageContent.bytes().then(Mono.just(file));
         }
 
-        return DataBufferUtils.write(
-            imageContent.bytes(),
-            file,
-            StandardOpenOption.CREATE,
-            StandardOpenOption.TRUNCATE_EXISTING,
-            StandardOpenOption.WRITE
-        ).thenReturn(file);
+        return Mono
+            .fromCallable(() -> Files.createDirectories(file.getParent()))
+            .then(DataBufferUtils.write(
+                imageContent.bytes(),
+                file,
+                StandardOpenOption.CREATE,
+                StandardOpenOption.TRUNCATE_EXISTING,
+                StandardOpenOption.WRITE
+            ));
     }
 
     @Override
@@ -154,6 +155,16 @@ public class FilesystemCachedImageService implements CachedImageService {
             .resolve(spec.chapter())
             .resolve(spec.mode().name())
             .resolve(spec.file());
+    }
+
+    @Override
+    public Health health() {
+        try {
+            validateRootDirHealth();
+            return Health.up().build();
+        } catch (Exception e) {
+            return Health.down(e).build();
+        }
     }
 
 }
