@@ -88,33 +88,31 @@ public class FilesystemCachedImageService implements CachedImageService, HealthI
 
     @Override
     public Mono<ImageContent> findImage(ImageSpec imageSpec) {
-        Path file = specToPath(imageSpec);
-        if (!Files.exists(file)) {
-            return Mono.empty();
-        }
+        return Mono
+            .just(specToPath(imageSpec))
+            .filter(Files::exists)
+            .map(file -> {
+                try {
+                    long length = Files.size(file);
+                    Instant lastModified = Files.getLastModifiedTime(file).toInstant();
+                    String contentType = Files.probeContentType(file);
+                    MediaType mediaType = MediaType.parseMediaType(contentType);
 
-        return Mono.fromCallable(() -> {
-            try {
-                long length = Files.size(file);
-                Instant lastModified = Files.getLastModifiedTime(file).toInstant();
-                String contentType = Files.probeContentType(file);
-                MediaType mediaType = MediaType.parseMediaType(contentType);
-
-                return new ImageContent(
-                    Flux.defer(() -> DataBufferUtils.read(
-                        file,
-                        DefaultDataBufferFactory.sharedInstance,
-                        DefaultDataBufferFactory.DEFAULT_INITIAL_CAPACITY
-                    )),
-                    mediaType,
-                    OptionalLong.of(length),
-                    lastModified,
-                    CacheMode.HIT
-                );
-            } catch (IOException e) {
-                throw new IllegalStateException("Cannot read file " + file.toAbsolutePath().toString() + " for image " + imageSpec, e);
-            }
-        });
+                    return new ImageContent(
+                        Flux.defer(() -> DataBufferUtils.read(
+                            file,
+                            DefaultDataBufferFactory.sharedInstance,
+                            DefaultDataBufferFactory.DEFAULT_INITIAL_CAPACITY
+                        )),
+                        mediaType,
+                        OptionalLong.of(length),
+                        lastModified,
+                        CacheMode.HIT
+                    );
+                } catch (IOException e) {
+                    throw new IllegalStateException("Cannot read file " + file.toAbsolutePath().toString() + " for image " + imageSpec, e);
+                }
+            });
     }
 
     @Override
