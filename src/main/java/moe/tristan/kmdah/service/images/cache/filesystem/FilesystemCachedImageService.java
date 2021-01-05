@@ -1,5 +1,7 @@
 package moe.tristan.kmdah.service.images.cache.filesystem;
 
+import static reactor.core.publisher.Mono.fromCallable;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -16,7 +18,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
-import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.core.io.buffer.DefaultDataBufferFactory;
 import org.springframework.http.MediaType;
@@ -89,36 +90,29 @@ public class FilesystemCachedImageService implements CachedImageService, HealthI
 
     @Override
     public Mono<ImageContent> findImage(ImageSpec imageSpec) {
-        return Mono
-            .just(specToPath(imageSpec))
-            .filter(Files::isRegularFile)
-            .map(file -> {
-                try {
-                    long length = Files.size(file);
+        return Mono.fromCallable(() -> {
+            Path file = specToPath(imageSpec);
+            try {
+                long length = Files.size(file);
+                Instant lastModified = Files.getLastModifiedTime(file).toInstant();
+                String contentType = Files.probeContentType(file);
+                MediaType mediaType = MediaType.parseMediaType(contentType);
 
-                    Instant lastModified = Files.getLastModifiedTime(file).toInstant();
-
-                    String contentType = Files.probeContentType(file);
-                    MediaType mediaType = MediaType.parseMediaType(contentType);
-
-                    Flux<DataBuffer> bytes = DataBufferUtils.read(
+                return new ImageContent(
+                    Flux.defer(() -> DataBufferUtils.read(
                         file,
                         DefaultDataBufferFactory.sharedInstance,
                         DefaultDataBufferFactory.DEFAULT_INITIAL_CAPACITY
-                    );
-
-                    return new ImageContent(
-                        bytes,
-                        mediaType,
-                        OptionalLong.of(length),
-                        lastModified,
-                        CacheMode.HIT
-                    );
-                } catch (IOException e) {
-                    throw new IllegalStateException("Cannot read file " + file.toAbsolutePath().toString() + " for image " + imageSpec, e);
-                }
-            })
-            .onErrorContinue((err, obj) -> LOGGER.error("Couldn't read {} from cache", imageSpec, err));
+                    )),
+                    mediaType,
+                    OptionalLong.of(length),
+                    lastModified,
+                    CacheMode.HIT
+                );
+            } catch (IOException e) {
+                throw new IllegalStateException("Cannot read file " + file.toAbsolutePath().toString() + " for image " + imageSpec, e);
+            }
+        });
     }
 
     @Override
@@ -137,8 +131,7 @@ public class FilesystemCachedImageService implements CachedImageService, HealthI
             return imageContent.bytes().then();
         }
 
-        return Mono
-            .fromCallable(() -> Files.createDirectories(tmpFile.getParent()))
+        return fromCallable(() -> Files.createDirectories(tmpFile.getParent()))
             .then(DataBufferUtils.write(
                 imageContent.bytes(),
                 tmpFile,
