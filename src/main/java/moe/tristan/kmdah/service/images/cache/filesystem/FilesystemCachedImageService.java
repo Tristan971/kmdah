@@ -1,7 +1,5 @@
 package moe.tristan.kmdah.service.images.cache.filesystem;
 
-import static reactor.core.publisher.Mono.fromCallable;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -90,8 +88,12 @@ public class FilesystemCachedImageService implements CachedImageService, HealthI
 
     @Override
     public Mono<ImageContent> findImage(ImageSpec imageSpec) {
+        Path file = specToPath(imageSpec);
+        if (!Files.exists(file)) {
+            return Mono.empty();
+        }
+
         return Mono.fromCallable(() -> {
-            Path file = specToPath(imageSpec);
             try {
                 long length = Files.size(file);
                 Instant lastModified = Files.getLastModifiedTime(file).toInstant();
@@ -131,8 +133,9 @@ public class FilesystemCachedImageService implements CachedImageService, HealthI
             return imageContent.bytes().then();
         }
 
-        return fromCallable(() -> Files.createDirectories(tmpFile.getParent()))
-            .then(DataBufferUtils.write(
+        return Mono
+            .fromCallable(() -> Files.createDirectories(tmpFile.getParent()))
+            .flatMap(__ -> DataBufferUtils.write(
                 imageContent.bytes(),
                 tmpFile,
                 StandardOpenOption.CREATE_NEW,
