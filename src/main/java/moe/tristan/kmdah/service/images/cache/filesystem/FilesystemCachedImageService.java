@@ -1,5 +1,6 @@
 package moe.tristan.kmdah.service.images.cache.filesystem;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -89,7 +90,7 @@ public class FilesystemCachedImageService implements CachedImageService, HealthI
     @Override
     public Mono<ImageContent> findImage(ImageSpec imageSpec) {
         return Mono
-            .just(specToPath(imageSpec))
+            .fromCallable(() -> specToPath(imageSpec))
             .filter(Files::exists)
             .map(file -> {
                 try {
@@ -117,37 +118,37 @@ public class FilesystemCachedImageService implements CachedImageService, HealthI
 
     @Override
     public Mono<?> saveImage(ImageSpec imageSpec, ImageContent imageContent) {
-        Path file = specToPath(imageSpec);
-        Path tmpFile = file.getParent().resolve(file.getFileName().toString() + ".tmp");
-
-        Optional<Path> concurrentWriteWitness = Stream.of(file, tmpFile).filter(Files::exists).findFirst();
-        if (concurrentWriteWitness.isPresent()) {
-            LOGGER.warn(
-                "File already exists at {} for image {}. Dropping upstream response to avoid concurrent writes.",
-                concurrentWriteWitness.get().toString(),
-                imageSpec
-            );
-            // just subscribe to the stream as a noop and return empty save result
-            return imageContent.bytes().then();
-        }
-
         return Mono
-            .fromCallable(() -> Files.createDirectories(tmpFile.getParent()))
-            .flatMap(__ -> DataBufferUtils.write(
-                imageContent.bytes(),
-                tmpFile,
-                StandardOpenOption.CREATE_NEW,
-                StandardOpenOption.WRITE
-            )).doOnSuccess(__ -> {
-                try {
-                    Files.move(
-                        tmpFile,
-                        file,
-                        StandardCopyOption.ATOMIC_MOVE
+            .fromCallable(() -> specToPath(imageSpec))
+            .flatMap(finalFile -> {
+                Path tmpFile = finalFile.resolveSibling(imageSpec.file() + ".tmp");
+
+                Optional<Path> concurrentWriteWitness = Stream.of(finalFile, tmpFile).filter(Files::exists).findFirst();
+                if (concurrentWriteWitness.isPresent()) {
+                    LOGGER.warn(
+                        "File already exists at {} for image {}. Dropping upstream response to avoid concurrent writes.",
+                        concurrentWriteWitness.get().toString(),
+                        imageSpec
                     );
-                } catch (IOException e) {
-                    LOGGER.error("Failed committing {} to cache as {}", tmpFile, file, e);
+                    return imageContent.bytes().then();
                 }
+
+                return DataBufferUtils.write(
+                    imageContent.bytes(),
+                    tmpFile,
+                    StandardOpenOption.CREATE_NEW,
+                    StandardOpenOption.WRITE
+                ).doOnSuccess(__ -> {
+                    try {
+                        Files.move(
+                            tmpFile,
+                            finalFile,
+                            StandardCopyOption.ATOMIC_MOVE
+                        );
+                    } catch (IOException e) {
+                        LOGGER.error("Failed committing {} to cache as {}", tmpFile, finalFile, e);
+                    }
+                });
             });
     }
 
@@ -158,11 +159,9 @@ public class FilesystemCachedImageService implements CachedImageService, HealthI
     }
 
     private Path specToPath(ImageSpec spec) {
-        return filesystemSettings
-            .rootDir()
-            .resolve(spec.chapter())
-            .resolve(spec.mode().name())
-            .resolve(spec.file());
+        return filesystemSettings.rootDir().resolve(
+            spec.chapter() + File.separator + spec.mode().name() + File.separator + spec.file()
+        );
     }
 
     @Override
