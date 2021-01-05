@@ -34,7 +34,7 @@ public class GeoIpService {
                 InetAddress inetAddress = InetAddress.getByName(address);
                 return Optional.of(databaseReader.country(inetAddress).getCountry().getIsoCode());
             } catch (Throwable e) {
-                LOGGER.error("Couldn't resolve country for ip: {} - {}", address, e.getMessage());
+                LOGGER.warn("Couldn't resolve country for ip: {} - {}", address, e.getMessage());
                 return Optional.empty();
             }
         }
