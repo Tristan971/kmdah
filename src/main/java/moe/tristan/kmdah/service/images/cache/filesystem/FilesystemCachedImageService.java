@@ -138,7 +138,13 @@ public class FilesystemCachedImageService implements CachedImageService, HealthI
                     tmpFile,
                     StandardOpenOption.CREATE_NEW,
                     StandardOpenOption.WRITE
-                ).doOnSuccess(__ -> {
+                ).doFirst(() -> {
+                    try {
+                        Files.createDirectories(finalFile.getParent());
+                    } catch (IOException e) {
+                        throw new IllegalStateException("Couldn't create directories for file" + finalFile.toString() + "!", e);
+                    }
+                }).doOnSuccess(__ -> {
                     try {
                         Files.move(
                             tmpFile,
