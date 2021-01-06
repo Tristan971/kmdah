@@ -95,8 +95,22 @@ public class MongodbCachedImageService implements CachedImageService {
                 }
                 """
         ).flatMap(collStats -> {
-            Number numBytesStorageUsed = collStats.get("storageSize", Number.class);
-            DataSize current = DataSize.ofBytes(numBytesStorageUsed.longValue());
+            Number numBytesStorageAllocated = collStats.get("totalSize", Number.class);
+
+            long usedBytesCount = numBytesStorageAllocated.longValue();
+            if (collStats.containsKey("freeStorageSize")) {
+                Number numBytesReusableStorage = collStats.get("freeStorageSize", Number.class);
+                long reusableBytesCount = numBytesReusableStorage.longValue();
+
+                LOGGER.info(
+                    "MongoDB has allocated a total of {}GB on disk, but {}GB are unused and will be automatically reused.",
+                    DataSize.ofBytes(usedBytesCount).toGigabytes(),
+                    DataSize.ofBytes(reusableBytesCount).toGigabytes()
+                );
+                usedBytesCount -= reusableBytesCount;
+            }
+
+            DataSize current = DataSize.ofBytes(usedBytesCount);
             DataSize max = vacuumingRequest.targetSize();
 
             double loadFactor = (double) current.toBytes() / (double) max.toBytes();
