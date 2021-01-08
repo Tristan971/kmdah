@@ -1,5 +1,7 @@
 package moe.tristan.kmdah.api;
 
+import javax.servlet.http.HttpServletResponse;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
@@ -22,26 +24,26 @@ public class ImageControllerHeaders {
         this.serverHeader = "kmdah " + version + " (" + spec + ") - github.com/Tristan971/kmdah";
     }
 
-    public void addHeaders(HttpHeaders headers, ImageContent imageContent) {
+    public void addHeaders(HttpServletResponse response, ImageContent imageContent) {
         // MDAH spec headers
-        headers.add(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "https://mangadex.org");
-        headers.add(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, "*");
-        headers.add(HttpHeaders.CACHE_CONTROL, "public/ max-age=1209600");
-        headers.add("Timing-Allow-Origin", "https://mangadex.org");
-        headers.add("X-Content-Type-Options", "nosniff");
-        headers.add("X-Cache", imageContent.cacheMode().name());
-        headers.setLastModified(imageContent.lastModified().toEpochMilli());
+        response.addHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "https://mangadex.org");
+        response.addHeader(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, "*");
+        response.addHeader(HttpHeaders.CACHE_CONTROL, "public/ max-age=1209600");
+        response.addHeader("Timing-Allow-Origin", "https://mangadex.org");
+        response.addHeader("X-Content-Type-Options", "nosniff");
+        response.addHeader("X-Cache", imageContent.cacheMode().name());
+        response.setDateHeader(HttpHeaders.LAST_MODIFIED, imageContent.lastModified().toEpochMilli());
 
         // match for expected headers
-        headers.setContentType(imageContent.contentType());
+        response.setContentType(imageContent.contentType().toString());
 
         // match attempt for optional headers
-        imageContent.contentLength().ifPresent(headers::setContentLength);
+        imageContent.contentLength().ifPresent(len -> response.setContentLength(Math.toIntExact(len)));
 
         // extra kmdah-specific headers
-        headers.add(HttpHeaders.SERVER, serverHeader);
-        headers.add("X-Instance-Id", instanceId.id());
-        headers.add("X-Cache-Mode", imageContent.cacheMode().name());
+        response.addHeader(HttpHeaders.SERVER, serverHeader);
+        response.addHeader("X-Instance-Id", instanceId.id());
+        response.addHeader("X-Cache-Mode", imageContent.cacheMode().name());
     }
 
 }

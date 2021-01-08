@@ -1,16 +1,16 @@
 package moe.tristan.kmdah.service.images.cache;
 
-import reactor.core.publisher.Mono;
+import java.util.Optional;
 
 import moe.tristan.kmdah.service.images.ImageContent;
 import moe.tristan.kmdah.service.images.ImageSpec;
 
 public interface CachedImageService {
 
-    Mono<ImageContent> findImage(ImageSpec imageSpec);
+    Optional<ImageContent> findImage(ImageSpec imageSpec);
 
-    Mono<?> saveImage(ImageSpec imageSpec, ImageContent imageContent);
+    void saveImage(ImageSpec imageSpec, ImageContent imageContent);
 
-    Mono<VacuumingResult> vacuum(VacuumingRequest vacuumingRequest);
+    VacuumingResult vacuum(VacuumingRequest vacuumingRequest);
 
 }

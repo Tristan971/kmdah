@@ -8,11 +8,9 @@ import java.nio.file.Path;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.io.buffer.DataBuffer;
-import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Flux;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import com.maxmind.db.CHMCache;
 import com.maxmind.geoip2.DatabaseReader;
@@ -24,10 +22,10 @@ public class GeoIpDatabaseReader {
 
     private static final String GEOIP_COUNTRY_URI_FORMAT = "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country&license_key={license}&suffix=tar.gz";
 
-    private final WebClient webClient;
+    private final RestTemplate restTemplate;
 
-    public GeoIpDatabaseReader(WebClient.Builder webClient) {
-        this.webClient = webClient.build();
+    public GeoIpDatabaseReader(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
     }
 
     public DatabaseReader newDatabaseReader(String geoIpLicenseKey) {
@@ -35,16 +33,12 @@ public class GeoIpDatabaseReader {
             Path databaseFileDir = Files.createTempDirectory("kmdah-geoip");
             Path downloadLocation = Files.createTempFile(databaseFileDir, "download", ".tar.gz");
 
-            Flux<DataBuffer> geoIpDownload = webClient
-                .get()
-                .uri(GEOIP_COUNTRY_URI_FORMAT, geoIpLicenseKey)
-                .retrieve()
-                .bodyToFlux(DataBuffer.class)
-                .doOnSubscribe(__ -> LOGGER.info("Downloading GeoIp database to {}", downloadLocation.toAbsolutePath().toString()));
+            byte[] geoIpDatabase = restTemplate.getForObject(
+                UriComponentsBuilder.fromHttpUrl(GEOIP_COUNTRY_URI_FORMAT).buildAndExpand(geoIpLicenseKey).toUriString(),
+                byte[].class
+            );
 
-            DataBufferUtils
-                .write(geoIpDownload, downloadLocation)
-                .block();
+            Files.write(downloadLocation, requireNonNull(geoIpDatabase));
 
             Path databaseFile = untarDatabase(databaseFileDir, downloadLocation);
 

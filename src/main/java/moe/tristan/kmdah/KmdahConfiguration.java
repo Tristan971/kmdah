@@ -8,8 +8,7 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
-import reactor.core.scheduler.Scheduler;
-import reactor.core.scheduler.Schedulers;
+import org.springframework.web.client.RestTemplate;
 
 @Configuration
 @ConfigurationPropertiesScan
@@ -23,8 +22,8 @@ public class KmdahConfiguration {
     }
 
     @Bean
-    public Scheduler scheduler() {
-        return Schedulers.boundedElastic();
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
     }
 
 }

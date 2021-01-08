@@ -1,104 +1,84 @@
 package moe.tristan.kmdah.service.images;
 
-import static reactor.core.publisher.Mono.defer;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
+import org.bouncycastle.util.io.TeeInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
-import org.springframework.core.io.buffer.DataBuffer;
-import org.springframework.core.io.buffer.DataBufferUtils;
-import org.springframework.core.io.buffer.DefaultDataBuffer;
-import org.springframework.core.io.buffer.DefaultDataBufferFactory;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
 import moe.tristan.kmdah.mangadex.image.MangadexImageService;
 import moe.tristan.kmdah.service.gossip.messages.LeaderImageServerEvent;
+import moe.tristan.kmdah.service.images.cache.CacheMode;
 import moe.tristan.kmdah.service.images.cache.CachedImageService;
-import moe.tristan.kmdah.service.metrics.ImageMetrics;
 
 @Service
 public class ImageService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ImageService.class);
 
+    private static final ExecutorService EXECUTOR_SERVICE = Executors.newVirtualThreadExecutor();
+
     private final CachedImageService cachedImageService;
     private final MangadexImageService mangadexImageService;
-    private final ImageMetrics imageMetrics;
 
     private String upstreamServerUri = "https://s2.mangadex.org";
 
     public ImageService(
         CachedImageService cachedImageService,
-        MangadexImageService mangadexImageService,
-        ImageMetrics imageMetrics
+        MangadexImageService mangadexImageService
     ) {
         this.cachedImageService = cachedImageService;
         this.mangadexImageService = mangadexImageService;
-        this.imageMetrics = imageMetrics;
     }
 
-    public Mono<ImageContent> findOrFetch(ImageSpec imageSpec) {
-        long startSearch = System.nanoTime();
-
-        return fetchFromCache(imageSpec)
-            .onErrorResume(error -> {
-                LOGGER.error("Failed pulling {} from cache!", imageSpec, error);
-                return defer(() -> fetchFromUpstream(imageSpec));
-            })
-            .switchIfEmpty(defer(() -> fetchFromUpstream(imageSpec)))
-            .doOnSuccess(content -> {
-                LOGGER.info("Cache {} for {}", content.cacheMode(), imageSpec);
-                imageMetrics.recordSearch(startSearch, content.cacheMode());
-            });
+    public ImageContent findOrFetch(ImageSpec imageSpec) {
+        return cachedImageService
+            .findImage(imageSpec)
+            .orElseGet(() -> fetchFromUpstream(imageSpec));
     }
 
-    private Mono<ImageContent> fetchFromCache(ImageSpec imageSpec) {
-        return cachedImageService.findImage(imageSpec);
-    }
+    private ImageContent fetchFromUpstream(ImageSpec imageSpec) {
+        ImageContent upstreamContent = mangadexImageService.download(imageSpec, upstreamServerUri);
 
-    private Mono<ImageContent> fetchFromUpstream(ImageSpec imageSpec) {
-        return mangadexImageService
-            .download(imageSpec, upstreamServerUri)
-            .map(content -> {
-                Flux<DataBuffer> multicaster = content
-                    .bytes()
-                    .map(dbuf -> {
-                        DefaultDataBuffer allocated = DefaultDataBufferFactory.sharedInstance.allocateBuffer(dbuf.capacity());
-                        allocated.write(dbuf);
-                        DataBufferUtils.release(dbuf);
-                        return (DataBuffer) allocated;
-                    })
-                    .publish()
-                    .autoConnect(2)
-                    .transformDeferred(flux -> flux.map(dbf -> DefaultDataBufferFactory.sharedInstance.wrap(dbf.asByteBuffer())));
+        try {
+            InputStream upstreamIs = upstreamContent.resource().getInputStream();
 
-                long startSave = System.nanoTime();
-                cachedImageService
-                    .saveImage(
-                        imageSpec,
-                        new ImageContent(
-                            multicaster,
-                            content.contentType(),
-                            content.contentLength(),
-                            content.lastModified(),
-                            content.cacheMode()
-                        )
-                    )
-                    .doOnSuccess(__ -> imageMetrics.recordSave(startSave))
-                    .subscribeOn(Schedulers.parallel())
-                    .subscribe();
+            PipedOutputStream responseOutputStreamPipe = new PipedOutputStream();
+            PipedInputStream responseInputStream = new PipedInputStream(responseOutputStreamPipe);
 
-                return new ImageContent(
-                    multicaster,
-                    content.contentType(),
-                    content.contentLength(),
-                    content.lastModified(),
-                    content.cacheMode()
-                );
-            });
+            TeeInputStream cacheSaveInputStream = new TeeInputStream(upstreamIs, responseOutputStreamPipe);
+            ImageContent cacheSaveContent = new ImageContent(
+                new InputStreamResource(cacheSaveInputStream),
+                upstreamContent.contentType(),
+                upstreamContent.contentLength(),
+                upstreamContent.lastModified(),
+                CacheMode.MISS
+            );
+
+            CompletableFuture.runAsync(() -> {
+                LOGGER.info("Starting cache committing");
+                cachedImageService.saveImage(imageSpec, cacheSaveContent);
+            }, EXECUTOR_SERVICE);
+
+            return new ImageContent(
+                new InputStreamResource(responseInputStream),
+                upstreamContent.contentType(),
+                upstreamContent.contentLength(),
+                upstreamContent.lastModified(),
+                CacheMode.MISS
+            );
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     @EventListener(LeaderImageServerEvent.class)
