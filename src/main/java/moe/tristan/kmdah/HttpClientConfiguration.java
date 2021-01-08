@@ -1,11 +1,17 @@
-package moe.tristan.kmdah.configuration;
+package moe.tristan.kmdah;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.web.client.RestTemplate;
 
 @Configuration
-public class JdkHttpClientConfiguration {
+public class HttpClientConfiguration {
+
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
+    }
 
     @Bean
     SimpleClientHttpRequestFactory clientHttpRequestFactory() {

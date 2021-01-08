@@ -1,4 +1,4 @@
-package moe.tristan.kmdah.configuration;
+package moe.tristan.kmdah.loom;
 
 import java.lang.reflect.Field;
 

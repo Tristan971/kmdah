@@ -3,12 +3,13 @@ package moe.tristan.kmdah;
 import java.time.Clock;
 import java.time.ZoneOffset;
 import java.util.TimeZone;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
-import org.springframework.web.client.RestTemplate;
 
 @Configuration
 @ConfigurationPropertiesScan
@@ -22,8 +23,14 @@ public class KmdahConfiguration {
     }
 
     @Bean
-    public RestTemplate restTemplate() {
-        return new RestTemplate();
+    public ScheduledExecutorService scheduledExecutorService() {
+        return Executors.newSingleThreadScheduledExecutor(
+            Thread
+                .builder()
+                .virtual()
+                .name("virt-", 0)
+                .factory()
+        );
     }
 
 }

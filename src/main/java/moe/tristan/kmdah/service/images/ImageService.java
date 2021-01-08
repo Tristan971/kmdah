@@ -4,9 +4,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.bouncycastle.util.io.TeeInputStream;
 import org.slf4j.Logger;
@@ -26,8 +26,7 @@ public class ImageService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ImageService.class);
 
-    private static final ExecutorService EXECUTOR_SERVICE = Executors.newVirtualThreadExecutor();
-
+    private final ScheduledExecutorService scheduledExecutorService;
     private final CachedImageService cachedImageService;
     private final MangadexImageService mangadexImageService;
     private final ImageMetrics imageMetrics;
@@ -35,10 +34,12 @@ public class ImageService {
     private String upstreamServerUri = "https://s2.mangadex.org";
 
     public ImageService(
+        ScheduledExecutorService scheduledExecutorService,
         CachedImageService cachedImageService,
         MangadexImageService mangadexImageService,
         ImageMetrics imageMetrics
     ) {
+        this.scheduledExecutorService = scheduledExecutorService;
         this.cachedImageService = cachedImageService;
         this.mangadexImageService = mangadexImageService;
         this.imageMetrics = imageMetrics;
@@ -47,9 +48,15 @@ public class ImageService {
     public ImageContent findOrFetch(ImageSpec imageSpec) {
         long startSearch = System.nanoTime();
 
-        ImageContent imageContent = cachedImageService
-            .findImage(imageSpec)
-            .orElseGet(() -> fetchFromUpstream(imageSpec));
+        Optional<ImageContent> cacheLookup;
+        try {
+            cacheLookup = cachedImageService.findImage(imageSpec);
+        } catch (Exception e) {
+            LOGGER.error("Failed searching image {} in cache", imageSpec, e);
+            cacheLookup = Optional.empty();
+        }
+
+        ImageContent imageContent = cacheLookup.orElseGet(() -> fetchFromUpstream(imageSpec));
 
         LOGGER.info("Cache {} for {}", imageContent.cacheMode(), imageSpec);
         imageMetrics.recordSearch(startSearch, imageContent.cacheMode());
@@ -78,7 +85,7 @@ public class ImageService {
             CompletableFuture.runAsync(() -> {
                 LOGGER.info("Starting cache committing");
                 cachedImageService.saveImage(imageSpec, cacheSaveContent);
-            }, EXECUTOR_SERVICE);
+            }, scheduledExecutorService);
 
             return new ImageContent(
                 new InputStreamResource(responseInputStream),

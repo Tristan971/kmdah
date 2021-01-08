@@ -2,7 +2,6 @@ package moe.tristan.kmdah.api;
 
 import javax.servlet.http.HttpServletResponse;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 
@@ -13,15 +12,9 @@ import moe.tristan.kmdah.service.images.ImageContent;
 public class ImageControllerHeaders {
 
     private final InstanceId instanceId;
-    private final String serverHeader;
 
-    public ImageControllerHeaders(
-        InstanceId instanceId,
-        @Value("${spring.application.version}") String version,
-        @Value("${spring.application.spec}") String spec
-    ) {
+    public ImageControllerHeaders(InstanceId instanceId) {
         this.instanceId = instanceId;
-        this.serverHeader = "kmdah " + version + " (" + spec + ") - github.com/Tristan971/kmdah";
     }
 
     public void addHeaders(HttpServletResponse response, ImageContent imageContent) {
@@ -41,9 +34,7 @@ public class ImageControllerHeaders {
         imageContent.contentLength().ifPresent(len -> response.setContentLength(Math.toIntExact(len)));
 
         // extra kmdah-specific headers
-        response.addHeader(HttpHeaders.SERVER, serverHeader);
         response.addHeader("X-Instance-Id", instanceId.id());
-        response.addHeader("X-Cache-Mode", imageContent.cacheMode().name());
     }
 
 }
