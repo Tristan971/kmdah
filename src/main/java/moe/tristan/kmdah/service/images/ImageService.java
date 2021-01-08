@@ -19,6 +19,7 @@ import moe.tristan.kmdah.mangadex.image.MangadexImageService;
 import moe.tristan.kmdah.service.gossip.messages.LeaderImageServerEvent;
 import moe.tristan.kmdah.service.images.cache.CacheMode;
 import moe.tristan.kmdah.service.images.cache.CachedImageService;
+import moe.tristan.kmdah.service.metrics.ImageMetrics;
 
 @Service
 public class ImageService {
@@ -29,21 +30,31 @@ public class ImageService {
 
     private final CachedImageService cachedImageService;
     private final MangadexImageService mangadexImageService;
+    private final ImageMetrics imageMetrics;
 
     private String upstreamServerUri = "https://s2.mangadex.org";
 
     public ImageService(
         CachedImageService cachedImageService,
-        MangadexImageService mangadexImageService
+        MangadexImageService mangadexImageService,
+        ImageMetrics imageMetrics
     ) {
         this.cachedImageService = cachedImageService;
         this.mangadexImageService = mangadexImageService;
+        this.imageMetrics = imageMetrics;
     }
 
     public ImageContent findOrFetch(ImageSpec imageSpec) {
-        return cachedImageService
+        long startSearch = System.nanoTime();
+
+        ImageContent imageContent = cachedImageService
             .findImage(imageSpec)
             .orElseGet(() -> fetchFromUpstream(imageSpec));
+
+        LOGGER.info("Cache {} for {}", imageContent.cacheMode(), imageSpec);
+        imageMetrics.recordSearch(startSearch, imageContent.cacheMode());
+
+        return imageContent;
     }
 
     private ImageContent fetchFromUpstream(ImageSpec imageSpec) {

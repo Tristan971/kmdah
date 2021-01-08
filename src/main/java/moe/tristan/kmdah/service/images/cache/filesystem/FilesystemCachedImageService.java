@@ -2,6 +2,7 @@ package moe.tristan.kmdah.service.images.cache.filesystem;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -21,7 +22,6 @@ import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.core.io.buffer.DefaultDataBufferFactory;
 import org.springframework.http.MediaType;
 import org.springframework.util.unit.DataSize;
-
 import reactor.core.publisher.Flux;
 
 import moe.tristan.kmdah.service.images.ImageContent;
@@ -125,6 +125,11 @@ public class FilesystemCachedImageService implements CachedImageService {
                 concurrentWriteWitness.get().toString(),
                 imageSpec
             );
+            try (InputStream is = imageContent.resource().getInputStream()) {
+                is.readAllBytes();
+            } catch (IOException e) {
+                throw new IllegalStateException(e);
+            }
             return;
         }
 

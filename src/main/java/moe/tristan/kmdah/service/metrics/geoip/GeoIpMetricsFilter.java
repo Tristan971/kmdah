@@ -21,7 +21,7 @@ public class GeoIpMetricsFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException, ServletException {
-        if (!request.getContextPath().startsWith("/__")) {
+        if (!request.getServletPath().startsWith("/__")) {
             String remoteAddr = request.getRemoteAddr();
             geoIpMetrics.recordCountrySource(remoteAddr);
         }

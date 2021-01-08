@@ -65,6 +65,8 @@ public class ImageController {
     }
 
     private Resource serve(String imageMode, String chapterHash, String fileName, HttpServletRequest request, HttpServletResponse response) {
+        long startServe = System.nanoTime();
+
         if (request.getHeader(HttpHeaders.REFERER) != null) {
             referrerValidator.validate(request.getHeaders(HttpHeaders.REFERER).nextElement());
         }
@@ -74,6 +76,7 @@ public class ImageController {
         ImageContent imageContent = imageService.findOrFetch(imageRequest);
         controllerHeaders.addHeaders(response, imageContent);
 
+        imageMetrics.recordServe(startServe, imageContent.cacheMode());
         return imageContent.resource();
     }
 

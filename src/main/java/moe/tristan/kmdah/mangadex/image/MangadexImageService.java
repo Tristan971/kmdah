@@ -41,7 +41,6 @@ public class MangadexImageService {
         try {
             ClientHttpRequest request = httpRequestFactory.createRequest(uri, HttpMethod.GET);
             ClientHttpResponse response = request.execute();
-            LOGGER.info("Reponse from upstream! {}", response);
 
             if (!response.getStatusCode().is2xxSuccessful()) {
                 throw new MangadexUpstreamException("Upstream returned an error status code: " + response.getStatusCode());

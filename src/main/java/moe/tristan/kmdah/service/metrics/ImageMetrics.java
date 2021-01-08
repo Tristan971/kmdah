@@ -16,8 +16,6 @@ public class ImageMetrics {
 
     private static final String OP_SERVE_IMAGE = METRICS_PREFIX + "serve";
     private static final String OP_SEARCH_IMAGE = METRICS_PREFIX + "search";
-    private static final String OP_DOWNLOAD_IMAGE = METRICS_PREFIX + "load";
-    private static final String OP_STORE_IMAGE = METRICS_PREFIX + "store";
 
     private static final String CACHE_MODE_TAG_KEY = "cache_mode";
 
@@ -30,19 +28,6 @@ public class ImageMetrics {
     public void recordSearch(long start, CacheMode cacheMode) {
         meterRegistry.timer(
             OP_SEARCH_IMAGE,
-            CACHE_MODE_TAG_KEY, cacheMode.name()
-        ).record(nanoTime() - start, TimeUnit.NANOSECONDS);
-    }
-
-    public void recordSave(long start) {
-        meterRegistry.timer(
-            OP_STORE_IMAGE
-        ).record(nanoTime() - start, TimeUnit.NANOSECONDS);
-    }
-
-    public void recordLoad(long start, CacheMode cacheMode) {
-        meterRegistry.timer(
-            OP_DOWNLOAD_IMAGE,
             CACHE_MODE_TAG_KEY, cacheMode.name()
         ).record(nanoTime() - start, TimeUnit.NANOSECONDS);
     }
