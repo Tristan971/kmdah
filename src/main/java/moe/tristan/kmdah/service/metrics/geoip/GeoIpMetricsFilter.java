@@ -7,11 +7,15 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
 public class GeoIpMetricsFilter extends OncePerRequestFilter {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(GeoIpMetricsFilter.class);
 
     private final GeoIpMetrics geoIpMetrics;
 
@@ -22,8 +26,12 @@ public class GeoIpMetricsFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException, ServletException {
         if (!request.getServletPath().startsWith("/__")) {
-            String remoteAddr = request.getRemoteAddr();
-            geoIpMetrics.recordCountrySource(remoteAddr);
+            try {
+                String remoteAddr = request.getRemoteAddr();
+                geoIpMetrics.recordCountrySource(remoteAddr);
+            } catch (Exception e) {
+                LOGGER.error("Cannot resolve country.", e);
+            }
         }
         filterChain.doFilter(request, response);
     }

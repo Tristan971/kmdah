@@ -63,12 +63,12 @@ public class ImageService {
         try {
             InputStream upstreamIs = upstreamContent.resource().getInputStream();
 
-            PipedOutputStream responseOutputStreamPipe = new PipedOutputStream();
-            PipedInputStream responseInputStream = new PipedInputStream(responseOutputStreamPipe);
+            PipedOutputStream cacheOutputStream = new PipedOutputStream();
+            PipedInputStream cacheInputStream = new PipedInputStream(cacheOutputStream);
+            TeeInputStream responseInputStream = new TeeInputStream(upstreamIs, cacheOutputStream);
 
-            TeeInputStream cacheSaveInputStream = new TeeInputStream(upstreamIs, responseOutputStreamPipe);
             ImageContent cacheSaveContent = new ImageContent(
-                new InputStreamResource(cacheSaveInputStream),
+                new InputStreamResource(cacheInputStream),
                 upstreamContent.contentType(),
                 upstreamContent.contentLength(),
                 upstreamContent.lastModified(),
