@@ -8,10 +8,12 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Set up JDK 15
-        uses: actions/setup-java@v1
+      - uses: AdoptOpenJDK/install-jdk@v1
         with:
-          java-version: 15
+          version: '16'
+          architecture: x64
+          source: "https://download.java.net/java/early_access/loom/9/openjdk-16-loom+9-316_linux-x64_bin.tar.gz"
+          archiveExtension: ".tar"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
