@@ -23,13 +23,17 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.MediaType;
 
+import moe.tristan.kmdah.loom.LoomExecutorServiceConfiguration;
 import moe.tristan.kmdah.mangadex.image.ImageMode;
 import moe.tristan.kmdah.mangadex.image.MangadexImageService;
 import moe.tristan.kmdah.service.images.cache.CacheMode;
 import moe.tristan.kmdah.service.images.cache.CachedImageService;
 import moe.tristan.kmdah.service.metrics.ImageMetrics;
 
-@SpringBootTest(classes = ImageService.class)
+@SpringBootTest(classes = {
+    ImageService.class,
+    LoomExecutorServiceConfiguration.class
+})
 class ImageServiceTest {
 
     private static final ImageSpec SPEC = new ImageSpec(ImageMode.DATA, "chapter", "file");
