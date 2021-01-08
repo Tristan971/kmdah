@@ -82,10 +82,10 @@ public class ImageService {
                 CacheMode.MISS
             );
 
-            CompletableFuture.runAsync(() -> {
-                LOGGER.info("Starting cache committing");
-                cachedImageService.saveImage(imageSpec, cacheSaveContent);
-            }, scheduledExecutorService);
+            CompletableFuture.runAsync(
+                () -> cachedImageService.saveImage(imageSpec, cacheSaveContent),
+                scheduledExecutorService
+            );
 
             return new ImageContent(
                 new InputStreamResource(responseInputStream),
