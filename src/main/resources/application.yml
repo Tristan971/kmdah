@@ -27,6 +27,9 @@ server:
   shutdown: graceful
   forward-headers-strategy: framework
   server-header: "kmdah ${spring.application.version} (${spring.application.spec}) - github.com/Tristan971/kmdah"
+  jetty:
+    threads.idle-timeout: 10s
+    connection-idle-timeout: 10s
 
 logging.level:
   root: WARN
