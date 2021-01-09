@@ -28,14 +28,14 @@ server:
   forward-headers-strategy: framework
   server-header: "kmdah ${spring.application.version} (${spring.application.spec}) - github.com/Tristan971/kmdah"
   jetty:
-    threads.idle-timeout: 10s
-    connection-idle-timeout: 10s
+    threads.idle-timeout: 15s
+    connection-idle-timeout: 15s
 
 logging.level:
   root: WARN
   moe.tristan.kmdah: INFO
   org.springframework:
-    data.convert.CustomConversions: ERROR
+    boot.web.embedded.jetty: INFO
     integration.leader: INFO
 
 management:

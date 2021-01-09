@@ -52,6 +52,6 @@ jobs:
           push: true
           tags: |
             tristandeloche/kmdah:latest
-            tristandeloche/kmdah:0.3.3-SNAPSHOT
+            tristandeloche/kmdah:0.3.4-SNAPSHOT
             rg.fr-par.scw.cloud/tristandeloche/kmdah:latest
-            rg.fr-par.scw.cloud/tristandeloche/kmdah:0.3.3-SNAPSHOT
+            rg.fr-par.scw.cloud/tristandeloche/kmdah:0.3.4-SNAPSHOT
