@@ -9,7 +9,6 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.time.Instant;
@@ -158,7 +157,7 @@ public class FilesystemCachedImageService implements CachedImageService {
         }
 
         try {
-            Files.move(tmpFile, finalFile, StandardCopyOption.ATOMIC_MOVE);
+            Files.move(tmpFile, finalFile);
         } catch (IOException e) {
             throw new IllegalStateException("Couldn't commit temporary file " + tmpFile + " to final location " + finalFile, e);
         }
