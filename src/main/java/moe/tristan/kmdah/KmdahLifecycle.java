@@ -1,6 +1,7 @@
 package moe.tristan.kmdah;
 
 import java.util.Optional;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -18,26 +19,21 @@ import moe.tristan.kmdah.service.gossip.messages.pub.GossipPublisher;
 public class KmdahLifecycle implements SmartLifecycle {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KmdahLifecycle.class);
+    private static final ScheduledExecutorService EXECUTOR_SERVICE = Executors.newSingleThreadScheduledExecutor();
 
     private final GossipPublisher gossipPublisher;
-    private final ScheduledExecutorService scheduledExecutorService;
     private final LockRegistryLeaderInitiator lockRegistryLeaderInitiator;
 
     private final AtomicReference<ScheduledFuture<?>> gossipPingJob = new AtomicReference<>();
 
-    public KmdahLifecycle(
-        GossipPublisher gossipPublisher,
-        ScheduledExecutorService scheduledExecutorService,
-        LockRegistryLeaderInitiator lockRegistryLeaderInitiator
-    ) {
+    public KmdahLifecycle(GossipPublisher gossipPublisher, LockRegistryLeaderInitiator lockRegistryLeaderInitiator) {
         this.gossipPublisher = gossipPublisher;
-        this.scheduledExecutorService = scheduledExecutorService;
         this.lockRegistryLeaderInitiator = lockRegistryLeaderInitiator;
     }
 
     @Override
     public void start() {
-        gossipPingJob.set(scheduledExecutorService.scheduleAtFixedRate(() -> {
+        gossipPingJob.set(EXECUTOR_SERVICE.scheduleAtFixedRate(() -> {
             try {
                 gossipPublisher.broadcastPing();
             } catch (Throwable e) {

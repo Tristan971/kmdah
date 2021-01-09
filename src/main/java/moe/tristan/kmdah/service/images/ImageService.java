@@ -6,7 +6,6 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ScheduledExecutorService;
 
 import org.bouncycastle.util.io.TeeInputStream;
 import org.slf4j.Logger;
@@ -26,7 +25,6 @@ public class ImageService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ImageService.class);
 
-    private final ScheduledExecutorService scheduledExecutorService;
     private final CachedImageService cachedImageService;
     private final MangadexImageService mangadexImageService;
     private final ImageMetrics imageMetrics;
@@ -34,12 +32,10 @@ public class ImageService {
     private String upstreamServerUri = "https://s2.mangadex.org";
 
     public ImageService(
-        ScheduledExecutorService scheduledExecutorService,
         CachedImageService cachedImageService,
         MangadexImageService mangadexImageService,
         ImageMetrics imageMetrics
     ) {
-        this.scheduledExecutorService = scheduledExecutorService;
         this.cachedImageService = cachedImageService;
         this.mangadexImageService = mangadexImageService;
         this.imageMetrics = imageMetrics;
@@ -82,10 +78,7 @@ public class ImageService {
                 CacheMode.MISS
             );
 
-            CompletableFuture.runAsync(
-                () -> cachedImageService.saveImage(imageSpec, cacheSaveContent),
-                scheduledExecutorService
-            );
+            CompletableFuture.runAsync(() -> cachedImageService.saveImage(imageSpec, cacheSaveContent));
 
             return new ImageContent(
                 new InputStreamResource(responseInputStream),

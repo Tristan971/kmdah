@@ -3,6 +3,7 @@ package moe.tristan.kmdah.service.leader;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -20,13 +21,12 @@ import moe.tristan.kmdah.service.gossip.elections.RevokedLeadershipEvent;
 public class LeaderActivities {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LeaderActivities.class);
+    private static final ScheduledExecutorService EXECUTOR_SERVICE = Executors.newScheduledThreadPool(4);
 
-    private final ScheduledExecutorService scheduledExecutorService;
     private final Set<LeaderActivity> leaderActivities;
     private final Map<String, ScheduledFuture<?>> jobs = new ConcurrentHashMap<>();
 
-    public LeaderActivities(ScheduledExecutorService scheduledExecutorService, Set<LeaderActivity> leaderActivities) {
-        this.scheduledExecutorService = scheduledExecutorService;
+    public LeaderActivities(Set<LeaderActivity> leaderActivities) {
         this.leaderActivities = leaderActivities;
     }
 
@@ -49,7 +49,7 @@ public class LeaderActivities {
 
     private void startJobs() {
         leaderActivities.forEach(activity -> {
-            ScheduledFuture<?> job = scheduledExecutorService.scheduleAtFixedRate(
+            ScheduledFuture<?> job = EXECUTOR_SERVICE.scheduleAtFixedRate(
                 () -> {
                     try {
                         activity.run();
