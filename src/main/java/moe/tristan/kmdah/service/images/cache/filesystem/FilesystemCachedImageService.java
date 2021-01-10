@@ -168,7 +168,7 @@ public class FilesystemCachedImageService implements CachedImageService {
 
     private boolean isTmpFileStale(Path tmpFile) {
         Instant now = Instant.now();
-        Instant deadFileCutoff = now.minus(10, ChronoUnit.MINUTES);
+        Instant deadFileCutoff = now.minusSeconds(10 * 60);
         try {
             Instant tmpFileLastModified = Files.getLastModifiedTime(tmpFile).toInstant();
             if (tmpFileLastModified.isBefore(deadFileCutoff)) {
