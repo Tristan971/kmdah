@@ -1,5 +1,7 @@
 package moe.tristan.kmdah.service.images.cache.filesystem;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -151,7 +153,10 @@ public class FilesystemCachedImageService implements CachedImageService {
             FileChannel tmpFileChannel = FileChannel.open(tmpFile, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
             OutputStream tmpFileOutputStream = Channels.newOutputStream(tmpFileChannel)
         ) {
-            StreamUtils.copy(imageContent.resource().getInputStream(), tmpFileOutputStream);
+            StreamUtils.copy(
+                new BufferedInputStream(imageContent.resource().getInputStream()),
+                new BufferedOutputStream(tmpFileOutputStream)
+            );
         } catch (IOException e) {
             throw new IllegalStateException("Couldn't write upstream content to " + tmpFile + "!", e);
         }
