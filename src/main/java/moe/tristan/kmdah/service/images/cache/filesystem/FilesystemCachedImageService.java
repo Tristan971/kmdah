@@ -15,14 +15,16 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.UUID;
+import java.util.concurrent.RejectedExecutionException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.util.StreamUtils;
 import org.springframework.util.unit.DataSize;
+import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
 
 import moe.tristan.kmdah.service.images.ImageContent;
 import moe.tristan.kmdah.service.images.ImageSpec;
@@ -34,6 +36,8 @@ import moe.tristan.kmdah.service.images.cache.VacuumingResult;
 public class FilesystemCachedImageService implements CachedImageService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FilesystemCachedImageService.class);
+
+    private static final Scheduler SAVE_EXECUTOR = Schedulers.newBoundedElastic(10, 10, "cache-filesystem");
 
     private final FilesystemSettings filesystemSettings;
 
@@ -115,12 +119,28 @@ public class FilesystemCachedImageService implements CachedImageService {
 
     @Override
     public void saveImage(ImageSpec imageSpec, ImageContent imageContent) {
+        try {
+            SAVE_EXECUTOR.schedule(() -> {
+                try (InputStream stream = imageContent.resource().getInputStream()) {
+                    doSaveImage(imageSpec, stream);
+                } catch (IOException e) {
+                    LOGGER.error("Couldn't open image content stream!", e);
+                }
+            });
+        } catch (RejectedExecutionException e) {
+            LOGGER.error("Rejected saving of {} due to outstanding amount of files still waiting to be committed.", imageSpec, e);
+        } catch (Exception e) {
+            LOGGER.error("Error while committing {} to cache.", imageSpec, e);
+        }
+    }
+
+    private void doSaveImage(ImageSpec imageSpec, InputStream content) {
         Path finalFile = specToPath(imageSpec);
         Path tmpFile = finalFile.resolveSibling(imageSpec.file() + ".tmp");
 
         if (Files.exists(finalFile)) {
             LOGGER.warn("Final file already exists at {} for image {}. Dropping upstream response", finalFile, imageSpec);
-            drainContent(imageContent.resource());
+            return;
         }
 
         if (Files.exists(tmpFile)) {
@@ -130,12 +150,10 @@ public class FilesystemCachedImageService implements CachedImageService {
                     Files.delete(tmpFile);
                 } catch (IOException e) {
                     LOGGER.error("Cannot delete stale temporary file {}", tmpFile);
-                    drainContent(imageContent.resource());
                     return;
                 }
             } else {
                 LOGGER.warn("Temporary file exists and isn't stale at {} for image {}. Dropping upstream response", tmpFile, imageSpec);
-                drainContent(imageContent.resource());
                 return;
             }
         }
@@ -150,10 +168,7 @@ public class FilesystemCachedImageService implements CachedImageService {
             FileChannel tmpFileChannel = FileChannel.open(tmpFile, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
             OutputStream tmpFileOutputStream = Channels.newOutputStream(tmpFileChannel)
         ) {
-            StreamUtils.copy(
-                imageContent.resource().getInputStream(),
-                tmpFileOutputStream
-            );
+            StreamUtils.copy(content, tmpFileOutputStream);
         } catch (IOException e) {
             throw new IllegalStateException("Couldn't write upstream content to " + tmpFile + "!", e);
         }
@@ -184,14 +199,6 @@ public class FilesystemCachedImageService implements CachedImageService {
         } catch (IOException e) {
             LOGGER.error("Cannot determine whether temporary file is stale. Assume it isn't.", e);
             return false;
-        }
-    }
-
-    private void drainContent(Resource resource) {
-        try (InputStream stream = resource.getInputStream()) {
-            StreamUtils.drain(stream);
-        } catch (IOException e) {
-            LOGGER.error("Exception while draining inputstream!", e);
         }
     }
 
