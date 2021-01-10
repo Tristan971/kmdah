@@ -43,11 +43,15 @@ management:
   endpoints:
     enabled-by-default: true
     web:
-      base-path: /__mon
+      base-path: /
       exposure.include:
         - info
         - health
         - prometheus
+      path-mapping:
+        prometheus: /metrics
+        info: /__mon/info
+        health: /__mon/health
   metrics:
     tags:
       application: ${spring.application.name}
