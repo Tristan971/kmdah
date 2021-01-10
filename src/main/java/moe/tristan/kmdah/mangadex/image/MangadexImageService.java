@@ -11,8 +11,8 @@ import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.ClientHttpRequest;
-import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.ClientHttpResponse;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -25,9 +25,9 @@ public class MangadexImageService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MangadexImageService.class);
 
-    private final ClientHttpRequestFactory httpRequestFactory;
+    private final SimpleClientHttpRequestFactory httpRequestFactory;
 
-    public MangadexImageService(ClientHttpRequestFactory httpRequestFactory) {
+    public MangadexImageService(SimpleClientHttpRequestFactory httpRequestFactory) {
         this.httpRequestFactory = httpRequestFactory;
     }
 
