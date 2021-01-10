@@ -5,10 +5,7 @@ import java.io.InputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.RejectedExecutionException;
 
 import org.bouncycastle.util.io.TeeInputStream;
 import org.slf4j.Logger;
@@ -17,6 +14,8 @@ import org.springframework.context.event.EventListener;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StreamUtils;
+import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
 
 import moe.tristan.kmdah.mangadex.image.MangadexImageService;
 import moe.tristan.kmdah.service.gossip.messages.LeaderImageServerEvent;
@@ -28,6 +27,8 @@ import moe.tristan.kmdah.service.metrics.ImageMetrics;
 public class ImageService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ImageService.class);
+
+    private static final Scheduler SAVE_EXECUTOR = Schedulers.newBoundedElastic(15, 20, "cache-commit", 10);
 
     private final CachedImageService cachedImageService;
     private final MangadexImageService mangadexImageService;
@@ -82,21 +83,14 @@ public class ImageService {
                 CacheMode.MISS
             );
 
-            CompletableFuture.runAsync(() -> {
-                try {
-                    // allow 5 seconds grace period of persistence writing, otherwise drop save attempt and drain content away
-                    // this makes us use 2x threads for saves (1 to monitor save, and 1 for effective save) but prevents slow
-                    // underlying storage from causing busy threads explosion
-                    CompletableFuture.runAsync(() -> cachedImageService.saveImage(imageSpec, cacheSaveContent)).get(5, TimeUnit.SECONDS);
-                } catch (InterruptedException | TimeoutException | ExecutionException e) {
-                    LOGGER.error("Couldn't save image content in a timely fashion!", e);
-                    try {
-                        StreamUtils.drain(cacheInputStream);
-                    } catch (IOException ioException) {
-                        LOGGER.error("Couldn't drain tee'd request inputstream!", ioException);
-                    }
-                }
-            });
+            try {
+                SAVE_EXECUTOR.schedule(() -> cachedImageService.saveImage(imageSpec, cacheSaveContent));
+            } catch (RejectedExecutionException e) {
+                LOGGER.error("Rejected saving of {} due to outstanding amount of files still waiting to be committed.", imageSpec, e);
+                StreamUtils.drain(cacheInputStream);
+            } catch (Exception e) {
+                LOGGER.error("Error while committing {} to cache.", imageSpec, e);
+            }
 
             return new ImageContent(
                 new InputStreamResource(responseInputStream),
