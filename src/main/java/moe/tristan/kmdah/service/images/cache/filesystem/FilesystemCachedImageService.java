@@ -12,7 +12,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.UUID;
@@ -176,7 +175,7 @@ public class FilesystemCachedImageService implements CachedImageService {
                 LOGGER.warn(
                     "Temporary file at {} is {} minutes old. Considering stale.",
                     tmpFile,
-                    tmpFileAge.get(ChronoUnit.MINUTES)
+                    tmpFileAge.toSeconds() / 60
                 );
                 return true;
             } else {
