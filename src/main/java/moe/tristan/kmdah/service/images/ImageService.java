@@ -1,16 +1,21 @@
 package moe.tristan.kmdah.service.images;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.stereotype.Service;
 
 import moe.tristan.kmdah.mangadex.image.MangadexImageService;
 import moe.tristan.kmdah.service.gossip.messages.LeaderImageServerEvent;
 import moe.tristan.kmdah.service.images.cache.CachedImageService;
 import moe.tristan.kmdah.service.metrics.ImageMetrics;
+import moe.tristan.kmdah.util.ContentCallbackInputStream;
 
 @Service
 public class ImageService {
@@ -53,7 +58,27 @@ public class ImageService {
     }
 
     private ImageContent fetchFromUpstream(ImageSpec imageSpec) {
-        return mangadexImageService.download(imageSpec, upstreamServerUri);
+        ImageContent upstreamContent = mangadexImageService.download(imageSpec, upstreamServerUri);
+
+        try {
+            Consumer<byte[]> cacheSaveCallback = bytes -> cachedImageService.saveImage(imageSpec, new ImageContent(
+                new InputStreamResource(new ByteArrayInputStream(bytes)),
+                upstreamContent.contentType(),
+                upstreamContent.contentLength(),
+                upstreamContent.lastModified(),
+                upstreamContent.cacheMode()
+            ));
+
+            return new ImageContent(
+                new InputStreamResource(new ContentCallbackInputStream(upstreamContent.resource().getInputStream(), cacheSaveCallback)),
+                upstreamContent.contentType(),
+                upstreamContent.contentLength(),
+                upstreamContent.lastModified(),
+                upstreamContent.cacheMode()
+            );
+        } catch (IOException e) {
+            throw new IllegalStateException("Cannot open upstream response for reading!", e);
+        }
     }
 
     @EventListener(LeaderImageServerEvent.class)
