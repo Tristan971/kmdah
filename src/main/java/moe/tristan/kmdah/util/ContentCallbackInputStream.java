@@ -25,11 +25,13 @@ public class ContentCallbackInputStream extends InputStream {
     public int read() throws IOException {
         int read = delegate.read();
 
-        contentBuffer.write(read);
         if (read == IOUtils.EOF && !callbackCalled) {
+            contentBuffer.write(IOUtils.EOF); // buffered reads trigger multiple EOF delegate reads ; so ensure only writing it once
             callbackCalled = true;
             byte[] contentCopy = contentBuffer.toByteArray(); // make sure to dupe before last return
             CompletableFuture.runAsync(() -> contentCallback.accept(contentCopy));
+        } else {
+            contentBuffer.write(read);
         }
 
         return read;

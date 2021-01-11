@@ -146,6 +146,7 @@ public class FilesystemCachedImageService implements CachedImageService {
         ) {
             content.transferTo(tmpFileOutputStream);
             Files.move(tmpFile, finalFile);
+            LOGGER.info("Committed {} to cache", imageSpec);
         } catch (IOException e) {
             LOGGER.error("Couldn't commit {} to cache.", tmpFile, e);
         }

@@ -61,13 +61,16 @@ public class ImageService {
         ImageContent upstreamContent = mangadexImageService.download(imageSpec, upstreamServerUri);
 
         try {
-            Consumer<byte[]> cacheSaveCallback = bytes -> cachedImageService.saveImage(imageSpec, new ImageContent(
-                new InputStreamResource(new ByteArrayInputStream(bytes)),
-                upstreamContent.contentType(),
-                upstreamContent.contentLength(),
-                upstreamContent.lastModified(),
-                upstreamContent.cacheMode()
-            ));
+            Consumer<byte[]> cacheSaveCallback = bytes -> {
+                LOGGER.info("Content of {} fully read from upstream. Triggering cache saving.", imageSpec);
+                cachedImageService.saveImage(imageSpec, new ImageContent(
+                    new InputStreamResource(new ByteArrayInputStream(bytes)),
+                    upstreamContent.contentType(),
+                    upstreamContent.contentLength(),
+                    upstreamContent.lastModified(),
+                    upstreamContent.cacheMode()
+                ));
+            };
 
             return new ImageContent(
                 new InputStreamResource(new ContentCallbackInputStream(upstreamContent.resource().getInputStream(), cacheSaveCallback)),
