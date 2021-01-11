@@ -15,16 +15,12 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.UUID;
-import java.util.concurrent.RejectedExecutionException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.MediaType;
-import org.springframework.util.StreamUtils;
 import org.springframework.util.unit.DataSize;
-import reactor.core.scheduler.Scheduler;
-import reactor.core.scheduler.Schedulers;
 
 import moe.tristan.kmdah.service.images.ImageContent;
 import moe.tristan.kmdah.service.images.ImageSpec;
@@ -36,8 +32,6 @@ import moe.tristan.kmdah.service.images.cache.VacuumingResult;
 public class FilesystemCachedImageService implements CachedImageService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FilesystemCachedImageService.class);
-
-    private static final Scheduler SAVE_EXECUTOR = Schedulers.newBoundedElastic(10, 10, "cache-filesystem");
 
     private final FilesystemSettings filesystemSettings;
 
@@ -120,63 +114,40 @@ public class FilesystemCachedImageService implements CachedImageService {
     @Override
     public void saveImage(ImageSpec imageSpec, ImageContent imageContent) {
         try {
-            SAVE_EXECUTOR.schedule(() -> {
-                try (InputStream stream = imageContent.resource().getInputStream()) {
-                    doSaveImage(imageSpec, stream);
-                } catch (IOException e) {
-                    LOGGER.error("Couldn't open image content stream!", e);
-                }
-            });
-        } catch (RejectedExecutionException e) {
-            LOGGER.error("Rejected saving of {} due to outstanding amount of files still waiting to be committed.", imageSpec, e);
-        } catch (Exception e) {
-            LOGGER.error("Error while committing {} to cache.", imageSpec, e);
+            doSaveImage(imageSpec, imageContent.resource().getInputStream());
+        } catch (IOException e) {
+            throw new IllegalStateException("Cannot tee upstream content stream!", e);
         }
     }
 
-    private void doSaveImage(ImageSpec imageSpec, InputStream content) {
+    private void doSaveImage(ImageSpec imageSpec, InputStream content) throws IOException {
         Path finalFile = specToPath(imageSpec);
         Path tmpFile = finalFile.resolveSibling(imageSpec.file() + ".tmp");
 
         if (Files.exists(finalFile)) {
-            LOGGER.warn("Final file already exists at {} for image {}. Dropping upstream response", finalFile, imageSpec);
+            LOGGER.warn("Final file already exists at {} for image {}. Not committing response.", finalFile, imageSpec);
             return;
         }
 
         if (Files.exists(tmpFile)) {
-            boolean isStale = isTmpFileStale(tmpFile);
-            if (isStale) {
-                try {
-                    Files.delete(tmpFile);
-                } catch (IOException e) {
-                    LOGGER.error("Cannot delete stale temporary file {}", tmpFile);
-                    return;
-                }
+            if (isTmpFileStale(tmpFile)) {
+                Files.delete(tmpFile);
             } else {
                 LOGGER.warn("Temporary file exists and isn't stale at {} for image {}. Dropping upstream response", tmpFile, imageSpec);
                 return;
             }
         }
 
-        try {
-            Files.createDirectories(finalFile.getParent());
-        } catch (IOException e) {
-            throw new IllegalStateException("Cannot create intermediate directories to " + finalFile, e);
-        }
+        Files.createDirectories(finalFile.getParent());
 
         try (
             FileChannel tmpFileChannel = FileChannel.open(tmpFile, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
             OutputStream tmpFileOutputStream = Channels.newOutputStream(tmpFileChannel)
         ) {
-            StreamUtils.copy(content, tmpFileOutputStream);
-        } catch (IOException e) {
-            throw new IllegalStateException("Couldn't write upstream content to " + tmpFile + "!", e);
-        }
-
-        try {
+            content.transferTo(tmpFileOutputStream);
             Files.move(tmpFile, finalFile);
         } catch (IOException e) {
-            throw new IllegalStateException("Couldn't commit temporary file " + tmpFile + " to final location " + finalFile, e);
+            LOGGER.error("Couldn't commit {} to cache.", tmpFile, e);
         }
     }
 

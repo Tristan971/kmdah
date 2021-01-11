@@ -3,6 +3,7 @@ package moe.tristan.kmdah.mangadex.image;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.OptionalLong;
 
 import org.slf4j.Logger;
@@ -47,7 +48,11 @@ public class MangadexImageService {
             }
             LOGGER.info("Retrieving {} from upstream {}", imageRequest, upstreamServerUri);
 
-            MediaType contentType = response.getHeaders().getContentType();
+            MediaType contentType = Objects.requireNonNull(
+                response.getHeaders().getContentType(),
+                "Content-Type was not set by upstream for: " + uri
+            );
+
             long contentLength = response.getHeaders().getContentLength();
 
             long upstreamLastModified = response.getHeaders().getLastModified();

@@ -1,10 +1,11 @@
 package moe.tristan.kmdah.api;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
@@ -41,43 +42,50 @@ public class ImageController {
     }
 
     @GetMapping("/{token}/{image-mode}/{chapterHash}/{fileName}")
-    public Resource tokenizedImage(
+    public ResponseEntity<Resource> tokenizedImage(
         @PathVariable String token,
         @PathVariable("image-mode") String imageMode,
         @PathVariable String chapterHash,
         @PathVariable String fileName,
-        HttpServletRequest request,
-        HttpServletResponse response
+        HttpServletRequest request
     ) {
         tokenValidator.validate(token, chapterHash);
-        return image(imageMode, chapterHash, fileName, request, response);
+        return image(imageMode, chapterHash, fileName, request);
     }
 
     @GetMapping("/{image-mode}/{chapterHash}/{fileName}")
-    public Resource image(
+    public ResponseEntity<Resource> image(
         @PathVariable("image-mode") String imageMode,
         @PathVariable String chapterHash,
         @PathVariable String fileName,
-        HttpServletRequest request,
-        HttpServletResponse response
+        HttpServletRequest request
     ) {
-        return serve(imageMode, chapterHash, fileName, request, response);
+        return serve(imageMode, chapterHash, fileName, request);
     }
 
-    private Resource serve(String imageMode, String chapterHash, String fileName, HttpServletRequest request, HttpServletResponse response) {
+    private ResponseEntity<Resource> serve(String imageMode, String chapterHash, String fileName, HttpServletRequest request) {
         long startServe = System.nanoTime();
 
         if (request.getHeader(HttpHeaders.REFERER) != null) {
             referrerValidator.validate(request.getHeaders(HttpHeaders.REFERER).nextElement());
         }
 
+        if (request.getHeader(HttpHeaders.IF_MODIFIED_SINCE) != null) {
+            return new ResponseEntity<>(HttpStatus.NOT_MODIFIED);
+        }
+
         ImageSpec imageRequest = new ImageSpec(ImageMode.fromPathFragment(imageMode), chapterHash, fileName);
 
         ImageContent imageContent = imageService.findOrFetch(imageRequest);
-        controllerHeaders.addHeaders(response, imageContent);
+        HttpHeaders headers = controllerHeaders.buildHeaders(imageContent);
 
         imageMetrics.recordServe(startServe, imageContent.cacheMode());
-        return imageContent.resource();
+
+        return new ResponseEntity<>(
+            imageContent.resource(),
+            headers,
+            HttpStatus.OK
+        );
     }
 
 }

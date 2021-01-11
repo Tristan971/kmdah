@@ -1,21 +1,14 @@
 package moe.tristan.kmdah.service.images;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
 import java.util.Optional;
 
-import org.bouncycastle.util.io.TeeInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
-import org.springframework.core.io.InputStreamResource;
 import org.springframework.stereotype.Service;
 
 import moe.tristan.kmdah.mangadex.image.MangadexImageService;
 import moe.tristan.kmdah.service.gossip.messages.LeaderImageServerEvent;
-import moe.tristan.kmdah.service.images.cache.CacheMode;
 import moe.tristan.kmdah.service.images.cache.CachedImageService;
 import moe.tristan.kmdah.service.metrics.ImageMetrics;
 
@@ -60,34 +53,7 @@ public class ImageService {
     }
 
     private ImageContent fetchFromUpstream(ImageSpec imageSpec) {
-        ImageContent upstreamContent = mangadexImageService.download(imageSpec, upstreamServerUri);
-
-        try {
-            InputStream upstreamIs = upstreamContent.resource().getInputStream();
-
-            PipedOutputStream cacheOutputStream = new PipedOutputStream();
-            PipedInputStream cacheInputStream = new PipedInputStream(cacheOutputStream);
-            TeeInputStream responseInputStream = new TeeInputStream(upstreamIs, cacheOutputStream);
-
-            ImageContent cacheSaveContent = new ImageContent(
-                new InputStreamResource(cacheInputStream),
-                upstreamContent.contentType(),
-                upstreamContent.contentLength(),
-                upstreamContent.lastModified(),
-                CacheMode.MISS
-            );
-            cachedImageService.saveImage(imageSpec, cacheSaveContent);
-
-            return new ImageContent(
-                new InputStreamResource(responseInputStream),
-                upstreamContent.contentType(),
-                upstreamContent.contentLength(),
-                upstreamContent.lastModified(),
-                CacheMode.MISS
-            );
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
+        return mangadexImageService.download(imageSpec, upstreamServerUri);
     }
 
     @EventListener(LeaderImageServerEvent.class)
