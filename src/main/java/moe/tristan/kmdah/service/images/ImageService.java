@@ -63,13 +63,7 @@ public class ImageService {
         try {
             Consumer<byte[]> cacheSaveCallback = bytes -> {
                 LOGGER.info("Content of {} fully read from upstream. Triggering cache saving.", imageSpec);
-                cachedImageService.saveImage(imageSpec, new ImageContent(
-                    new InputStreamResource(new ByteArrayInputStream(bytes)),
-                    upstreamContent.contentType(),
-                    upstreamContent.contentLength(),
-                    upstreamContent.lastModified(),
-                    upstreamContent.cacheMode()
-                ));
+                cachedImageService.saveImage(imageSpec, new ByteArrayInputStream(bytes));
             };
 
             return new ImageContent(

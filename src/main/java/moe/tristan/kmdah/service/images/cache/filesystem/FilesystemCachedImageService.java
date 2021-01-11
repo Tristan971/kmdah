@@ -15,12 +15,16 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.UUID;
+import java.util.concurrent.RejectedExecutionException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.MediaType;
 import org.springframework.util.unit.DataSize;
+
+import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
 
 import moe.tristan.kmdah.service.images.ImageContent;
 import moe.tristan.kmdah.service.images.ImageSpec;
@@ -32,6 +36,9 @@ import moe.tristan.kmdah.service.images.cache.VacuumingResult;
 public class FilesystemCachedImageService implements CachedImageService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FilesystemCachedImageService.class);
+
+    // pool of at most 10 active and 10 scheduled cache file commits
+    private static final Scheduler BOUNDED_SCHEDULER = Schedulers.newBoundedElastic(10, 1, "cache-commit");
 
     private final FilesystemSettings filesystemSettings;
 
@@ -112,11 +119,17 @@ public class FilesystemCachedImageService implements CachedImageService {
     }
 
     @Override
-    public void saveImage(ImageSpec imageSpec, ImageContent imageContent) {
+    public void saveImage(ImageSpec imageSpec, InputStream inputStream) {
         try {
-            doSaveImage(imageSpec, imageContent.resource().getInputStream());
-        } catch (IOException e) {
-            throw new IllegalStateException("Cannot tee upstream content stream!", e);
+            BOUNDED_SCHEDULER.schedule(() -> {
+                try {
+                    doSaveImage(imageSpec, inputStream);
+                } catch (IOException e) {
+                    LOGGER.error("Error during cache saving of {}", imageSpec, e);
+                }
+            });
+        } catch (RejectedExecutionException e) {
+            LOGGER.error("Couldn't schedule cache save due to having a full queue of files to commit already.", e);
         }
     }
 
