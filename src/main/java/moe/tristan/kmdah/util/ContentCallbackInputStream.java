@@ -30,7 +30,7 @@ public class ContentCallbackInputStream extends InputStream {
             callbackCalled = true;
             byte[] contentCopy = contentBuffer.toByteArray(); // make sure to dupe before last return
             CompletableFuture.runAsync(() -> contentCallback.accept(contentCopy));
-        } else {
+        } else if (read != IOUtils.EOF) {
             contentBuffer.write(read);
         }
 
