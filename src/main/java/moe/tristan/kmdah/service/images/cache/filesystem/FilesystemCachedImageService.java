@@ -41,7 +41,7 @@ public class FilesystemCachedImageService implements CachedImageService {
     private static final int NB_CORES = Runtime.getRuntime().availableProcessors();
 
     // pool of at most as many threads as CPUs and additionally queued operations
-    private static final ExecutorService EXECUTOR_SERVICE = new ThreadPoolExecutor(
+    private static final ExecutorService WRITE_EXECUTOR_SERVICE = new ThreadPoolExecutor(
         NB_CORES,
         NB_CORES,
         0L,
@@ -130,7 +130,7 @@ public class FilesystemCachedImageService implements CachedImageService {
     @Override
     public void saveImage(ImageSpec imageSpec, InputStream inputStream) {
         try {
-            EXECUTOR_SERVICE.submit(() -> {
+            WRITE_EXECUTOR_SERVICE.submit(() -> {
                 try {
                     doSaveImage(imageSpec, inputStream);
                 } catch (Exception e) {

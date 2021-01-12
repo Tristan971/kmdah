@@ -1,6 +1,5 @@
 package moe.tristan.kmdah.mangadex.image;
 
-import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Objects;
@@ -67,7 +66,7 @@ public class MangadexImageService {
                 lastModified,
                 CacheMode.MISS
             );
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new IllegalStateException(e);
         }
     }

@@ -48,8 +48,14 @@ public class ImageService {
             LOGGER.error("Failed searching image {} in cache", imageSpec, e);
             cacheLookup = Optional.empty();
         }
+        imageMetrics.recordSearchFromCache(startSearch, cacheLookup.isPresent());
 
-        ImageContent imageContent = cacheLookup.orElseGet(() -> fetchFromUpstream(imageSpec));
+        ImageContent imageContent = cacheLookup.orElseGet(() -> {
+            long startUptreamFetch = System.nanoTime();
+            ImageContent upstreamResponseContent = fetchFromUpstream(imageSpec);
+            imageMetrics.recordSearchFromUpstream(startUptreamFetch);
+            return upstreamResponseContent;
+        });
 
         LOGGER.info("Cache {} for {}", imageContent.cacheMode(), imageSpec);
         imageMetrics.recordSearch(startSearch, imageContent.cacheMode());
