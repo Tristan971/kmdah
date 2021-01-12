@@ -28,8 +28,9 @@ server:
   forward-headers-strategy: framework
   server-header: "kmdah ${spring.application.version} (${spring.application.spec}) - github.com/Tristan971/kmdah"
   jetty:
-    threads.idle-timeout: 15s
-    connection-idle-timeout: 15s
+    connection-idle-timeout: 3s
+    threads:
+      idle-timeout: 5s
 
 logging.level:
   root: WARN
