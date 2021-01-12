@@ -1,5 +1,6 @@
 package moe.tristan.kmdah.mangadex.image;
 
+import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Objects;
@@ -66,8 +67,8 @@ public class MangadexImageService {
                 lastModified,
                 CacheMode.MISS
             );
-        } catch (Exception e) {
-            throw new IllegalStateException(e);
+        } catch (IOException e) {
+            throw new MangadexUpstreamException("Failed upstream fetch for " + imageRequest, e);
         }
     }
 
