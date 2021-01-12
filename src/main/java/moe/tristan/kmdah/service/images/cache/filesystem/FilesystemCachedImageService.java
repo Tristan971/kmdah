@@ -15,16 +15,17 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.MediaType;
 import org.springframework.util.unit.DataSize;
-
-import reactor.core.scheduler.Scheduler;
-import reactor.core.scheduler.Schedulers;
 
 import moe.tristan.kmdah.service.images.ImageContent;
 import moe.tristan.kmdah.service.images.ImageSpec;
@@ -37,8 +38,16 @@ public class FilesystemCachedImageService implements CachedImageService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FilesystemCachedImageService.class);
 
-    // pool of at most 10 active and 10 scheduled cache file commits
-    private static final Scheduler BOUNDED_SCHEDULER = Schedulers.newBoundedElastic(10, 1, "cache-commit");
+    private static final int NB_CORES = Runtime.getRuntime().availableProcessors();
+
+    // pool of at most as many threads as CPUs and additionally queued operations
+    private static final ExecutorService EXECUTOR_SERVICE = new ThreadPoolExecutor(
+        NB_CORES,
+        NB_CORES,
+        0L,
+        TimeUnit.MILLISECONDS,
+        new LinkedBlockingQueue<>(NB_CORES)
+    );
 
     private final FilesystemSettings filesystemSettings;
 
@@ -121,10 +130,10 @@ public class FilesystemCachedImageService implements CachedImageService {
     @Override
     public void saveImage(ImageSpec imageSpec, InputStream inputStream) {
         try {
-            BOUNDED_SCHEDULER.schedule(() -> {
+            EXECUTOR_SERVICE.submit(() -> {
                 try {
                     doSaveImage(imageSpec, inputStream);
-                } catch (IOException e) {
+                } catch (Exception e) {
                     LOGGER.error("Error during cache saving of {}", imageSpec, e);
                 }
             });
