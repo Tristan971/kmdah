@@ -77,7 +77,7 @@ public class ImageService {
 
         ImageContent imageContent = cacheLookup.orElseGet(() -> {
             long startUptreamFetch = System.nanoTime();
-            ImageContent upstreamResponseContent = fetchFromUpstream(imageSpec);
+            ImageContent upstreamResponseContent = fetchFromUpstream(imageSpec, ABORTED != searchResult);
             imageMetrics.recordSearchFromUpstream(startUptreamFetch);
             return upstreamResponseContent;
         });
@@ -88,8 +88,11 @@ public class ImageService {
         return imageContent;
     }
 
-    private ImageContent fetchFromUpstream(ImageSpec imageSpec) {
+    private ImageContent fetchFromUpstream(ImageSpec imageSpec, boolean saveToCache) {
         ImageContent upstreamContent = mangadexImageService.download(imageSpec, upstreamServerUri);
+        if (!saveToCache) {
+            return upstreamContent;
+        }
 
         try {
             Consumer<byte[]> cacheSaveCallback = bytes -> {

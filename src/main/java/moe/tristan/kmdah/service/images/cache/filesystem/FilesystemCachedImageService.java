@@ -138,7 +138,7 @@ public class FilesystemCachedImageService implements CachedImageService {
                 }
             });
         } catch (RejectedExecutionException e) {
-            LOGGER.error("Couldn't schedule cache save due to having a full queue of files to commit already.", e);
+            LOGGER.error("Couldn't schedule cache save of {} due to having a full queue of files to commit already.", imageSpec);
         }
     }
 
