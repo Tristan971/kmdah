@@ -1,8 +1,16 @@
 package moe.tristan.kmdah.service.images;
 
+import static moe.tristan.kmdah.service.metrics.CacheSearchResult.ABORTED;
+import static moe.tristan.kmdah.service.metrics.CacheSearchResult.FOUND;
+import static moe.tristan.kmdah.service.metrics.CacheSearchResult.NOT_FOUND;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 import org.slf4j.Logger;
@@ -14,6 +22,7 @@ import org.springframework.stereotype.Service;
 import moe.tristan.kmdah.mangadex.image.MangadexImageService;
 import moe.tristan.kmdah.service.gossip.messages.LeaderImageServerEvent;
 import moe.tristan.kmdah.service.images.cache.CachedImageService;
+import moe.tristan.kmdah.service.metrics.CacheSearchResult;
 import moe.tristan.kmdah.service.metrics.ImageMetrics;
 import moe.tristan.kmdah.util.ContentCallbackInputStream;
 
@@ -41,14 +50,30 @@ public class ImageService {
     public ImageContent findOrFetch(ImageSpec imageSpec) {
         long startSearch = System.nanoTime();
 
+        boolean aborted = false;
         Optional<ImageContent> cacheLookup;
         try {
-            cacheLookup = cachedImageService.findImage(imageSpec);
-        } catch (Exception e) {
-            LOGGER.error("Failed searching image {} in cache", imageSpec, e);
+            cacheLookup = CompletableFuture.<Optional<ImageContent>>supplyAsync(() -> {
+                try {
+                    return cachedImageService.findImage(imageSpec);
+                } catch (Exception e) {
+                    LOGGER.error("Failed searching image {} in cache", imageSpec, e);
+                    return Optional.empty();
+                }
+            }).get(200, TimeUnit.MILLISECONDS);
+        } catch (TimeoutException e) {
+            LOGGER.error("Aborted cache lookup for {} after 100ms.", imageSpec);
+            cacheLookup = Optional.empty();
+            aborted = true;
+        } catch (InterruptedException | ExecutionException e) {
+            LOGGER.error("Uncaught exception during cache lookup of {}", imageSpec, e);
             cacheLookup = Optional.empty();
         }
-        imageMetrics.recordSearchFromCache(startSearch, cacheLookup.isPresent());
+
+        CacheSearchResult searchResult = aborted
+            ? ABORTED
+            : cacheLookup.isPresent() ? FOUND : NOT_FOUND;
+        imageMetrics.recordSearchFromCache(startSearch, searchResult);
 
         ImageContent imageContent = cacheLookup.orElseGet(() -> {
             long startUptreamFetch = System.nanoTime();

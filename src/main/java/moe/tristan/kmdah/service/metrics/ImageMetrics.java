@@ -21,7 +21,7 @@ public class ImageMetrics {
     private static final String OP_SEARCH_IMAGE = METRICS_PREFIX + "search";
 
     private static final String CACHE_MODE_TAG_KEY = "cache_mode";
-    private static final String FOUND_TAG_KEY = "found";
+    private static final String RESULT_TAG_KEY = "result";
 
     private final MeterRegistry meterRegistry;
 
@@ -36,10 +36,10 @@ public class ImageMetrics {
         ).record(nanoTime() - start, TimeUnit.NANOSECONDS);
     }
 
-    public void recordSearchFromCache(long start, boolean found) {
+    public void recordSearchFromCache(long start, CacheSearchResult cacheSearchResult) {
         meterRegistry.timer(
             OP_SEARCH_FROM_CACHE,
-            FOUND_TAG_KEY, String.valueOf(found)
+            RESULT_TAG_KEY, cacheSearchResult.name()
         ).record(nanoTime() - start, TimeUnit.NANOSECONDS);
     }
 
