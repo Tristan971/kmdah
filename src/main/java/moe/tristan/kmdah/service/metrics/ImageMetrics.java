@@ -2,11 +2,15 @@ package moe.tristan.kmdah.service.metrics;
 
 import static java.lang.System.nanoTime;
 
+import java.util.Arrays;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.stereotype.Component;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import moe.tristan.kmdah.service.images.cache.CacheMode;
 
 @Component
@@ -23,10 +27,20 @@ public class ImageMetrics {
     private static final String CACHE_MODE_TAG_KEY = "cache_mode";
     private static final String RESULT_TAG_KEY = "result";
 
+    private static final Map<CacheSearchResult, Timer> TIMERS = new ConcurrentHashMap<>();
+
     private final MeterRegistry meterRegistry;
 
     public ImageMetrics(MeterRegistry meterRegistry) {
         this.meterRegistry = meterRegistry;
+        Arrays.stream(CacheSearchResult.values()).forEach(csr -> {
+            Timer csrTimer = Timer
+                .builder(OP_SEARCH_FROM_CACHE)
+                .tags(RESULT_TAG_KEY, csr.name())
+                .publishPercentiles(0.5, 0.75, 0.9, 0.95, 0.99)
+                .register(meterRegistry);
+            TIMERS.put(csr, csrTimer);
+        });
     }
 
     public void recordSearch(long start, CacheMode cacheMode) {
@@ -37,10 +51,7 @@ public class ImageMetrics {
     }
 
     public void recordSearchFromCache(long start, CacheSearchResult cacheSearchResult) {
-        meterRegistry.timer(
-            OP_SEARCH_FROM_CACHE,
-            RESULT_TAG_KEY, cacheSearchResult.name()
-        ).record(nanoTime() - start, TimeUnit.NANOSECONDS);
+        TIMERS.get(cacheSearchResult).record(nanoTime() - start, TimeUnit.NANOSECONDS);
     }
 
     public void recordSearchFromUpstream(long start) {
