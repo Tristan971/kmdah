@@ -60,9 +60,9 @@ public class ImageService {
                     LOGGER.error("Failed searching image {} in cache", imageSpec, e);
                     return Optional.empty();
                 }
-            }).get(200, TimeUnit.MILLISECONDS);
+            }).get(300, TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
-            LOGGER.error("Aborted cache lookup for {} after 100ms.", imageSpec);
+            LOGGER.error("Aborted cache lookup for {} after 300ms.", imageSpec);
             cacheLookup = Optional.empty();
             aborted = true;
         } catch (InterruptedException | ExecutionException e) {
