@@ -3,6 +3,9 @@ package moe.tristan.kmdah.service.leader;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -10,8 +13,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
-import reactor.core.Disposable;
-import reactor.core.scheduler.Scheduler;
 
 import moe.tristan.kmdah.service.gossip.elections.GrantedLeadershipEvent;
 import moe.tristan.kmdah.service.gossip.elections.RevokedLeadershipEvent;
@@ -20,14 +21,12 @@ import moe.tristan.kmdah.service.gossip.elections.RevokedLeadershipEvent;
 public class LeaderActivities {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LeaderActivities.class);
-
-    private final Scheduler scheduler;
+    private static final ScheduledExecutorService EXECUTOR_SERVICE = Executors.newScheduledThreadPool(4);
 
     private final Set<LeaderActivity> leaderActivities;
-    private final Map<String, Disposable> jobs = new ConcurrentHashMap<>();
+    private final Map<String, ScheduledFuture<?>> jobs = new ConcurrentHashMap<>();
 
-    public LeaderActivities(Scheduler scheduler, Set<LeaderActivity> leaderActivities) {
-        this.scheduler = scheduler;
+    public LeaderActivities(Set<LeaderActivity> leaderActivities) {
         this.leaderActivities = leaderActivities;
     }
 
@@ -50,7 +49,7 @@ public class LeaderActivities {
 
     private void startJobs() {
         leaderActivities.forEach(activity -> {
-            Disposable job = scheduler.schedulePeriodically(
+            ScheduledFuture<?> job = EXECUTOR_SERVICE.scheduleAtFixedRate(
                 () -> {
                     try {
                         activity.run();
@@ -79,12 +78,12 @@ public class LeaderActivities {
         }
 
         leaderActivities.forEach(activity -> {
-            Disposable job = jobs.get(activity.getName());
+            ScheduledFuture<?> job = jobs.get(activity.getName());
             if (job == null) {
                 LOGGER.debug("Activity [{}] cannot be stopped because it had no previously started job!", activity.getName());
             } else {
                 try {
-                    job.dispose(); // stop scheduler
+                    job.cancel(true); // stop scheduler
                     LOGGER.info("[{}] unscheduled", activity.getName());
                 } catch (Throwable e) {
                     LOGGER.error("[{}] Failed unscheduling!", activity.getName(), e);

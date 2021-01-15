@@ -11,6 +11,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.util.unit.DataSize;
 
+import moe.tristan.kmdah.mangadex.ping.PingResponse;
 import moe.tristan.kmdah.mangadex.ping.PingService;
 import moe.tristan.kmdah.mangadex.ping.TlsData;
 import moe.tristan.kmdah.mangadex.stop.StopService;
@@ -70,10 +71,8 @@ public class MangadexHeartbeatJob implements LeaderActivity {
             return;
         }
 
-        pingService.ping(
-            Optional.ofNullable(lastCreatedAt.get()),
-            poolSpeed
-        ).doOnSuccess(response -> {
+        try {
+            PingResponse response = pingService.ping(Optional.ofNullable(lastCreatedAt.get()), poolSpeed);
             Optional<TlsData> tlsData = response.tls();
 
             // store last-created-at
@@ -85,7 +84,9 @@ public class MangadexHeartbeatJob implements LeaderActivity {
             tlsData.map(TlsDataReceivedEvent::new).ifPresent(applicationEventPublisher::publishEvent);
 
             gossipPublisher.broadcastImageServer(response.imageServer());
-        }).blockOptional(Duration.ofSeconds(5L));
+        } catch (Exception e) {
+            LOGGER.error("Error during ping!", e);
+        }
     }
 
     @Override
@@ -93,7 +94,7 @@ public class MangadexHeartbeatJob implements LeaderActivity {
         long otherWorkers = workersRegistry.getOtherWorkersCount();
         if (otherWorkers == 0L) {
             LOGGER.info("There are no other workers confidently known, requesting a stop to the backend.");
-            stopService.stop().block();
+            stopService.stop();
         } else {
             LOGGER.info("There are {} other workers available, not issuing backend stop.", otherWorkers);
         }

@@ -1,6 +1,9 @@
 package moe.tristan.kmdah.api;
 
-import org.springframework.beans.factory.annotation.Value;
+import java.time.Duration;
+import java.util.List;
+
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 
@@ -10,27 +13,28 @@ import moe.tristan.kmdah.service.images.ImageContent;
 @Component
 public class ImageControllerHeaders {
 
-    private final InstanceId instanceId;
-    private final String serverHeader;
+    private static final List<String> EXPOSE_HEADERS = List.of("*");
+    private static final CacheControl CACHE_CONTROL = CacheControl
+        .maxAge(Duration.ofSeconds(1209600))
+        .cachePublic();
 
-    public ImageControllerHeaders(
-        InstanceId instanceId,
-        @Value("${spring.application.version}") String version,
-        @Value("${spring.application.spec}") String spec
-    ) {
+    private final InstanceId instanceId;
+
+    public ImageControllerHeaders(InstanceId instanceId) {
         this.instanceId = instanceId;
-        this.serverHeader = "kmdah " + version + " (" + spec + ") - github.com/Tristan971/kmdah";
     }
 
-    public void addHeaders(HttpHeaders headers, ImageContent imageContent) {
+    public HttpHeaders buildHeaders(ImageContent imageContent) {
+        HttpHeaders headers = new HttpHeaders();
+
         // MDAH spec headers
-        headers.add(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "https://mangadex.org");
-        headers.add(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, "*");
-        headers.add(HttpHeaders.CACHE_CONTROL, "public/ max-age=1209600");
+        headers.setAccessControlAllowOrigin("https://mangadex.org");
+        headers.setAccessControlExposeHeaders(EXPOSE_HEADERS);
+        headers.setCacheControl(CACHE_CONTROL);
         headers.add("Timing-Allow-Origin", "https://mangadex.org");
         headers.add("X-Content-Type-Options", "nosniff");
         headers.add("X-Cache", imageContent.cacheMode().name());
-        headers.setLastModified(imageContent.lastModified().toEpochMilli());
+        headers.setLastModified(imageContent.lastModified());
 
         // match for expected headers
         headers.setContentType(imageContent.contentType());
@@ -39,9 +43,9 @@ public class ImageControllerHeaders {
         imageContent.contentLength().ifPresent(headers::setContentLength);
 
         // extra kmdah-specific headers
-        headers.add(HttpHeaders.SERVER, serverHeader);
         headers.add("X-Instance-Id", instanceId.id());
-        headers.add("X-Cache-Mode", imageContent.cacheMode().name());
+
+        return headers;
     }
 
 }

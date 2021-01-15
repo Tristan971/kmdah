@@ -2,26 +2,30 @@ package moe.tristan.kmdah.service.images.cache.filesystem;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.UUID;
-import java.util.stream.Stream;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.actuate.health.Health;
-import org.springframework.boot.actuate.health.HealthIndicator;
-import org.springframework.core.io.buffer.DataBufferUtils;
-import org.springframework.core.io.buffer.DefaultDataBufferFactory;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.MediaType;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
+import org.springframework.util.unit.DataSize;
 
 import moe.tristan.kmdah.service.images.ImageContent;
 import moe.tristan.kmdah.service.images.ImageSpec;
@@ -30,9 +34,20 @@ import moe.tristan.kmdah.service.images.cache.CachedImageService;
 import moe.tristan.kmdah.service.images.cache.VacuumingRequest;
 import moe.tristan.kmdah.service.images.cache.VacuumingResult;
 
-public class FilesystemCachedImageService implements CachedImageService, HealthIndicator {
+public class FilesystemCachedImageService implements CachedImageService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FilesystemCachedImageService.class);
+
+    private static final int NB_CORES = Runtime.getRuntime().availableProcessors();
+
+    // pool of at most as many threads as CPUs and additionally queued operations
+    private static final ExecutorService WRITE_EXECUTOR_SERVICE = new ThreadPoolExecutor(
+        NB_CORES,
+        NB_CORES,
+        0L,
+        TimeUnit.MILLISECONDS,
+        new LinkedBlockingQueue<>(NB_CORES)
+    );
 
     private final FilesystemSettings filesystemSettings;
 
@@ -88,96 +103,109 @@ public class FilesystemCachedImageService implements CachedImageService, HealthI
     }
 
     @Override
-    public Mono<ImageContent> findImage(ImageSpec imageSpec) {
-        return Mono
-            .fromCallable(() -> specToPath(imageSpec))
-            .filter(Files::exists)
-            .map(file -> {
+    public Optional<ImageContent> findImage(ImageSpec imageSpec) {
+        Path file = specToPath(imageSpec);
+        if (!Files.exists(file)) {
+            return Optional.empty();
+        }
+
+        try {
+            long length = Files.size(file);
+            Instant lastModified = Files.getLastModifiedTime(file).toInstant();
+            MediaType mediaType = MediaType.parseMediaType(Files.probeContentType(file));
+
+            return Optional.of(new ImageContent(
+                new FileSystemResource(file),
+                mediaType,
+                OptionalLong.of(length),
+                lastModified,
+                CacheMode.HIT
+            ));
+        } catch (IOException e) {
+            LOGGER.error("Cannot read file " + file.toAbsolutePath().toString() + " for image " + imageSpec, e);
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public void saveImage(ImageSpec imageSpec, InputStream inputStream) {
+        try {
+            WRITE_EXECUTOR_SERVICE.submit(() -> {
                 try {
-                    long length = Files.size(file);
-                    Instant lastModified = Files.getLastModifiedTime(file).toInstant();
-                    String contentType = Files.probeContentType(file);
-                    MediaType mediaType = MediaType.parseMediaType(contentType);
-
-                    return new ImageContent(
-                        Flux.defer(() -> DataBufferUtils.read(
-                            file,
-                            DefaultDataBufferFactory.sharedInstance,
-                            DefaultDataBufferFactory.DEFAULT_INITIAL_CAPACITY
-                        )),
-                        mediaType,
-                        OptionalLong.of(length),
-                        lastModified,
-                        CacheMode.HIT
-                    );
-                } catch (IOException e) {
-                    throw new IllegalStateException("Cannot read file " + file.toAbsolutePath().toString() + " for image " + imageSpec, e);
+                    doSaveImage(imageSpec, inputStream);
+                } catch (Exception e) {
+                    LOGGER.error("Error during cache saving of {}", imageSpec, e);
                 }
             });
+        } catch (RejectedExecutionException e) {
+            LOGGER.error("Couldn't schedule cache save of {} due to having a full queue of files to commit already.", imageSpec);
+        }
     }
 
-    @Override
-    public Mono<?> saveImage(ImageSpec imageSpec, ImageContent imageContent) {
-        return Mono
-            .fromCallable(() -> specToPath(imageSpec))
-            .flatMap(finalFile -> {
-                Path tmpFile = finalFile.resolveSibling(imageSpec.file() + ".tmp");
+    private void doSaveImage(ImageSpec imageSpec, InputStream content) throws IOException {
+        Path finalFile = specToPath(imageSpec);
+        Path tmpFile = finalFile.resolveSibling(imageSpec.file() + ".tmp");
 
-                Optional<Path> concurrentWriteWitness = Stream.of(finalFile, tmpFile).filter(Files::exists).findFirst();
-                if (concurrentWriteWitness.isPresent()) {
-                    LOGGER.warn(
-                        "File already exists at {} for image {}. Dropping upstream response to avoid concurrent writes.",
-                        concurrentWriteWitness.get().toString(),
-                        imageSpec
-                    );
-                    return imageContent.bytes().then();
-                }
+        if (Files.exists(finalFile)) {
+            LOGGER.warn("Final file already exists at {} for image {}. Not committing response.", finalFile, imageSpec);
+            return;
+        }
 
-                return DataBufferUtils.write(
-                    imageContent.bytes(),
+        if (Files.exists(tmpFile)) {
+            if (isTmpFileStale(tmpFile)) {
+                Files.delete(tmpFile);
+            } else {
+                LOGGER.warn("Temporary file exists and isn't stale at {} for image {}. Dropping upstream response", tmpFile, imageSpec);
+                return;
+            }
+        }
+
+        Files.createDirectories(finalFile.getParent());
+
+        try (
+            FileChannel tmpFileChannel = FileChannel.open(tmpFile, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
+            OutputStream tmpFileOutputStream = Channels.newOutputStream(tmpFileChannel)
+        ) {
+            content.transferTo(tmpFileOutputStream);
+            Files.move(tmpFile, finalFile);
+            LOGGER.info("Committed {} to cache", imageSpec);
+        } catch (IOException e) {
+            LOGGER.error("Couldn't commit {} to cache.", tmpFile, e);
+        }
+    }
+
+    private boolean isTmpFileStale(Path tmpFile) {
+        Instant now = Instant.now();
+        Instant deadFileCutoff = now.minusSeconds(10 * 60);
+        try {
+            Instant tmpFileLastModified = Files.getLastModifiedTime(tmpFile).toInstant();
+            if (tmpFileLastModified.isBefore(deadFileCutoff)) {
+                Duration tmpFileAge = Duration.between(tmpFileLastModified, now);
+                LOGGER.warn(
+                    "Temporary file at {} is {} minutes old. Considering stale.",
                     tmpFile,
-                    StandardOpenOption.CREATE_NEW,
-                    StandardOpenOption.WRITE
-                ).doFirst(() -> {
-                    try {
-                        Files.createDirectories(finalFile.getParent());
-                    } catch (IOException e) {
-                        throw new IllegalStateException("Couldn't create directories for file" + finalFile.toString() + "!", e);
-                    }
-                }).doOnSuccess(__ -> {
-                    try {
-                        Files.move(
-                            tmpFile,
-                            finalFile,
-                            StandardCopyOption.ATOMIC_MOVE
-                        );
-                    } catch (IOException e) {
-                        LOGGER.error("Failed committing {} to cache as {}", tmpFile, finalFile, e);
-                    }
-                });
-            });
+                    tmpFileAge.toSeconds() / 60
+                );
+                return true;
+            } else {
+                return false;
+            }
+        } catch (IOException e) {
+            LOGGER.error("Cannot determine whether temporary file is stale. Assume it isn't.", e);
+            return false;
+        }
     }
 
     @Override
-    public Mono<VacuumingResult> vacuum(VacuumingRequest vacuumingRequest) {
+    public VacuumingResult vacuum(VacuumingRequest vacuumingRequest) {
         LOGGER.info("Vacuuming is not supported on {}", getClass().getSimpleName());
-        return Mono.empty();
+        return new VacuumingResult(0L, DataSize.ofBytes(0L));
     }
 
     private Path specToPath(ImageSpec spec) {
         return filesystemSettings.rootDir().resolve(
             spec.chapter() + File.separator + spec.mode().name() + File.separator + spec.file()
         );
-    }
-
-    @Override
-    public Health health() {
-        try {
-            validateRootDirHealth();
-            return Health.up().build();
-        } catch (Exception e) {
-            return Health.down(e).build();
-        }
     }
 
 }

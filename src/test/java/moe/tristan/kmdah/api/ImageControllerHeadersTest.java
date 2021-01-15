@@ -1,7 +1,9 @@
 package moe.tristan.kmdah.api;
 
+import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.text.ParseException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -14,9 +16,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import reactor.core.publisher.Flux;
+import org.springframework.util.StreamUtils;
 
 import moe.tristan.kmdah.service.gossip.InstanceId;
 import moe.tristan.kmdah.service.images.ImageContent;
@@ -46,62 +49,43 @@ class ImageControllerHeadersTest {
 
     @ParameterizedTest
     @EnumSource(CacheMode.class)
-    void validateHeadersByCacheMode(CacheMode cacheMode) {
-        HttpHeaders headers = new HttpHeaders();
-
-        ImageContent content = new ImageContent(Flux.empty(), MediaType.IMAGE_JPEG, OptionalLong.of(1L), LAST_MODIFIED, cacheMode);
-        imageControllerHeaders.addHeaders(headers, content);
+    void validateHeadersByCacheMode(CacheMode cacheMode) throws ParseException {
+        ImageContent content = new ImageContent(
+            new InputStreamResource(StreamUtils.emptyInput()),
+            MediaType.IMAGE_JPEG,
+            OptionalLong.of(1L),
+            LAST_MODIFIED,
+            cacheMode
+        );
+        HttpHeaders headers = imageControllerHeaders.buildHeaders(content);
 
         validateInstanceId(headers, instanceId);
         validateCacheMode(headers, content.cacheMode());
         validateContentLength(headers, content.contentLength());
         validateMangadexHeadersPresent(headers);
-        validateServerHeader(headers);
-    }
-
-    private void validateServerHeader(HttpHeaders headers) {
-        String expected = "kmdah " + VERSION + " (" + SPEC + ") - github.com/Tristan971/kmdah";
-        assertThat(headers.get(HttpHeaders.SERVER))
-            .containsExactly(expected);
     }
 
     private void validateInstanceId(HttpHeaders headers, InstanceId instanceId) {
-        assertThat(headers.get("X-Instance-Id"))
-            .containsExactly(instanceId.id());
+        assertThat(headers.getFirst("X-Instance-Id")).isEqualTo(instanceId.id());
     }
 
     private void validateCacheMode(HttpHeaders headers, CacheMode cacheMode) {
-        assertThat(headers.get("X-Cache"))
-            .containsExactly(cacheMode.name());
-        assertThat(headers.get("X-Cache-Mode"))
-            .containsExactly(cacheMode.name());
+        assertThat(headers.getFirst("X-Cache")).isEqualTo(cacheMode.name());
     }
 
     private void validateContentLength(HttpHeaders headers, OptionalLong upstreamLength) {
-        upstreamLength.ifPresent(length -> assertThat(headers.getContentLength()).isEqualTo(length));
+        upstreamLength.ifPresent(
+            length -> assertThat(headers.getContentLength()).isEqualTo(length)
+        );
     }
 
     private void validateMangadexHeadersPresent(HttpHeaders headers) {
-        assertThat(headers.get(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN))
-            .containsExactly("https://mangadex.org");
-
-        assertThat(headers.get(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS))
-            .containsExactly("*");
-
-        assertThat(headers.get(HttpHeaders.CACHE_CONTROL))
-            .containsExactly("public/ max-age=1209600");
-
-        assertThat(headers.get("Timing-Allow-Origin"))
-            .containsExactly("https://mangadex.org");
-
-        assertThat(headers.get("X-Content-Type-Options"))
-            .containsExactly("nosniff");
-
-        assertThat(headers.get("X-Content-Type-Options"))
-            .containsExactly("nosniff");
-
-        assertThat(Instant.ofEpochMilli(headers.getLastModified()))
-            .isEqualTo(LAST_MODIFIED);
+        assertThat(headers.getAccessControlAllowOrigin()).isEqualTo("https://mangadex.org");
+        assertThat(headers.getAccessControlExposeHeaders()).containsExactly("*");
+        assertThat(requireNonNull(headers.getCacheControl()).split(", ")).containsExactlyInAnyOrder("public", "max-age=1209600");
+        assertThat(headers.getFirst("Timing-Allow-Origin")).isEqualTo("https://mangadex.org");
+        assertThat(headers.getFirst("X-Content-Type-Options")).isEqualTo("nosniff");
+        assertThat(headers.getLastModified()).isEqualTo(LAST_MODIFIED.toEpochMilli());
     }
 
     @TestConfiguration

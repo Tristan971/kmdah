@@ -1,6 +1,7 @@
 package moe.tristan.kmdah.service.images;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -10,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayInputStream;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.UUID;
 
@@ -18,13 +20,8 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.core.io.buffer.DataBuffer;
-import org.springframework.core.io.buffer.DataBufferUtils;
-import org.springframework.core.io.buffer.DefaultDataBufferFactory;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.MediaType;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import reactor.test.StepVerifier;
 
 import moe.tristan.kmdah.mangadex.image.ImageMode;
 import moe.tristan.kmdah.mangadex.image.MangadexImageService;
@@ -53,14 +50,10 @@ class ImageServiceTest {
     void onMiss() {
         ImageContent cacheMissContent = sampleContent(CacheMode.MISS);
 
-        when(cachedImageService.findImage(eq(SPEC))).thenReturn(Mono.empty());
-        when(cachedImageService.saveImage(eq(SPEC), any())).thenReturn(Mono.empty());
-        when(mangadexImageService.download(eq(SPEC), any())).thenReturn(Mono.just(cacheMissContent));
+        when(cachedImageService.findImage(eq(SPEC))).thenReturn(Optional.empty());
+        when(mangadexImageService.download(eq(SPEC), any())).thenReturn(cacheMissContent);
 
-        StepVerifier
-            .create(imageService.findOrFetch(SPEC))
-            .expectNextCount(1)
-            .verifyComplete();
+        imageService.findOrFetch(SPEC);
 
         verifyCachedCall();
         verifyUpstreamCall(1);
@@ -72,12 +65,9 @@ class ImageServiceTest {
     void onHit() {
         ImageContent cacheHitContent = sampleContent(CacheMode.HIT);
 
-        when(cachedImageService.findImage(eq(SPEC))).thenReturn(Mono.just(cacheHitContent));
+        when(cachedImageService.findImage(eq(SPEC))).thenReturn(Optional.of(cacheHitContent));
 
-        StepVerifier
-            .create(imageService.findOrFetch(SPEC))
-            .expectNextCount(1)
-            .verifyComplete();
+        imageService.findOrFetch(SPEC);
 
         verifyCachedCall();
         verifyUpstreamCall(0);
@@ -89,15 +79,10 @@ class ImageServiceTest {
     void onFailCached() {
         ImageContent cacheMissContent = sampleContent(CacheMode.MISS);
 
-        when(cachedImageService.findImage(eq(SPEC))).thenReturn(Mono.error(new IllegalStateException("Some underlying error!")));
-        when(cachedImageService.saveImage(eq(SPEC), any())).thenReturn(Mono.empty());
+        when(cachedImageService.findImage(eq(SPEC))).thenThrow(new IllegalStateException("Some underlying error!"));
+        when(mangadexImageService.download(eq(SPEC), any())).thenReturn(cacheMissContent);
 
-        when(mangadexImageService.download(eq(SPEC), any())).thenReturn(Mono.just(cacheMissContent));
-
-        StepVerifier
-            .create(imageService.findOrFetch(SPEC))
-            .expectNextCount(1)
-            .verifyComplete();
+        imageService.findOrFetch(SPEC);
 
         verifyCachedCall();
         verifyUpstreamCall(1);
@@ -107,13 +92,11 @@ class ImageServiceTest {
 
     @Test
     void onFailUpstream() {
-        when(cachedImageService.findImage(eq(SPEC))).thenReturn(Mono.empty());
-        when(mangadexImageService.download(eq(SPEC), any())).thenReturn(Mono.error(new IllegalStateException("Upstream error!")));
+        when(cachedImageService.findImage(eq(SPEC))).thenReturn(Optional.empty());
+        IllegalStateException upstreamException = new IllegalStateException("Upstream error!");
+        when(mangadexImageService.download(eq(SPEC), any())).thenThrow(upstreamException);
 
-        StepVerifier
-            .create(imageService.findOrFetch(SPEC))
-            .expectError()
-            .verify();
+        assertThatThrownBy(() -> imageService.findOrFetch(SPEC)).isEqualTo(upstreamException);
 
         verifyCachedCall();
         verifyUpstreamCall(1);
@@ -122,14 +105,8 @@ class ImageServiceTest {
     private static ImageContent sampleContent(CacheMode cacheMode) {
         byte[] bytes = UUID.randomUUID().toString().getBytes();
 
-        Flux<DataBuffer> dataBufferFlux = DataBufferUtils.readInputStream(
-            () -> new ByteArrayInputStream(bytes),
-            DefaultDataBufferFactory.sharedInstance,
-            DefaultDataBufferFactory.DEFAULT_INITIAL_CAPACITY
-        );
-
         return new ImageContent(
-            dataBufferFlux,
+            new InputStreamResource(new ByteArrayInputStream(bytes)),
             MediaType.IMAGE_PNG,
             OptionalLong.of(bytes.length),
             Instant.now(),

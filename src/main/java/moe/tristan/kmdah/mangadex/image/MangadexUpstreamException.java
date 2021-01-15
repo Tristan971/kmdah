@@ -6,4 +6,8 @@ public final class MangadexUpstreamException extends RuntimeException {
         super(reason);
     }
 
+    public MangadexUpstreamException(String reason, Throwable cause) {
+        super(reason, cause);
+    }
+
 }

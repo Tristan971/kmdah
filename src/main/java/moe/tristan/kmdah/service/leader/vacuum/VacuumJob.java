@@ -1,7 +1,6 @@
 package moe.tristan.kmdah.service.leader.vacuum;
 
 import java.time.Duration;
-import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,16 +46,12 @@ public class VacuumJob implements LeaderActivity {
         long startTime = System.nanoTime();
 
         VacuumingRequest vacuumingRequest = new VacuumingRequest(DataSize.ofGigabytes(cacheSettings.maxSizeGb()));
-        Optional<VacuumingResult> vacuumingResult = cachedImageService
-            .vacuum(vacuumingRequest)
-            .filter(result -> result.deletedFileCount() > 0)
-            .blockOptional();
+        VacuumingResult result = cachedImageService.vacuum(vacuumingRequest);
 
         long endTime = System.nanoTime();
         Duration duration = Duration.ofNanos(endTime - startTime);
 
-        if (vacuumingResult.isPresent()) {
-            VacuumingResult result = vacuumingResult.get();
+        if (result.deletedFileCount() > 0) {
             LOGGER.info(
                 "Vacuuming run done - freed {}MB by deleting {} files ({}h {}m {}s {}ms)",
                 result.freedSpace().toMegabytes(),

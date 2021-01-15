@@ -1,23 +1,30 @@
 package moe.tristan.kmdah.service.images;
 
-import static reactor.core.publisher.Mono.defer;
+import static moe.tristan.kmdah.service.metrics.CacheSearchResult.ABORTED;
+import static moe.tristan.kmdah.service.metrics.CacheSearchResult.FOUND;
+import static moe.tristan.kmdah.service.metrics.CacheSearchResult.NOT_FOUND;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
-import org.springframework.core.io.buffer.DataBuffer;
-import org.springframework.core.io.buffer.DataBufferUtils;
-import org.springframework.core.io.buffer.DefaultDataBuffer;
-import org.springframework.core.io.buffer.DefaultDataBufferFactory;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
 import moe.tristan.kmdah.mangadex.image.MangadexImageService;
 import moe.tristan.kmdah.service.gossip.messages.LeaderImageServerEvent;
 import moe.tristan.kmdah.service.images.cache.CachedImageService;
+import moe.tristan.kmdah.service.metrics.CacheSearchResult;
 import moe.tristan.kmdah.service.metrics.ImageMetrics;
+import moe.tristan.kmdah.util.ContentCallbackInputStream;
 
 @Service
 public class ImageService {
@@ -40,65 +47,69 @@ public class ImageService {
         this.imageMetrics = imageMetrics;
     }
 
-    public Mono<ImageContent> findOrFetch(ImageSpec imageSpec) {
+    public ImageContent findOrFetch(ImageSpec imageSpec) {
         long startSearch = System.nanoTime();
 
-        return fetchFromCache(imageSpec)
-            .onErrorResume(error -> {
-                LOGGER.error("Failed pulling {} from cache!", imageSpec, error);
-                return defer(() -> fetchFromUpstream(imageSpec));
-            })
-            .switchIfEmpty(defer(() -> fetchFromUpstream(imageSpec)))
-            .doOnSuccess(content -> {
-                LOGGER.info("Cache {} for {}", content.cacheMode(), imageSpec);
-                imageMetrics.recordSearch(startSearch, content.cacheMode());
-            });
+        boolean aborted = false;
+        Optional<ImageContent> cacheLookup;
+        try {
+            cacheLookup = CompletableFuture.<Optional<ImageContent>>supplyAsync(() -> {
+                try {
+                    return cachedImageService.findImage(imageSpec);
+                } catch (Exception e) {
+                    LOGGER.error("Failed searching image {} in cache", imageSpec, e);
+                    return Optional.empty();
+                }
+            }).get(300, TimeUnit.MILLISECONDS);
+        } catch (TimeoutException e) {
+            LOGGER.error("Aborted cache lookup for {} after 300ms.", imageSpec);
+            cacheLookup = Optional.empty();
+            aborted = true;
+        } catch (InterruptedException | ExecutionException e) {
+            LOGGER.error("Uncaught exception during cache lookup of {}", imageSpec, e);
+            cacheLookup = Optional.empty();
+        }
+
+        CacheSearchResult searchResult = aborted
+            ? ABORTED
+            : cacheLookup.isPresent() ? FOUND : NOT_FOUND;
+        imageMetrics.recordSearchFromCache(startSearch, searchResult);
+
+        ImageContent imageContent = cacheLookup.orElseGet(() -> {
+            long startUptreamFetch = System.nanoTime();
+            ImageContent upstreamResponseContent = fetchFromUpstream(imageSpec, ABORTED != searchResult);
+            imageMetrics.recordSearchFromUpstream(startUptreamFetch);
+            return upstreamResponseContent;
+        });
+
+        LOGGER.info("Cache {} for {} (content-length: {})", imageContent.cacheMode(), imageSpec, imageContent.contentLength().orElse(-1L));
+        imageMetrics.recordSearch(startSearch, imageContent.cacheMode());
+
+        return imageContent;
     }
 
-    private Mono<ImageContent> fetchFromCache(ImageSpec imageSpec) {
-        return cachedImageService.findImage(imageSpec);
-    }
+    private ImageContent fetchFromUpstream(ImageSpec imageSpec, boolean saveToCache) {
+        ImageContent upstreamContent = mangadexImageService.download(imageSpec, upstreamServerUri);
+        if (!saveToCache) {
+            return upstreamContent;
+        }
 
-    private Mono<ImageContent> fetchFromUpstream(ImageSpec imageSpec) {
-        return mangadexImageService
-            .download(imageSpec, upstreamServerUri)
-            .map(content -> {
-                Flux<DataBuffer> multicaster = content
-                    .bytes()
-                    .map(dbuf -> {
-                        DefaultDataBuffer allocated = DefaultDataBufferFactory.sharedInstance.allocateBuffer(dbuf.capacity());
-                        allocated.write(dbuf);
-                        DataBufferUtils.release(dbuf);
-                        return (DataBuffer) allocated;
-                    })
-                    .publish()
-                    .autoConnect(2)
-                    .transformDeferred(flux -> flux.map(dbf -> DefaultDataBufferFactory.sharedInstance.wrap(dbf.asByteBuffer())));
+        try {
+            Consumer<byte[]> cacheSaveCallback = bytes -> {
+                LOGGER.info("Content of {} fully read from upstream. Triggering cache saving.", imageSpec);
+                cachedImageService.saveImage(imageSpec, new ByteArrayInputStream(bytes));
+            };
 
-                long startSave = System.nanoTime();
-                cachedImageService
-                    .saveImage(
-                        imageSpec,
-                        new ImageContent(
-                            multicaster,
-                            content.contentType(),
-                            content.contentLength(),
-                            content.lastModified(),
-                            content.cacheMode()
-                        )
-                    )
-                    .doOnSuccess(__ -> imageMetrics.recordSave(startSave))
-                    .subscribeOn(Schedulers.parallel())
-                    .subscribe();
-
-                return new ImageContent(
-                    multicaster,
-                    content.contentType(),
-                    content.contentLength(),
-                    content.lastModified(),
-                    content.cacheMode()
-                );
-            });
+            return new ImageContent(
+                new InputStreamResource(new ContentCallbackInputStream(upstreamContent.resource().getInputStream(), cacheSaveCallback)),
+                upstreamContent.contentType(),
+                upstreamContent.contentLength(),
+                upstreamContent.lastModified(),
+                upstreamContent.cacheMode()
+            );
+        } catch (IOException e) {
+            throw new IllegalStateException("Cannot open upstream response for reading!", e);
+        }
     }
 
     @EventListener(LeaderImageServerEvent.class)

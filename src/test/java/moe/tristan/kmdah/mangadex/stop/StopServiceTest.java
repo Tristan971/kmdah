@@ -1,6 +1,7 @@
 package moe.tristan.kmdah.mangadex.stop;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -10,19 +11,17 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureWebClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import reactor.core.publisher.Mono;
-import reactor.test.StepVerifier;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import moe.tristan.kmdah.HttpClientConfiguration;
 import moe.tristan.kmdah.MockWebServerSupport;
 import moe.tristan.kmdah.mangadex.MangadexApi;
 import moe.tristan.kmdah.mangadex.MangadexSettings;
@@ -30,13 +29,12 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.RecordedRequest;
 
 @SpringBootTest(
-    classes = StopService.class,
+    classes = {StopService.class, JacksonAutoConfiguration.class, HttpClientConfiguration.class},
     properties = {
         "kmdah.mangadex.client-secret=secret",
         "kmdah.mangadex.load-balancer-ip=192.168.0.1"
     }
 )
-@AutoConfigureWebClient
 @EnableConfigurationProperties(MangadexSettings.class)
 class StopServiceTest {
 
@@ -70,11 +68,7 @@ class StopServiceTest {
 
         StopRequest expectedRequest = new StopRequest("secret");
 
-        Mono<ResponseEntity<Void>> stop = stopService.stop();
-        StepVerifier
-            .create(stop)
-            .expectNextCount(1)
-            .verifyComplete();
+        stopService.stop();
 
         RecordedRequest recordedRequest = mockWebServerSupport.takeRequest();
         String requestBody = recordedRequest.getBody().readString(StandardCharsets.UTF_8);
@@ -88,11 +82,7 @@ class StopServiceTest {
         mockResponse.setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
         mockWebServerSupport.enqueue(mockResponse);
 
-        Mono<ResponseEntity<Void>> stop = stopService.stop();
-        StepVerifier
-            .create(stop)
-            .expectError()
-            .verify();
+        assertThatThrownBy(stopService::stop).hasMessageContaining(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR.value()));
     }
 
 }

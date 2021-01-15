@@ -1,15 +1,17 @@
 package moe.tristan.kmdah.api;
 
-import org.springframework.core.io.buffer.DataBuffer;
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.http.server.reactive.ServerHttpResponse;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
-import reactor.core.publisher.Flux;
 
 import moe.tristan.kmdah.mangadex.image.ImageMode;
+import moe.tristan.kmdah.service.images.ImageContent;
 import moe.tristan.kmdah.service.images.ImageService;
 import moe.tristan.kmdah.service.images.ImageSpec;
 import moe.tristan.kmdah.service.images.validation.ImageRequestReferrerValidator;
@@ -40,46 +42,50 @@ public class ImageController {
     }
 
     @GetMapping("/{token}/{image-mode}/{chapterHash}/{fileName}")
-    public Flux<DataBuffer> tokenizedImage(
+    public ResponseEntity<Resource> tokenizedImage(
         @PathVariable String token,
         @PathVariable("image-mode") String imageMode,
         @PathVariable String chapterHash,
         @PathVariable String fileName,
-        ServerHttpRequest request,
-        ServerHttpResponse response
+        HttpServletRequest request
     ) {
         tokenValidator.validate(token, chapterHash);
-        return image(imageMode, chapterHash, fileName, request, response);
+        return image(imageMode, chapterHash, fileName, request);
     }
 
     @GetMapping("/{image-mode}/{chapterHash}/{fileName}")
-    public Flux<DataBuffer> image(
+    public ResponseEntity<Resource> image(
         @PathVariable("image-mode") String imageMode,
         @PathVariable String chapterHash,
         @PathVariable String fileName,
-        ServerHttpRequest request,
-        ServerHttpResponse response
+        HttpServletRequest request
     ) {
-        return serve(imageMode, chapterHash, fileName, request, response);
+        return serve(imageMode, chapterHash, fileName, request);
     }
 
-    private Flux<DataBuffer> serve(String imageMode, String chapterHash, String fileName, ServerHttpRequest request, ServerHttpResponse response) {
-        referrerValidator.validate(request.getHeaders().getFirst(HttpHeaders.REFERER));
+    private ResponseEntity<Resource> serve(String imageMode, String chapterHash, String fileName, HttpServletRequest request) {
+        long startServe = System.nanoTime();
+
+        if (request.getHeader(HttpHeaders.REFERER) != null) {
+            referrerValidator.validate(request.getHeaders(HttpHeaders.REFERER).nextElement());
+        }
+
+        if (request.getHeader(HttpHeaders.IF_MODIFIED_SINCE) != null) {
+            return new ResponseEntity<>(HttpStatus.NOT_MODIFIED);
+        }
 
         ImageSpec imageRequest = new ImageSpec(ImageMode.fromPathFragment(imageMode), chapterHash, fileName);
 
-        long startServe = System.nanoTime();
+        ImageContent imageContent = imageService.findOrFetch(imageRequest);
+        HttpHeaders headers = controllerHeaders.buildHeaders(imageContent);
 
-        return imageService
-            .findOrFetch(imageRequest)
-            .doOnNext(content -> controllerHeaders.addHeaders(response.getHeaders(), content))
-            .flatMapMany(content -> {
-                long startLoad = System.nanoTime();
-                return content
-                    .bytes()
-                    .doOnComplete(() -> imageMetrics.recordLoad(startLoad, content.cacheMode()))
-                    .doOnSubscribe(__ -> imageMetrics.recordServe(startServe, content.cacheMode()));
-            });
+        imageMetrics.recordServe(startServe, imageContent.cacheMode());
+
+        return new ResponseEntity<>(
+            imageContent.resource(),
+            headers,
+            HttpStatus.OK
+        );
     }
 
 }

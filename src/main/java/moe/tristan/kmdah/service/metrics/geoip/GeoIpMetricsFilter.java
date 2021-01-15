@@ -1,16 +1,21 @@
 package moe.tristan.kmdah.service.metrics.geoip;
 
-import java.net.InetSocketAddress;
-import java.util.Optional;
+import java.io.IOException;
 
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import org.springframework.web.server.ServerWebExchange;
-import org.springframework.web.server.WebFilter;
-import org.springframework.web.server.WebFilterChain;
-import reactor.core.publisher.Mono;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
-public class GeoIpMetricsFilter implements WebFilter {
+public class GeoIpMetricsFilter extends OncePerRequestFilter {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(GeoIpMetricsFilter.class);
 
     private final GeoIpMetrics geoIpMetrics;
 
@@ -19,17 +24,16 @@ public class GeoIpMetricsFilter implements WebFilter {
     }
 
     @Override
-    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
-        if (exchange.getRequest().getPath().value().startsWith("/__")) {
-            return chain.filter(exchange);
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException, ServletException {
+        if (!request.getServletPath().startsWith("/__")) {
+            try {
+                String remoteAddr = request.getRemoteAddr();
+                geoIpMetrics.recordCountrySource(remoteAddr);
+            } catch (Exception e) {
+                LOGGER.error("Cannot resolve country.", e);
+            }
         }
-
-        return chain.filter(exchange).transformDeferred(
-            call -> call.doOnSubscribe(__ -> Optional
-                .ofNullable(exchange.getRequest().getRemoteAddress())
-                .map(InetSocketAddress::getHostString)
-                .ifPresent(geoIpMetrics::recordCountrySource))
-        );
+        filterChain.doFilter(request, response);
     }
 
 }

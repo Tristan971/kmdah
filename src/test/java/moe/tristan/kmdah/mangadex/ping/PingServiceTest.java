@@ -11,8 +11,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureWebClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpHeaders;
@@ -21,6 +21,7 @@ import org.springframework.util.unit.DataSize;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import moe.tristan.kmdah.HttpClientConfiguration;
 import moe.tristan.kmdah.MockWebServerSupport;
 import moe.tristan.kmdah.mangadex.MangadexApi;
 import moe.tristan.kmdah.mangadex.MangadexSettings;
@@ -29,14 +30,17 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.RecordedRequest;
 
 @SpringBootTest(
-    classes = PingService.class,
+    classes = {
+        PingService.class,
+        JacksonAutoConfiguration.class,
+        HttpClientConfiguration.class
+    },
     properties = {
         "kmdah.mangadex.client-secret=secret",
         "kmdah.mangadex.load-balancer-ip=192.168.0.1",
         "kmdah.cache.max-size-gb=100"
     }
 )
-@AutoConfigureWebClient
 @EnableConfigurationProperties({MangadexSettings.class, CacheSettings.class})
 class PingServiceTest {
 
@@ -97,7 +101,7 @@ class PingServiceTest {
         mockResponse.setBody(objectMapper.writeValueAsString(expectedResponse));
         mockWebServerSupport.enqueue(mockResponse);
 
-        PingResponse response = pingService.ping(Optional.empty(), poolSpeed).blockOptional().orElseThrow();
+        PingResponse response = pingService.ping(Optional.empty(), poolSpeed);
         assertThat(response).isEqualTo(expectedResponse);
 
         RecordedRequest request = mockWebServerSupport.takeRequest();

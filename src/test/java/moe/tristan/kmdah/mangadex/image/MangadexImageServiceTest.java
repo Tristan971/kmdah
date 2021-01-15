@@ -1,35 +1,34 @@
 package moe.tristan.kmdah.mangadex.image;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.UUID;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureWebClient;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import reactor.core.publisher.Mono;
-import reactor.test.StepVerifier;
 
+import moe.tristan.kmdah.HttpClientConfiguration;
 import moe.tristan.kmdah.MockWebServerSupport;
-import moe.tristan.kmdah.service.images.cache.CacheMode;
 import moe.tristan.kmdah.service.images.ImageContent;
 import moe.tristan.kmdah.service.images.ImageSpec;
+import moe.tristan.kmdah.service.images.cache.CacheMode;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.RecordedRequest;
 import okio.Buffer;
 
-@SpringBootTest(classes = MangadexImageService.class)
-@AutoConfigureWebClient
+@SpringBootTest(classes = {
+    MangadexImageService.class,
+    HttpClientConfiguration.class
+})
 class MangadexImageServiceTest {
 
     private final MockWebServerSupport mockWebServerSupport = new MockWebServerSupport();
@@ -49,7 +48,7 @@ class MangadexImageServiceTest {
     }
 
     @Test
-    void onUpstreamSuccess() {
+    void onUpstreamSuccess() throws IOException {
         MediaType contentType = MediaType.IMAGE_JPEG;
         byte[] content = UUID.randomUUID().toString().getBytes();
 
@@ -61,21 +60,13 @@ class MangadexImageServiceTest {
 
         ImageSpec spec = new ImageSpec(ImageMode.DATA, "chapter", "file");
 
-        ImageContent download = mangadexImageService
-            .download(spec, mockWebServerUri)
-            .blockOptional()
-            .orElseThrow();
+        ImageContent download = mangadexImageService.download(spec, mockWebServerUri);
 
         assertThat(download.contentLength()).hasValue(content.length);
         assertThat(download.contentType()).isEqualTo(contentType);
         assertThat(download.cacheMode()).isEqualTo(CacheMode.MISS);
 
-        InputStream downloadedBytes = DataBufferUtils
-            .join(download.bytes())
-            .blockOptional()
-            .orElseThrow()
-            .asInputStream();
-        assertThat(downloadedBytes).hasBinaryContent(content);
+        assertThat(download.resource().getInputStream()).hasBinaryContent(content);
 
         RecordedRequest recordedRequest = mockWebServerSupport.takeRequest();
         assertThat(recordedRequest.getMethod()).isEqualTo(HttpMethod.GET.name());
@@ -93,15 +84,9 @@ class MangadexImageServiceTest {
 
         // data-saver is broken every other day amirite :^)
         ImageSpec whatever = new ImageSpec(ImageMode.DATA_SAVER, "chapter-with", "file-that-fails");
-        Mono<ImageContent> download = mangadexImageService.download(whatever, mockWebServerUri);
-
-        StepVerifier
-            .create(download)
-            .consumeErrorWith(error ->
-                assertThat(error)
-                    .isInstanceOf(MangadexUpstreamException.class)
-                    .hasMessageContaining(failureHttpStatus.toString()))
-            .verify();
+        assertThatThrownBy(() -> mangadexImageService.download(whatever, mockWebServerUri))
+            .isInstanceOf(MangadexUpstreamException.class)
+            .hasMessageContaining(failureHttpStatus.toString());
     }
 
 }
