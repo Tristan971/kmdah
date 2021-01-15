@@ -82,7 +82,7 @@ public class ImageService {
             return upstreamResponseContent;
         });
 
-        LOGGER.info("Cache {} for {}", imageContent.cacheMode(), imageSpec);
+        LOGGER.info("Cache {} for {} (content-length: {})", imageContent.cacheMode(), imageSpec, imageContent.contentLength().orElse(-1L));
         imageMetrics.recordSearch(startSearch, imageContent.cacheMode());
 
         return imageContent;
