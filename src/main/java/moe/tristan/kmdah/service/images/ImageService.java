@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StreamUtils;
 
 import moe.tristan.kmdah.mangadex.image.MangadexImageService;
 import moe.tristan.kmdah.service.gossip.messages.LeaderImageServerEvent;
@@ -73,11 +74,16 @@ public class ImageService {
         CacheSearchResult searchResult = aborted
             ? ABORTED
             : cacheLookup.isPresent() ? FOUND : NOT_FOUND;
+
+        // do not schedule saving of cache misses if they're due to aborted storage lookup
+        // as it would only hurt a presumably-overloaded underlying storage system
+        boolean saveMissToCache = ABORTED != searchResult;
+
         imageMetrics.recordSearchFromCache(startSearch, searchResult);
 
         ImageContent imageContent = cacheLookup.orElseGet(() -> {
             long startUptreamFetch = System.nanoTime();
-            ImageContent upstreamResponseContent = fetchFromUpstream(imageSpec, ABORTED != searchResult);
+            ImageContent upstreamResponseContent = fetchFromUpstream(imageSpec, saveMissToCache);
             imageMetrics.recordSearchFromUpstream(startUptreamFetch);
             return upstreamResponseContent;
         });
@@ -109,6 +115,15 @@ public class ImageService {
             );
         } catch (IOException e) {
             throw new IllegalStateException("Cannot open upstream response for reading!", e);
+        }
+    }
+
+    public void preload(ImageSpec imageSpec) {
+        try {
+            ImageContent content = findOrFetch(imageSpec);
+            StreamUtils.drain(content.resource().getInputStream());
+        } catch (IOException e) {
+            LOGGER.error("Failed preloading of {}", imageSpec, e);
         }
     }
 

@@ -1,13 +1,19 @@
 package moe.tristan.kmdah.api;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
+
 import javax.servlet.http.HttpServletRequest;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import moe.tristan.kmdah.mangadex.image.ImageMode;
@@ -17,9 +23,14 @@ import moe.tristan.kmdah.service.images.ImageSpec;
 import moe.tristan.kmdah.service.images.validation.ImageRequestReferrerValidator;
 import moe.tristan.kmdah.service.images.validation.ImageRequestTokenValidator;
 import moe.tristan.kmdah.service.metrics.ImageMetrics;
+import moe.tristan.kmdah.util.ThrottledExecutorService;
 
 @RestController
 public class ImageController {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ImageController.class);
+
+    private static final ExecutorService PRELOAD_SERVICE = ThrottledExecutorService.from(1, 1, 16);
 
     private final ImageService imageService;
     private final ImageMetrics imageMetrics;
@@ -61,6 +72,22 @@ public class ImageController {
         HttpServletRequest request
     ) {
         return serve(imageMode, chapterHash, fileName, request);
+    }
+
+    @PostMapping("/preload/{image-mode}/{chapterHash}/{fileName}")
+    public ResponseEntity<Void> preload(
+        @PathVariable("image-mode") String imageMode,
+        @PathVariable String chapterHash,
+        @PathVariable String fileName
+    ) {
+        ImageSpec imageSpec = new ImageSpec(ImageMode.fromPathFragment(imageMode), chapterHash, fileName);
+        try {
+            PRELOAD_SERVICE.submit(() -> imageService.preload(imageSpec));
+            return ResponseEntity.ok().build();
+        } catch (RejectedExecutionException e) {
+            LOGGER.error("Rejected scheduling preloading of {}", imageSpec);
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).build();
+        }
     }
 
     private ResponseEntity<Resource> serve(String imageMode, String chapterHash, String fileName, HttpServletRequest request) {

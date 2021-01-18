@@ -16,10 +16,7 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +30,7 @@ import moe.tristan.kmdah.service.images.cache.CacheMode;
 import moe.tristan.kmdah.service.images.cache.CachedImageService;
 import moe.tristan.kmdah.service.images.cache.VacuumingRequest;
 import moe.tristan.kmdah.service.images.cache.VacuumingResult;
+import moe.tristan.kmdah.util.ThrottledExecutorService;
 
 public class FilesystemCachedImageService implements CachedImageService {
 
@@ -40,14 +38,8 @@ public class FilesystemCachedImageService implements CachedImageService {
 
     private static final int NB_CORES = Runtime.getRuntime().availableProcessors();
 
-    // pool of at most as many threads as CPUs and additionally queued operations
-    private static final ExecutorService WRITE_EXECUTOR_SERVICE = new ThreadPoolExecutor(
-        NB_CORES,
-        NB_CORES,
-        0L,
-        TimeUnit.MILLISECONDS,
-        new LinkedBlockingQueue<>(NB_CORES)
-    );
+    // pool of as many threads as CPU cores, with the same amount queued
+    private static final ExecutorService WRITE_EXECUTOR_SERVICE = ThrottledExecutorService.from(NB_CORES, NB_CORES, NB_CORES);
 
     private final FilesystemSettings filesystemSettings;
 
