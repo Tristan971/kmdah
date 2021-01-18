@@ -128,7 +128,7 @@ public class FilesystemCachedImageService implements CachedImageService {
     }
 
     @Override
-    public void saveImage(ImageSpec imageSpec, InputStream inputStream) {
+    public void saveImage(ImageSpec imageSpec, MediaType mediaType, InputStream inputStream) {
         try {
             WRITE_EXECUTOR_SERVICE.submit(() -> {
                 try {
