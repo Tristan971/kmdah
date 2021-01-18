@@ -76,6 +76,13 @@ kmdah:
     filesystem:
       root-dir: ${KMDAH_CACHE_FILESYSTEM_ROOT_DIR:}
 
+    mongodb:
+      host: ${KMDAH_CACHE_MONGODB_HOST:localhost}
+      port: ${KMDAH_CACHE_MONGODB_PORT:27017}
+      authentication-database: ${KMDAH_CACHE_MONGODB_AUTHENTICATION_DATABASE:admin}
+      username: ${KMDAH_CACHE_MONGODB_USERNAME:kmdah}
+      password: ${KMDAH_CACHE_MONGODB_PASSWORD:kmdah}
+
   geoip:
     enabled: ${KMDAH_GEOIP_ENABLED:false}
     license-key: ${KMDAH_GEOIP_LICENSE_KEY:unset}

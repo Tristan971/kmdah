@@ -16,6 +16,20 @@ services:
           cpus: '0.5'
           memory: '200M'
 
+  mongo:
+    container_name: kmdah_mongo
+    image: library/mongo:4.4
+    ports:
+      - 27017:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: kmdah
+      MONGO_INITDB_ROOT_PASSWORD: kmdah
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: '512M'
+
   kmdah:
     container_name: kmdah
     image: tristandeloche/kmdah:latest
