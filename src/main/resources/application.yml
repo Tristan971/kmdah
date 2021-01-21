@@ -72,6 +72,7 @@ kmdah:
   cache:
     backend: ${KMDAH_CACHE_BACKEND:cache_backend_unset}
     max-size-gb: ${KMDAH_CACHE_MAX_SIZE_GB:100}
+    abort-lookup-threshold-millis: ${KMDAH_CACHE_ABORT_LOOKUP_THRESHOLD_MILLIS:500}
 
     filesystem:
       root-dir: ${KMDAH_CACHE_FILESYSTEM_ROOT_DIR:}

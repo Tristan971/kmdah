@@ -22,6 +22,7 @@ import org.springframework.util.StreamUtils;
 
 import moe.tristan.kmdah.mangadex.image.MangadexImageService;
 import moe.tristan.kmdah.service.gossip.messages.LeaderImageServerEvent;
+import moe.tristan.kmdah.service.images.cache.CacheSettings;
 import moe.tristan.kmdah.service.images.cache.CachedImageService;
 import moe.tristan.kmdah.service.metrics.CacheSearchResult;
 import moe.tristan.kmdah.service.metrics.ImageMetrics;
@@ -35,17 +36,20 @@ public class ImageService {
     private final CachedImageService cachedImageService;
     private final MangadexImageService mangadexImageService;
     private final ImageMetrics imageMetrics;
+    private final long abortLookupThresholdMillis;
 
     private String upstreamServerUri = "https://s2.mangadex.org";
 
     public ImageService(
         CachedImageService cachedImageService,
         MangadexImageService mangadexImageService,
-        ImageMetrics imageMetrics
+        ImageMetrics imageMetrics,
+        CacheSettings cacheSettings
     ) {
         this.cachedImageService = cachedImageService;
         this.mangadexImageService = mangadexImageService;
         this.imageMetrics = imageMetrics;
+        this.abortLookupThresholdMillis = cacheSettings.abortLookupThresholdMillis();
     }
 
     public ImageContent findOrFetch(ImageSpec imageSpec) {
@@ -61,7 +65,7 @@ public class ImageService {
                     LOGGER.error("Failed searching image {} in cache", imageSpec, e);
                     return Optional.empty();
                 }
-            }).get(300, TimeUnit.MILLISECONDS);
+            }).get(abortLookupThresholdMillis, TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
             LOGGER.error("Aborted cache lookup for {} after 300ms.", imageSpec);
             cacheLookup = Optional.empty();

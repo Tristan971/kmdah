@@ -9,6 +9,8 @@ public record CacheSettings(
 
     CacheBackend backend,
 
-    int maxSizeGb
+    int maxSizeGb,
+
+    long abortLookupThresholdMillis
 
 ) {}

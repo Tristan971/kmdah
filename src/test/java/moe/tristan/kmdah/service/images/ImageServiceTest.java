@@ -18,6 +18,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.core.io.InputStreamResource;
@@ -26,10 +27,12 @@ import org.springframework.http.MediaType;
 import moe.tristan.kmdah.mangadex.image.ImageMode;
 import moe.tristan.kmdah.mangadex.image.MangadexImageService;
 import moe.tristan.kmdah.service.images.cache.CacheMode;
+import moe.tristan.kmdah.service.images.cache.CacheSettings;
 import moe.tristan.kmdah.service.images.cache.CachedImageService;
 import moe.tristan.kmdah.service.metrics.ImageMetrics;
 
 @SpringBootTest(classes = ImageService.class)
+@EnableConfigurationProperties(CacheSettings.class)
 class ImageServiceTest {
 
     private static final ImageSpec SPEC = new ImageSpec(ImageMode.DATA, "chapter", "file");
