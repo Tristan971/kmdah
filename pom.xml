@@ -20,7 +20,7 @@
     <properties>
         <revision>local-SNAPSHOT</revision>
         <java.version>15</java.version>
-        <mangadex.spec>20</mangadex.spec>
+        <mangadex.spec>23</mangadex.spec>
     </properties>
 
     <build>
