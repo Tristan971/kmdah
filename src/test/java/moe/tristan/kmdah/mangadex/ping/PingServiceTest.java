@@ -15,6 +15,7 @@ import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.util.unit.DataSize;
@@ -61,6 +62,9 @@ class PingServiceTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private Environment environment;
+
     @BeforeEach
     void setUp() throws IOException {
         String mockWebServerUri = mockWebServerSupport.start();
@@ -76,6 +80,7 @@ class PingServiceTest {
     void pingFirstTime() throws IOException {
         DataSize poolSpeed = DataSize.ofMegabytes(100 / 8);
 
+        //noinspection ConstantConditions
         PingRequest expectedRequest = new PingRequest(
             mangadexSettings.clientSecret(),
             mangadexSettings.loadBalancerIp().getHostAddress(),
@@ -83,7 +88,7 @@ class PingServiceTest {
             DataSize.ofGigabytes(cacheSettings.maxSizeGb()).toBytes(),
             poolSpeed.toBytes(),
             Optional.empty(),
-            20
+            environment.getProperty("spring.application.spec", Integer.class)
         );
 
         PingResponse expectedResponse = new PingResponse(
