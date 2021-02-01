@@ -18,6 +18,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
@@ -131,6 +132,16 @@ public class FilesystemCachedImageService implements CachedImageService {
             });
         } catch (RejectedExecutionException e) {
             LOGGER.error("Couldn't schedule cache save of {} due to having a full queue of files to commit already.", imageSpec);
+        }
+    }
+
+    @Override
+    public void deleteChapter(ImageSpec imageSpec) {
+        Path path = specToPath(imageSpec).getParent();
+        try {
+            FileUtils.deleteDirectory(path.toFile());
+        } catch (IOException e) {
+            throw new RuntimeException("Cannot delete " + imageSpec, e);
         }
     }
 

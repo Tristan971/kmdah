@@ -131,6 +131,12 @@ public class ImageService {
         }
     }
 
+    public void delete(ImageSpec imageSpec) {
+        LOGGER.info("DELETE {}", imageSpec);
+        cachedImageService.deleteChapter(imageSpec);
+        LOGGER.info("DELETE of {} succeeded", imageSpec);
+    }
+
     @EventListener(LeaderImageServerEvent.class)
     public void onLeaderImageServerEvent(LeaderImageServerEvent leaderImageServerEvent) {
         if (!upstreamServerUri.equals(leaderImageServerEvent.imageServer())) {

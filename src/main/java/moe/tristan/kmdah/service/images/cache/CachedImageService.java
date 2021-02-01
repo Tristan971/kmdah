@@ -14,6 +14,8 @@ public interface CachedImageService {
 
     void saveImage(ImageSpec imageSpec, MediaType mediaType, InputStream inputStream);
 
+    void deleteChapter(ImageSpec imageSpec);
+
     VacuumingResult vacuum(VacuumingRequest vacuumingRequest);
 
 }

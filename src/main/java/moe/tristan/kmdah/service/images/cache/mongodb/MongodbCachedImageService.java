@@ -18,6 +18,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.gridfs.GridFsResource;
 import org.springframework.data.mongodb.gridfs.GridFsTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.util.unit.DataSize;
@@ -86,6 +87,15 @@ public class MongodbCachedImageService implements CachedImageService {
             filename,
             mediaType
         );
+    }
+
+    @Override
+    public void deleteChapter(ImageSpec imageSpec) {
+        String filename = specToFilename(imageSpec); // for chapters, the spec has * as filename so will match the whole chapter
+        for (GridFsResource resource : gridFsTemplate.getResources(filename)) {
+            LOGGER.info("Deleting {}", resource.getFilename());
+            gridFsTemplate.delete(query(whereFilename().is(resource.getFilename())));
+        }
     }
 
     @Override

@@ -1,5 +1,7 @@
 package moe.tristan.kmdah.api;
 
+import static org.springframework.http.HttpStatus.FORBIDDEN;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 
@@ -11,11 +13,13 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import moe.tristan.kmdah.mangadex.MangadexSettings;
 import moe.tristan.kmdah.mangadex.image.ImageMode;
 import moe.tristan.kmdah.service.images.ImageContent;
 import moe.tristan.kmdah.service.images.ImageService;
@@ -34,6 +38,7 @@ public class ImageController {
 
     private final ImageService imageService;
     private final ImageMetrics imageMetrics;
+    private final MangadexSettings mangadexSettings;
     private final ImageControllerHeaders controllerHeaders;
     private final ImageRequestTokenValidator tokenValidator;
     private final ImageRequestReferrerValidator referrerValidator;
@@ -41,12 +46,14 @@ public class ImageController {
     public ImageController(
         ImageService imageService,
         ImageMetrics imageMetrics,
+        MangadexSettings mangadexSettings,
         ImageRequestTokenValidator tokenValidator,
         ImageControllerHeaders controllerHeaders,
         ImageRequestReferrerValidator referrerValidator
     ) {
         this.imageService = imageService;
         this.imageMetrics = imageMetrics;
+        this.mangadexSettings = mangadexSettings;
         this.tokenValidator = tokenValidator;
         this.controllerHeaders = controllerHeaders;
         this.referrerValidator = referrerValidator;
@@ -88,6 +95,22 @@ public class ImageController {
             LOGGER.error("Rejected scheduling preloading of {}", imageSpec);
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).build();
         }
+    }
+
+    @DeleteMapping("/{client-secret}/{image-mode}/{chapterHash}")
+    public ResponseEntity<Void> delete(
+        @PathVariable("client-secret") String clientSecret,
+        @PathVariable("image-mode") String imageMode,
+        @PathVariable String chapterHash
+    ) {
+        if (!mangadexSettings.clientSecret().equals(clientSecret)) {
+            LOGGER.warn("Attempt to delete image had invalid client secret!");
+            return ResponseEntity.status(FORBIDDEN).build();
+        }
+
+        ImageSpec imageSpec = new ImageSpec(ImageMode.fromPathFragment(imageMode), chapterHash, "*");
+        imageService.delete(imageSpec);
+        return ResponseEntity.noContent().build();
     }
 
     private ResponseEntity<Resource> serve(String imageMode, String chapterHash, String fileName, HttpServletRequest request) {
