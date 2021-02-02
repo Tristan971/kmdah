@@ -74,19 +74,25 @@ public class MongodbCachedImageService implements CachedImageService {
 
         LOGGER.debug("Storing {} in MongoDB~GridFS as {} with content type: {}", imageSpec, filename, mediaType);
 
-        ObjectId storedObject = gridFsTemplate.store(
-            inputStream,
-            filename,
-            mediaType.toString()
-        );
+        try {
+            ObjectId storedObject = gridFsTemplate.store(
+                inputStream,
+                filename,
+                mediaType.toString()
+            );
 
-        LOGGER.debug(
-            "Stored {} in MongoDB~GridFS as _id:{}/{} with content type: {}",
-            imageSpec,
-            storedObject,
-            filename,
-            mediaType
-        );
+            LOGGER.debug(
+                "Stored {} in MongoDB~GridFS as _id:{}/{} with content type: {}",
+                imageSpec,
+                storedObject,
+                filename,
+                mediaType
+            );
+        } catch (Exception e) {
+            LOGGER.error("Failed storing {} in mongodb!", imageSpec, e);
+            gridFsTemplate.delete(query(whereFilename().is(filename)));
+        }
+
     }
 
     @Override

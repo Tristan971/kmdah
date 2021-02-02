@@ -15,6 +15,7 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.UUID;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +30,7 @@ import moe.tristan.kmdah.mangadex.image.MangadexImageService;
 import moe.tristan.kmdah.service.images.cache.CacheMode;
 import moe.tristan.kmdah.service.images.cache.CacheSettings;
 import moe.tristan.kmdah.service.images.cache.CachedImageService;
+import moe.tristan.kmdah.service.images.validation.ImageValidationService;
 import moe.tristan.kmdah.service.metrics.ImageMetrics;
 
 @SpringBootTest(classes = ImageService.class)
@@ -46,8 +48,16 @@ class ImageServiceTest {
     @MockBean
     private ImageMetrics imageMetrics;
 
+    @MockBean
+    private ImageValidationService imageValidationService;
+
     @Autowired
     private ImageService imageService;
+
+    @BeforeEach
+    void setUp() {
+        when(imageValidationService.validate(any(), any(), any())).thenReturn(true);
+    }
 
     @Test
     void onMiss() {

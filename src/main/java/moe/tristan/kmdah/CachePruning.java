@@ -9,19 +9,20 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.regex.Pattern;
 
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.gridfs.GridFsTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StreamUtils;
 
 import com.mongodb.client.gridfs.model.GridFSFile;
 
 import moe.tristan.kmdah.mangadex.image.ImageMode;
-import moe.tristan.kmdah.service.images.ImageService;
 import moe.tristan.kmdah.service.images.ImageSpec;
+import moe.tristan.kmdah.service.images.validation.ImageValidationService;
 import moe.tristan.kmdah.util.ThrottledExecutorService;
 
 @Component
@@ -33,11 +34,11 @@ public class CachePruning implements ApplicationRunner {
     private static final ExecutorService EXECUTOR_SERVICE = ThrottledExecutorService.from(1, 1, 1);
 
     private final GridFsTemplate gridFsTemplate;
-    private final ImageService imageService;
+    private final ImageValidationService imageValidationService;
 
-    public CachePruning(GridFsTemplate gridFsTemplate, ImageService imageService) {
+    public CachePruning(GridFsTemplate gridFsTemplate, ImageValidationService imageValidationService) {
         this.gridFsTemplate = gridFsTemplate;
-        this.imageService = imageService;
+        this.imageValidationService = imageValidationService;
     }
 
     @Override
@@ -47,7 +48,10 @@ public class CachePruning implements ApplicationRunner {
             return;
         }
 
-        gridFsTemplate.find(query(whereFilename().regex(DATA_SHASUMD_PAT))).forEach(file -> {
+        gridFsTemplate.find(
+            query(whereFilename().regex(DATA_SHASUMD_PAT))
+                .with(Sort.by(Sort.Order.desc("uploadDate")))
+        ).forEach(file -> {
             try {
                 EXECUTOR_SERVICE.submit(() -> doValidate(file)).get();
             } catch (InterruptedException | ExecutionException e) {
@@ -59,11 +63,11 @@ public class CachePruning implements ApplicationRunner {
     private void doValidate(GridFSFile file) {
         try {
             String[] parts = file.getFilename().split("/");
-            ImageSpec spec = new ImageSpec(ImageMode.valueOf(parts[1]), parts[0], parts[1]);
-            LOGGER.info("Validating {}", spec);
+            ImageSpec spec = new ImageSpec(ImageMode.valueOf(parts[1]), parts[0], parts[2]);
+            LOGGER.info("Validating [{}] {}", file.getUploadDate(), spec);
 
-            byte[] bytes = IOUtils.toByteArray(gridFsTemplate.getResource(file).getInputStream());
-            if (!imageService.validateImage(spec, OptionalLong.empty(), bytes)) {
+            byte[] bytes = StreamUtils.copyToByteArray(gridFsTemplate.getResource(file).getInputStream());
+            if (!imageValidationService.validate(spec, OptionalLong.empty(), bytes)) {
                 LOGGER.warn("Invalid");
                 gridFsTemplate.delete(query(whereFilename().is(file.getFilename())));
                 LOGGER.warn("Deleted");

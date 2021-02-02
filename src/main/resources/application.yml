@@ -32,12 +32,13 @@ server:
     threads:
       idle-timeout: 5s
 
-logging.level:
-  root: WARN
-  moe.tristan.kmdah: INFO
-  org.springframework:
-    boot.web.embedded.jetty: INFO
-    integration.leader: INFO
+logging:
+  level:
+    root: WARN
+    moe.tristan.kmdah: INFO
+    org.springframework:
+      boot.web.embedded.jetty: INFO
+      integration.leader: INFO
 
 management:
   endpoint.health.show-details: always
@@ -105,7 +106,7 @@ kmdah:
   mangadex:
     client-secret: ${KMDAH_MANGADEX_CLIENT_SECRET:asuka>rei}
     load-balancer-ip: ${KMDAH_MANGADEX_LOAD_BALANCER_IP:unset}
+    bandwidth-mbps: ${KMDAH_MANGADEX_BANDWIDTH_MBPS:100}
 
   worker:
     port: ${KMDAH_WORKER_PORT:8080}
-    bandwidth-mbps: ${KMDAH_WORKER_BANDWIDTH_MBPS:100}

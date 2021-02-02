@@ -7,8 +7,6 @@ import org.springframework.boot.context.properties.ConstructorBinding;
 @ConfigurationProperties("kmdah.worker")
 public record WorkerSettings(
 
-    int port,
-
-    int bandwidthMbps
+    int port
 
 ) {}

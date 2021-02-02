@@ -13,6 +13,7 @@ import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
+import moe.tristan.kmdah.mangadex.MangadexSettings;
 import moe.tristan.kmdah.service.gossip.InstanceId;
 import moe.tristan.kmdah.service.gossip.messages.WorkerPingEvent;
 import moe.tristan.kmdah.service.gossip.messages.WorkerShutdownEvent;
@@ -23,19 +24,17 @@ public class WorkersRegistry implements HealthIndicator {
     private static final Logger LOGGER = LoggerFactory.getLogger(WorkersRegistry.class);
 
     private final InstanceId instanceId;
+    private final MangadexSettings mangadexSettings;
     private final Map<WorkerInfo, Instant> knownWorkers;
 
-    public WorkersRegistry(InstanceId instanceId) {
+    public WorkersRegistry(InstanceId instanceId, MangadexSettings mangadexSettings) {
         this.instanceId = instanceId;
+        this.mangadexSettings = mangadexSettings;
         this.knownWorkers = new ConcurrentHashMap<>();
     }
 
     public long getTotalBandwidthMbps() {
-        return knownWorkers
-            .keySet()
-            .stream()
-            .mapToLong(WorkerInfo::bandwidthMbps)
-            .sum();
+        return mangadexSettings.bandwidthMbps();
     }
 
     public long getOtherWorkersCount() {

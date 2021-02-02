@@ -10,39 +10,35 @@ import moe.tristan.kmdah.service.gossip.messages.LeaderImageServerEvent;
 import moe.tristan.kmdah.service.gossip.messages.WorkerPingEvent;
 import moe.tristan.kmdah.service.gossip.messages.WorkerShutdownEvent;
 import moe.tristan.kmdah.service.workers.WorkerInfo;
-import moe.tristan.kmdah.service.workers.WorkerSettings;
 
 @Component
 public class GossipPublisher {
 
     private final InstanceId instanceId;
     private final RedisSettings redisSettings;
-    private final WorkerSettings workerSettings;
     private final RedisTemplate<String, GossipMessage> workerEventsRedisTemplate;
 
     public GossipPublisher(
         InstanceId instanceId,
         RedisSettings redisSettings,
-        WorkerSettings workerSettings,
         RedisTemplate<String, GossipMessage> workerEventsRedisTemplate
     ) {
         this.instanceId = instanceId;
         this.redisSettings = redisSettings;
-        this.workerSettings = workerSettings;
         this.workerEventsRedisTemplate = workerEventsRedisTemplate;
     }
 
     public void broadcastPing() {
         workerEventsRedisTemplate.convertAndSend(
             redisSettings.gossipTopic(),
-            new WorkerPingEvent(new WorkerInfo(instanceId.id(), workerSettings.bandwidthMbps()))
+            new WorkerPingEvent(new WorkerInfo(instanceId.id()))
         );
     }
 
     public void broadcastShutdown() {
         workerEventsRedisTemplate.convertAndSend(
             redisSettings.gossipTopic(),
-            new WorkerShutdownEvent(new WorkerInfo(instanceId.id(), workerSettings.bandwidthMbps()))
+            new WorkerShutdownEvent(new WorkerInfo(instanceId.id()))
         );
     }
 

@@ -7,14 +7,12 @@ import static moe.tristan.kmdah.service.metrics.CacheSearchResult.NOT_FOUND;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Optional;
-import java.util.OptionalLong;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
-import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
@@ -22,11 +20,11 @@ import org.springframework.core.io.InputStreamResource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StreamUtils;
 
-import moe.tristan.kmdah.mangadex.image.ImageMode;
 import moe.tristan.kmdah.mangadex.image.MangadexImageService;
 import moe.tristan.kmdah.service.gossip.messages.LeaderImageServerEvent;
 import moe.tristan.kmdah.service.images.cache.CacheSettings;
 import moe.tristan.kmdah.service.images.cache.CachedImageService;
+import moe.tristan.kmdah.service.images.validation.ImageValidationService;
 import moe.tristan.kmdah.service.metrics.CacheSearchResult;
 import moe.tristan.kmdah.service.metrics.ImageMetrics;
 import moe.tristan.kmdah.util.ContentCallbackInputStream;
@@ -38,6 +36,7 @@ public class ImageService {
 
     private final CachedImageService cachedImageService;
     private final MangadexImageService mangadexImageService;
+    private final ImageValidationService imageValidationService;
     private final ImageMetrics imageMetrics;
     private final long abortLookupThresholdMillis;
 
@@ -46,11 +45,12 @@ public class ImageService {
     public ImageService(
         CachedImageService cachedImageService,
         MangadexImageService mangadexImageService,
-        ImageMetrics imageMetrics,
+        ImageValidationService imageValidationService, ImageMetrics imageMetrics,
         CacheSettings cacheSettings
     ) {
         this.cachedImageService = cachedImageService;
         this.mangadexImageService = mangadexImageService;
+        this.imageValidationService = imageValidationService;
         this.imageMetrics = imageMetrics;
         this.abortLookupThresholdMillis = cacheSettings.abortLookupThresholdMillis();
     }
@@ -109,7 +109,7 @@ public class ImageService {
 
         try {
             Consumer<byte[]> cacheSaveCallback = bytes -> {
-                if (validateImage(imageSpec, upstreamContent.contentLength(), bytes)) {
+                if (imageValidationService.validate(imageSpec, upstreamContent.contentLength(), bytes)) {
                     LOGGER.debug("Content of {} fully read from upstream. Triggering cache saving.", imageSpec);
                     cachedImageService.saveImage(imageSpec, upstreamContent.contentType(), new ByteArrayInputStream(bytes));
                 }
@@ -140,28 +140,6 @@ public class ImageService {
         LOGGER.info("DELETE {}", imageSpec);
         cachedImageService.deleteChapter(imageSpec);
         LOGGER.info("DELETE of {} succeeded", imageSpec);
-    }
-
-    public boolean validateImage(ImageSpec imageSpec, OptionalLong expectedLength, byte[] bytes) {
-        if (expectedLength.isPresent()) {
-            if (expectedLength.getAsLong() == bytes.length) {
-                LOGGER.error("Mismatched length for {} ; expected {} bytes but got {} bytes", imageSpec, expectedLength.getAsLong(), bytes.length);
-                return false;
-            } else {
-                return true;
-            }
-        }
-
-        if (ImageMode.DATA_SAVER.equals(imageSpec.mode()) && imageSpec.file().contains("-")) {
-            String expectedShasum = imageSpec.file().split("-")[1].split("\\.")[0];
-            String actualShasum = DigestUtils.sha256Hex(bytes);
-            if (!expectedShasum.equals(actualShasum)) {
-                LOGGER.error("Mismatched shasum for {} ; expected {} but got {}", imageSpec, expectedLength, actualShasum);
-                return false;
-            }
-        }
-
-        return true;
     }
 
     @EventListener(LeaderImageServerEvent.class)

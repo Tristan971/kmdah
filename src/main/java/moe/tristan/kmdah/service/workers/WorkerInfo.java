@@ -7,10 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public record WorkerInfo(
 
     @JsonProperty("id")
-    String id,
-
-    @JsonProperty("bandwidthMbps")
-    long bandwidthMbps
+    String id
 
 ) {
 
