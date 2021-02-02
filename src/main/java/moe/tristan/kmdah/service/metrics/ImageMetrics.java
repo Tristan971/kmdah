@@ -19,6 +19,7 @@ public class ImageMetrics {
     private static final String METRICS_PREFIX = "kmdah_image_";
 
     private static final String OP_SERVE_IMAGE = METRICS_PREFIX + "serve";
+    private static final String OP_VALIDATE_IMAGE = METRICS_PREFIX + "validate";
 
     private static final String OP_SEARCH_FROM_CACHE = METRICS_PREFIX + "search_from_cache";
     private static final String OP_SEARCH_FROM_UPSTREAM = METRICS_PREFIX + "search_from_upstream";
@@ -65,6 +66,13 @@ public class ImageMetrics {
             OP_SERVE_IMAGE,
             CACHE_MODE_TAG_KEY, cacheMode.name()
         ).record(nanoTime() - start, TimeUnit.NANOSECONDS);
+    }
+
+    public void recordValidation(boolean success) {
+        meterRegistry.counter(
+            OP_VALIDATE_IMAGE,
+            RESULT_TAG_KEY, String.valueOf(success)
+        ).increment();
     }
 
 }

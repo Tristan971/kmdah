@@ -12,7 +12,7 @@ import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration;
 public class Kmdah {
 
     public static void main(String[] args) {
-        SpringApplication.run(Kmdah.class);
+        SpringApplication.run(Kmdah.class, args);
     }
 
 }
