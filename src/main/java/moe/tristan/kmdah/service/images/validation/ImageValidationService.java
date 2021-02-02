@@ -30,9 +30,7 @@ public class ImageValidationService {
                 imageMetrics.recordValidation(false);
                 return false;
             } else {
-                LOGGER.info("Byte count match");
-                imageMetrics.recordValidation(true);
-                return true;
+                LOGGER.info("Byte count match: {}", bytes.length);
             }
         }
 
