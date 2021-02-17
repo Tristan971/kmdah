@@ -27,7 +27,7 @@ import moe.tristan.kmdah.service.images.cache.VacuumingResult;
 
 @Testcontainers
 @DirtiesContext
-@ActiveProfiles("mongodb")
+@ActiveProfiles("cache-mongodb")
 @SpringBootTest(classes = MongodbConfiguration.class)
 class MongodbCacheVacuumingTest {
 
