@@ -52,9 +52,9 @@ jobs:
           push: true
           tags: |
             tristandeloche/kmdah:latest
-            tristandeloche/kmdah:0.3.26
+            tristandeloche/kmdah:0.3.27
             rg.fr-par.scw.cloud/tristandeloche/kmdah:latest
-            rg.fr-par.scw.cloud/tristandeloche/kmdah:0.3.26
+            rg.fr-par.scw.cloud/tristandeloche/kmdah:0.3.27
 
   extras-varnish:
     runs-on: ubuntu-latest

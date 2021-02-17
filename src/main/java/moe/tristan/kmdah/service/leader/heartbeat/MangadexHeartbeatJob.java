@@ -16,7 +16,7 @@ import moe.tristan.kmdah.mangadex.ping.PingService;
 import moe.tristan.kmdah.mangadex.ping.TlsData;
 import moe.tristan.kmdah.mangadex.stop.StopService;
 import moe.tristan.kmdah.service.gossip.messages.pub.GossipPublisher;
-import moe.tristan.kmdah.service.kubernetes.TlsDataReceivedEvent;
+import moe.tristan.kmdah.service.tls.TlsDataReceivedEvent;
 import moe.tristan.kmdah.service.leader.LeaderActivity;
 import moe.tristan.kmdah.service.workers.WorkersRegistry;
 

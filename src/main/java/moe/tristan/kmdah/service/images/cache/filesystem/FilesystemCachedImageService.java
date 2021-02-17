@@ -1,6 +1,5 @@
 package moe.tristan.kmdah.service.images.cache.filesystem;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -115,7 +114,7 @@ public class FilesystemCachedImageService implements CachedImageService {
                 CacheMode.HIT
             ));
         } catch (IOException e) {
-            LOGGER.error("Cannot read file " + file.toAbsolutePath().toString() + " for image " + imageSpec, e);
+            LOGGER.error("Cannot read file " + file.toAbsolutePath() + " for image " + imageSpec, e);
             return Optional.empty();
         }
     }
@@ -206,9 +205,11 @@ public class FilesystemCachedImageService implements CachedImageService {
     }
 
     private Path specToPath(ImageSpec spec) {
-        return filesystemSettings.rootDir().resolve(
-            spec.chapter() + File.separator + spec.mode().name() + File.separator + spec.file()
-        );
+        return filesystemSettings
+            .rootDir()
+            .resolve(spec.mode().getPathFragment())
+            .resolve(spec.chapter())
+            .resolve(spec.file());
     }
 
 }

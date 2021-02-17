@@ -1,4 +1,4 @@
-package moe.tristan.kmdah.service.kubernetes;
+package moe.tristan.kmdah.service.tls;
 
 import moe.tristan.kmdah.mangadex.ping.TlsData;
 

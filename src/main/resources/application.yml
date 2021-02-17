@@ -20,7 +20,9 @@ spring:
   config:
     import: optional:file:${KMDAH_CONFIGURATION:config.yml}
   profiles:
-    active: ${kmdah.cache.backend}
+    active:
+      - cache-${kmdah.cache.backend}
+      - tls-${kmdah.tls.backend}
 
 server:
   port: ${kmdah.worker.port}
@@ -71,7 +73,7 @@ management:
 kmdah:
 
   cache:
-    backend: ${KMDAH_CACHE_BACKEND:cache_backend_unset}
+    backend: ${KMDAH_CACHE_BACKEND:unset}
     max-size-gb: ${KMDAH_CACHE_MAX_SIZE_GB:100}
     abort-lookup-threshold-millis: ${KMDAH_CACHE_ABORT_LOOKUP_THRESHOLD_MILLIS:500}
 
@@ -97,11 +99,16 @@ kmdah:
       gossip-topic: ${KMDAH_GOSSIP_REDIS_TOPIC:kmdah}
       lock-registry-key: ${KMDAH_GOSSIP_REDIS_LOCK_REGISTRY_KEY:kmdah-leadership}
 
-  k8s:
-    tls-secret:
-      auto-update: ${KMDAH_K8S_TLS_SECRET_AUTO_UPDATE:false}
-      name: ${KMDAH_K8S_TLS_SECRET_NAME:secret-name}
-      namespace: ${KMDAH_K8S_TLS_SECRET_NAMESPACE:default}
+  tls:
+    backend: ${KMDAH_TLS_BACKEND:unset}
+    file:
+      certificate-output-file: ${KMDAH_TLS_FILE_CERTIFICATE_OUTPUT_FILE:tls.crt}
+      private-key-output-file: ${KMDAH_TLS_FILE_PRIVATE_KEY_OUTPUT_FILE:tls.key}
+    k8s:
+      secret:
+        auto-update: ${KMDAH_TLS_K8S_SECRET_AUTO_UPDATE:false}
+        name: ${KMDAH_TLS_K8S_SECRET_NAME:secret-name}
+        namespace: ${KMDAH_TLS_K8S_SECRET_NAMESPACE:default}
 
   mangadex:
     client-secret: ${KMDAH_MANGADEX_CLIENT_SECRET:asuka>rei}

@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
 @Configuration
-@Profile("filesystem")
+@Profile("cache-filesystem")
 @EnableConfigurationProperties(FilesystemSettings.class)
 public class FilesystemConfiguration {
 

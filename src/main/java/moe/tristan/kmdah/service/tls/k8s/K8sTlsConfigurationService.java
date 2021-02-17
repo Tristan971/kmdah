@@ -1,4 +1,4 @@
-package moe.tristan.kmdah.service.kubernetes;
+package moe.tristan.kmdah.service.tls.k8s;
 
 import static java.util.Objects.requireNonNull;
 
@@ -9,31 +9,32 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
-import org.springframework.stereotype.Service;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 import moe.tristan.kmdah.mangadex.ping.TlsData;
+import moe.tristan.kmdah.service.tls.TlsConfigurationService;
+import moe.tristan.kmdah.service.tls.TlsDataReceivedEvent;
 
-@Service
-public class KubernetesSecretService {
+public class K8sTlsConfigurationService implements TlsConfigurationService {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(KubernetesSecretService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(K8sTlsConfigurationService.class);
 
-    private final KubernetesTlsSecretSettings kubernetesTlsSecretSettings;
+    private final K8sTlsSecretSettings kubernetesTlsSecretSettings;
     private final CoreV1Api coreV1Api;
 
     private TlsData lastTlsData;
 
-    public KubernetesSecretService(KubernetesTlsSecretSettings kubernetesTlsSecretSettings, CoreV1Api kubernetesCoreV1Api) {
+    public K8sTlsConfigurationService(K8sTlsSecretSettings kubernetesTlsSecretSettings, CoreV1Api kubernetesCoreV1Api) {
         this.kubernetesTlsSecretSettings = kubernetesTlsSecretSettings;
         this.coreV1Api = kubernetesCoreV1Api;
     }
 
     @EventListener(TlsDataReceivedEvent.class)
-    public void pingReceived(TlsDataReceivedEvent event) {
+    @Override
+    public void applyTlsConfig(TlsDataReceivedEvent event) {
         if (kubernetesTlsSecretSettings.autoUpdate()) {
             this.syncTlsData(event.tlsData());
         } else {

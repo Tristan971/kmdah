@@ -11,7 +11,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.gridfs.GridFsTemplate;
 
 @Configuration
-@Profile("mongodb")
+@Profile("cache-mongodb")
 @EnableConfigurationProperties(MongodbSettings.class)
 @Import(value = {
     MongoAutoConfiguration.class,
