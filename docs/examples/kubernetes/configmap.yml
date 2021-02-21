@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: kmdah
+  name: kmdah-config
+data:
+  application-prod.yml: |
+    server.jetty.threads:
+      min: 100
+      max: 500
+
+    kmdah:
+      cache:
+        ...
+
+      geoip:
+        ...
+
+      gossip:
+        id-generation-strategy: hostname
+        redis:
+          host: 1.2.3.4
+          port: 6379
+
+      tls:
+        backend: k8s
+        k8s:
+          secret:
+            auto-update: true
+            namespace: kmdah
+            name: mangadex-at-home-tls-secret
+
+      mangadex:
+        client-secret: "verysecret"
+        load-balancer-ip: "123.231.123.231"
+        bandwidth-mbps: 10000
