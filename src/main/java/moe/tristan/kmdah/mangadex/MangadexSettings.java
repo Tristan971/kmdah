@@ -10,7 +10,11 @@ import org.springframework.boot.context.properties.ConstructorBinding;
 public record MangadexSettings(
 
     String clientSecret,
+
     Inet4Address loadBalancerIp,
-    long bandwidthMbps
+
+    long bandwidthMbps,
+
+    boolean enforceTokens
 
 ) {}

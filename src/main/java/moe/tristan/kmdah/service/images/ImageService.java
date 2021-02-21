@@ -15,6 +15,8 @@ import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.actuate.health.Health;
+import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.stereotype.Service;
@@ -30,7 +32,7 @@ import moe.tristan.kmdah.service.metrics.ImageMetrics;
 import moe.tristan.kmdah.util.ContentCallbackInputStream;
 
 @Service
-public class ImageService {
+public class ImageService implements HealthIndicator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ImageService.class);
 
@@ -40,7 +42,7 @@ public class ImageService {
     private final ImageMetrics imageMetrics;
     private final long abortLookupThresholdMillis;
 
-    private String upstreamServerUri = "https://s2.mangadex.org";
+    private String upstreamServerUri = null;
 
     public ImageService(
         CachedImageService cachedImageService,
@@ -144,10 +146,17 @@ public class ImageService {
 
     @EventListener(LeaderImageServerEvent.class)
     public void onLeaderImageServerEvent(LeaderImageServerEvent leaderImageServerEvent) {
-        if (!upstreamServerUri.equals(leaderImageServerEvent.imageServer())) {
+        if (upstreamServerUri == null || !upstreamServerUri.equals(leaderImageServerEvent.imageServer())) {
             LOGGER.info("Changed upstream server uri to: {}", leaderImageServerEvent.imageServer());
             this.upstreamServerUri = leaderImageServerEvent.imageServer();
         }
+    }
+
+    @Override
+    public Health health() {
+        return upstreamServerUri == null
+            ? Health.down().withDetail("upstream", "unset").build()
+            : Health.up().withDetail("upstream", upstreamServerUri).build();
     }
 
 }

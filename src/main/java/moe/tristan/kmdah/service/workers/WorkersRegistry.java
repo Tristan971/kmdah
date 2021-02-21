@@ -81,7 +81,10 @@ public class WorkersRegistry implements HealthIndicator {
                 .withDetail("reason", "No other workers known, potentially not in sync with leader")
                 .build();
         } else {
-            return Health.up().build();
+            return Health
+                .up()
+                .withDetail("workers", knownWorkers)
+                .build();
         }
     }
 

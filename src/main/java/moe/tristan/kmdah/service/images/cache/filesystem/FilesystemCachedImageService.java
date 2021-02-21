@@ -20,6 +20,8 @@ import java.util.concurrent.RejectedExecutionException;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.actuate.health.Health;
+import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.MediaType;
 import org.springframework.util.unit.DataSize;
@@ -32,7 +34,7 @@ import moe.tristan.kmdah.service.images.cache.VacuumingRequest;
 import moe.tristan.kmdah.service.images.cache.VacuumingResult;
 import moe.tristan.kmdah.util.ThrottledExecutorService;
 
-public class FilesystemCachedImageService implements CachedImageService {
+public class FilesystemCachedImageService implements CachedImageService, HealthIndicator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FilesystemCachedImageService.class);
 
@@ -46,7 +48,7 @@ public class FilesystemCachedImageService implements CachedImageService {
     public FilesystemCachedImageService(FilesystemSettings filesystemSettings) {
         this.filesystemSettings = filesystemSettings;
 
-        LOGGER.info("Initializing in filesystem mode with rootDir: {}", filesystemSettings.rootDir());
+        LOGGER.info("Initializing in filesystem mode with {}", filesystemSettings);
         validateRootDirHealth();
         LOGGER.info("Successfully validated rootDir {} for usage as cache filesystem!", filesystemSettings.rootDir());
     }
@@ -67,6 +69,11 @@ public class FilesystemCachedImageService implements CachedImageService {
 
         if (!Files.isDirectory(rootDir)) {
             throw new IllegalStateException("rootDir is not a directory!");
+        }
+
+        if (filesystemSettings.readOnly()) {
+            LOGGER.info("Not executing write access checks for filesystem directory as it is mounted read-only!");
+            return;
         }
 
         String witness = UUID.randomUUID().toString();
@@ -121,6 +128,11 @@ public class FilesystemCachedImageService implements CachedImageService {
 
     @Override
     public void saveImage(ImageSpec imageSpec, MediaType mediaType, InputStream inputStream) {
+        if (filesystemSettings.readOnly()) {
+            LOGGER.warn("Refusing to save image {} when filesystem is set to read-only!", imageSpec);
+            return;
+        }
+
         try {
             WRITE_EXECUTOR_SERVICE.submit(() -> {
                 try {
@@ -136,6 +148,10 @@ public class FilesystemCachedImageService implements CachedImageService {
 
     @Override
     public void deleteChapter(ImageSpec imageSpec) {
+        if (filesystemSettings.readOnly()) {
+            throw new IllegalArgumentException("Refusing to delete chapter when filesystem backend is set to read-only mode.");
+        }
+
         Path path = specToPath(imageSpec).getParent();
         try {
             FileUtils.deleteDirectory(path.toFile());
@@ -210,6 +226,16 @@ public class FilesystemCachedImageService implements CachedImageService {
             .resolve(spec.mode().getPathFragment())
             .resolve(spec.chapter())
             .resolve(spec.file());
+    }
+
+    @Override
+    public Health health() {
+        try {
+            validateRootDirHealth();
+            return Health.up().build();
+        } catch (Exception e) {
+            return Health.down(e).build();
+        }
     }
 
 }

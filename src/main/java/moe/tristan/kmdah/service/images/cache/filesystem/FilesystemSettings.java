@@ -8,5 +8,9 @@ import org.springframework.boot.context.properties.ConstructorBinding;
 @ConstructorBinding
 @ConfigurationProperties("kmdah.cache.filesystem")
 public record FilesystemSettings(
-    Path rootDir
+
+    Path rootDir,
+
+    boolean readOnly
+
 ) {}

@@ -79,6 +79,7 @@ kmdah:
 
     filesystem:
       root-dir: ${KMDAH_CACHE_FILESYSTEM_ROOT_DIR:}
+      read-only: ${KMDAH_CACHE_FILESYSTEM_READ_ONLY:false}
 
     mongodb:
       host: ${KMDAH_CACHE_MONGODB_HOST:localhost}
@@ -114,6 +115,7 @@ kmdah:
     client-secret: ${KMDAH_MANGADEX_CLIENT_SECRET:asuka>rei}
     load-balancer-ip: ${KMDAH_MANGADEX_LOAD_BALANCER_IP:unset}
     bandwidth-mbps: ${KMDAH_MANGADEX_BANDWIDTH_MBPS:500}
+    enforce-tokens: ${KMDAH_MANGADEX_ENFORE_TOKENS:false}
 
   worker:
     port: ${KMDAH_WORKER_PORT:8080}

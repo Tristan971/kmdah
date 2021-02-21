@@ -2,6 +2,7 @@ package moe.tristan.kmdah.api;
 
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 
@@ -26,6 +27,7 @@ import moe.tristan.kmdah.service.images.ImageService;
 import moe.tristan.kmdah.service.images.ImageSpec;
 import moe.tristan.kmdah.service.images.validation.ImageRequestReferrerValidator;
 import moe.tristan.kmdah.service.images.validation.ImageRequestTokenValidator;
+import moe.tristan.kmdah.service.images.validation.InvalidImageRequestTokenException;
 import moe.tristan.kmdah.service.metrics.ImageMetrics;
 import moe.tristan.kmdah.util.ThrottledExecutorService;
 
@@ -35,6 +37,11 @@ public class ImageController {
     private static final Logger LOGGER = LoggerFactory.getLogger(ImageController.class);
 
     private static final ExecutorService PRELOAD_SERVICE = ThrottledExecutorService.from(1, 1, 16);
+
+    private static final Set<String> TEST_CHAPTERS = Set.of(
+        "1b682e7b24ae7dbdc5064eeeb8e8e353",
+        "8172a46adc798f4f4ace6663322a383e"
+    );
 
     private final ImageService imageService;
     private final ImageMetrics imageMetrics;
@@ -68,7 +75,7 @@ public class ImageController {
         HttpServletRequest request
     ) {
         tokenValidator.validate(token, chapterHash);
-        return image(imageMode, chapterHash, fileName, request);
+        return serve(imageMode, chapterHash, fileName, request);
     }
 
     @GetMapping("/{image-mode}/{chapterHash}/{fileName}")
@@ -78,6 +85,10 @@ public class ImageController {
         @PathVariable String fileName,
         HttpServletRequest request
     ) {
+        if (mangadexSettings.enforceTokens() && !TEST_CHAPTERS.contains(chapterHash)) {
+            throw new InvalidImageRequestTokenException("Tokens are currently enforced, only test chapters are allowed.");
+        }
+
         return serve(imageMode, chapterHash, fileName, request);
     }
 
