@@ -10,8 +10,6 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import moe.tristan.kmdah.mangadex.MangadexApi;
-
 public record PingRequest(
 
     @JsonProperty("secret")
@@ -31,7 +29,7 @@ public record PingRequest(
 
     @JsonProperty("tls_created_at")
     @JsonInclude(NON_EMPTY)
-    @JsonFormat(shape = STRING, pattern = MangadexApi.TIMESTAMP_FORMAT)
+    @JsonFormat(shape = STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSSSSX")
     Optional<ZonedDateTime> tlsCreatedAt,
 
     @JsonProperty("build_version")

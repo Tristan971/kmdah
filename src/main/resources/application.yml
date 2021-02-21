@@ -23,6 +23,8 @@ spring:
     active:
       - cache-${kmdah.cache.backend}
       - tls-${kmdah.tls.backend}
+  jackson:
+    date-format: io.gsonfire.util.RFC3339DateFormat
 
 server:
   port: ${kmdah.worker.port}
@@ -68,6 +70,7 @@ management:
         request:
           autotime:
             percentiles: 0.5,0.75,0.9,0.95,0.99
+
 
 # User configuration
 kmdah:

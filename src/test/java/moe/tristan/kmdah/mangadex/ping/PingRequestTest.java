@@ -53,7 +53,7 @@ class PingRequestTest {
     void withTlsCreatedAt() throws JsonProcessingException, JSONException {
         ZonedDateTime lastCreatedAt = ZonedDateTime.of(
             LocalDate.of(1996, 1, 10),
-            LocalTime.NOON,
+            LocalTime.NOON.plusNanos(123456789),
             ZoneOffset.UTC
         );
 
@@ -75,7 +75,7 @@ class PingRequestTest {
               "ip_address": "192.168.0.1",
               "disk_space": 1234,
               "network_speed": 4567,
-              "tls_created_at": "1996-01-10T12:00:00.000000000Z",
+              "tls_created_at": "1996-01-10T12:00:00.123456789Z",
               "build_version": 19
             }
             """;
