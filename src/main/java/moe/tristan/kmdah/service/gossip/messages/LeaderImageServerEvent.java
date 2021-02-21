@@ -1,5 +1,7 @@
 package moe.tristan.kmdah.service.gossip.messages;
 
+import static moe.tristan.kmdah.service.gossip.messages.GossipMessageType.LEADER_IMAGE_SERVER;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public record LeaderImageServerEvent(
@@ -11,7 +13,7 @@ public record LeaderImageServerEvent(
 
     @Override
     public GossipMessageType getType() {
-        return GossipMessageType.LEADER_IMAGE_SERVER;
+        return LEADER_IMAGE_SERVER;
     }
 
 }

@@ -2,7 +2,7 @@ package moe.tristan.kmdah.mangadex.ping;
 
 import static com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -13,7 +13,7 @@ public record TlsData(
 
     @JsonProperty("created_at")
     @JsonFormat(shape = STRING, pattern = MangadexApi.TIMESTAMP_FORMAT)
-    LocalDateTime createdAt,
+    ZonedDateTime createdAt,
 
     @JsonProperty("private_key")
     String privateKey,

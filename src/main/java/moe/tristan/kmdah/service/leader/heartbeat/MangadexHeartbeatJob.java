@@ -1,7 +1,7 @@
 package moe.tristan.kmdah.service.leader.heartbeat;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -16,8 +16,8 @@ import moe.tristan.kmdah.mangadex.ping.PingService;
 import moe.tristan.kmdah.mangadex.ping.TlsData;
 import moe.tristan.kmdah.mangadex.stop.StopService;
 import moe.tristan.kmdah.service.gossip.messages.pub.GossipPublisher;
-import moe.tristan.kmdah.service.tls.TlsDataReceivedEvent;
 import moe.tristan.kmdah.service.leader.LeaderActivity;
+import moe.tristan.kmdah.service.tls.TlsDataReceivedEvent;
 import moe.tristan.kmdah.service.workers.WorkersRegistry;
 
 @Component
@@ -31,7 +31,7 @@ public class MangadexHeartbeatJob implements LeaderActivity {
     private final WorkersRegistry workersRegistry;
     private final ApplicationEventPublisher applicationEventPublisher;
 
-    private final AtomicReference<LocalDateTime> lastCreatedAt = new AtomicReference<>();
+    private final AtomicReference<ZonedDateTime> lastCreatedAt = new AtomicReference<>();
 
     public MangadexHeartbeatJob(
         PingService pingService,
@@ -84,6 +84,7 @@ public class MangadexHeartbeatJob implements LeaderActivity {
             tlsData.map(TlsDataReceivedEvent::new).ifPresent(applicationEventPublisher::publishEvent);
 
             gossipPublisher.broadcastImageServer(response.imageServer());
+            gossipPublisher.broadcastTokenSecretKey(response.tokenKey());
         } catch (Exception e) {
             LOGGER.error("Error during ping!", e);
         }

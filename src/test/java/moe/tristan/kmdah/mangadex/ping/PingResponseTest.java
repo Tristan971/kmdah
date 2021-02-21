@@ -3,8 +3,10 @@ package moe.tristan.kmdah.mangadex.ping;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -47,9 +49,10 @@ class PingResponseTest {
             false,
             false,
             Optional.of(new TlsData(
-                LocalDateTime.of(
-                    LocalDate.of(1996, 1, 10),
-                    LocalTime.NOON
+                ZonedDateTime.ofStrict(
+                    LocalDate.of(1996, 1, 10).atTime(LocalTime.NOON),
+                    ZoneOffset.UTC,
+                    ZoneId.of("UTC")
                 ),
                 "privkey",
                 "certificate"

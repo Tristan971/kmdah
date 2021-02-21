@@ -1,15 +1,20 @@
 package moe.tristan.kmdah.mangadex.image;
 
 import static com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING;
+import static moe.tristan.kmdah.mangadex.MangadexApi.TIMESTAMP_FORMAT;
 
 import java.time.ZonedDateTime;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-
-import moe.tristan.kmdah.mangadex.MangadexApi;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public record ImageToken(
-    @JsonFormat(shape = STRING, pattern = MangadexApi.TIMESTAMP_FORMAT)
+
+    @JsonProperty("expires")
+    @JsonFormat(shape = STRING, pattern = TIMESTAMP_FORMAT)
     ZonedDateTime expires,
+
+    @JsonProperty("hash")
     String hash
+
 ) {}

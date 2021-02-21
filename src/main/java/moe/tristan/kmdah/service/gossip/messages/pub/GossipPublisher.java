@@ -7,6 +7,7 @@ import moe.tristan.kmdah.service.gossip.InstanceId;
 import moe.tristan.kmdah.service.gossip.RedisSettings;
 import moe.tristan.kmdah.service.gossip.messages.GossipMessage;
 import moe.tristan.kmdah.service.gossip.messages.LeaderImageServerEvent;
+import moe.tristan.kmdah.service.gossip.messages.LeaderTokenEvent;
 import moe.tristan.kmdah.service.gossip.messages.WorkerPingEvent;
 import moe.tristan.kmdah.service.gossip.messages.WorkerShutdownEvent;
 import moe.tristan.kmdah.service.workers.WorkerInfo;
@@ -46,6 +47,13 @@ public class GossipPublisher {
         workerEventsRedisTemplate.convertAndSend(
             redisSettings.gossipTopic(),
             new LeaderImageServerEvent(imageServer)
+        );
+    }
+
+    public void broadcastTokenSecretKey(String tokenSecretKey) {
+        workerEventsRedisTemplate.convertAndSend(
+            redisSettings.gossipTopic(),
+            new LeaderTokenEvent(tokenSecretKey)
         );
     }
 

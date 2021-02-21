@@ -1,7 +1,7 @@
 package moe.tristan.kmdah.mangadex.ping;
 
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -42,7 +42,7 @@ public class PingService {
         this.mangadexSettings = mangadexSettings;
     }
 
-    public PingResponse ping(Optional<LocalDateTime> lastCreatedAt, DataSize poolSpeed) {
+    public PingResponse ping(Optional<ZonedDateTime> lastCreatedAt, DataSize poolSpeed) {
         long networkSpeedBytesPerSecond = poolSpeed.toBytes();
         if (networkSpeedBytesPerSecond == 0L) {
             LOGGER.info("Worker pool is empty, requesting 1B/s network speed");
@@ -55,7 +55,7 @@ public class PingService {
             443,
             DataSize.ofGigabytes(cacheSettings.maxSizeGb()).toBytes(),
             networkSpeedBytesPerSecond,
-            lastCreatedAt.map(ldt -> ldt.atZone(ZoneOffset.UTC)),
+            lastCreatedAt,
             mangadexSpecVersion
         );
 
