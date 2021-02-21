@@ -1,5 +1,7 @@
 FROM adoptopenjdk:15
 
+RUN apt update && apt install -y libsodium23
+
 WORKDIR /mangahome
 ADD target/kmdah.jar /mangahome/kmdah.jar
 
