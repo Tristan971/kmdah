@@ -26,7 +26,7 @@ The order of precedence is as follows (the lower down the list, the higher prior
 - Environment variable
 - Explicit yaml configuration key
 
-The default values are in [application.yml](src/main/resources/application.yml) under `kmdah`.
+The default values are in [application.yml](src/main/resources/application.yml#L77) under `kmdah`.
 
 ## Redis
 
