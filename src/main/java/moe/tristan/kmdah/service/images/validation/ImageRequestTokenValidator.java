@@ -31,6 +31,8 @@ public class ImageRequestTokenValidator {
     private final Clock clock;
     private final ObjectMapper objectMapper;
 
+    private ZonedDateTime lastAnnounce;
+
     private String lastSecretKey = null;
     private Key secretKey = null;
 
@@ -45,6 +47,11 @@ public class ImageRequestTokenValidator {
             return;
         }
 
+        if (lastAnnounce == null) {
+            LOGGER.warn("Time handling not ready, not checking tokens.");
+            return;
+        }
+
         byte[] decryptedTokenBytes = decryptToken(token);
 
         ImageToken imageToken = openToken(decryptedTokenBytes);
@@ -53,14 +60,16 @@ public class ImageRequestTokenValidator {
             throw new InvalidImageRequestTokenException("Mismatched chapter hash! Requested chapter '" + chapterHash + "' but token was for '" + imageToken.hash() + "'");
         }
 
-        ZonedDateTime now = ZonedDateTime.now(clock);
-        if (now.isAfter(imageToken.expires())) {
-            throw new InvalidImageRequestTokenException("Outdated token! Expires: " + imageToken.expires() + " is after now: " + now);
+        if (lastAnnounce.isAfter(imageToken.expires())) {
+            throw new InvalidImageRequestTokenException("Outdated token! Expires: " + imageToken.expires() + " is after now: " + lastAnnounce);
         }
     }
 
     @EventListener(LeaderTokenEvent.class)
     public void receivedTokenUpdateFromLeader(LeaderTokenEvent leaderTokenEvent) {
+        this.lastAnnounce = ZonedDateTime.now(clock);
+        LOGGER.info("New token comparison time: {}", lastAnnounce);
+
         if (lastSecretKey != null && lastSecretKey.equals(leaderTokenEvent.tokenKey())) {
             return; // we already have the latest and greatest :)
         }
@@ -68,7 +77,12 @@ public class ImageRequestTokenValidator {
 
         LOGGER.info("Received new secret key for token validation from leader: {}", leaderTokenEvent.tokenKey());
         byte[] secretKeyBytes = B64_NONURL_DECODER.decode(leaderTokenEvent.tokenKey());
-        this.secretKey = Key.fromBytes(secretKeyBytes);
+
+        Key newKey = Key.fromBytes(secretKeyBytes);
+        if (this.secretKey != null && !this.secretKey.isDestroyed()) {
+            this.secretKey.destroy();
+        }
+        this.secretKey = newKey;
     }
 
     private byte[] decryptToken(String token) {
@@ -77,14 +91,19 @@ public class ImageRequestTokenValidator {
             throw new InvalidImageRequestTokenException("Token is invalid (expected length >= 25 bytes but was " + tokenBytes.length + " bytes): " + token);
         }
 
-        int nonceLength = 24;
-        Nonce nonce = Nonce.fromBytes(Bytes.wrap(tokenBytes, 0, nonceLength));
-
-        int cipherTextLength = tokenBytes.length - nonceLength;
-        Bytes cipherText = Bytes.wrap(tokenBytes, nonceLength, cipherTextLength);
-
-        //noinspection ConstantConditions
-        return SecretBox.decrypt(cipherText, secretKey, nonce).toArrayUnsafe();
+        Nonce nonce = null;
+        try {
+            int nonceLength = 24;
+            nonce = Nonce.fromBytes(Bytes.wrap(tokenBytes, 0, nonceLength));
+            int cipherTextLength = tokenBytes.length - nonceLength;
+            Bytes cipherText = Bytes.wrap(tokenBytes, nonceLength, cipherTextLength);
+            //noinspection ConstantConditions
+            return SecretBox.decrypt(cipherText, secretKey, nonce).toArrayUnsafe();
+        } finally {
+            if (nonce != null && !nonce.isDestroyed()) {
+                nonce.destroy();
+            }
+        }
     }
 
     private ImageToken openToken(byte[] decryptedTokenBytes) {

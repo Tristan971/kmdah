@@ -15,6 +15,8 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.context.annotation.Bean;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import moe.tristan.kmdah.HttpClientConfiguration;
 import moe.tristan.kmdah.KmdahConfiguration;
 import moe.tristan.kmdah.service.gossip.messages.LeaderTokenEvent;
@@ -33,18 +35,22 @@ class ImageRequestTokenValidatorTest {
     private static final String TOKEN_HASH = "cae036bff6074695c9629bdc1ba9d6ca";
 
     @Autowired
-    private ImageRequestTokenValidator tokenValidator;
+    private ObjectMapper objectMapper;
 
     @SpyBean
     private Clock clock;
 
+    private ImageRequestTokenValidator tokenValidator;
+
     @BeforeEach
     void setUp() {
-        tokenValidator.receivedTokenUpdateFromLeader(new LeaderTokenEvent(SECRET_KEY));
+        tokenValidator = new ImageRequestTokenValidator(clock, objectMapper);
     }
 
     @Test
     void failsOnBadTokenSyntax() {
+        receivedWithCurrentTimeEpochSecond(TOKEN_EPIRES - 10);
+
         String sampleToken = "abc";
         assertThatThrownBy(() -> tokenValidator.validate(sampleToken, "test"))
             .isInstanceOf(InvalidImageRequestTokenException.class)
@@ -53,7 +59,8 @@ class ImageRequestTokenValidatorTest {
 
     @Test
     void failsOnMismatchedChapter() {
-        withCurrentTimeEpochSecond(TOKEN_EPIRES - 10);
+        receivedWithCurrentTimeEpochSecond(TOKEN_EPIRES - 10);
+
         assertThatThrownBy(() -> tokenValidator.validate(TOKEN, "not the chapter for this token!"))
             .isInstanceOf(InvalidImageRequestTokenException.class)
             .hasMessageContaining("Mismatched chapter hash");
@@ -61,7 +68,8 @@ class ImageRequestTokenValidatorTest {
 
     @Test
     void failsOnOutdatedToken() {
-        withCurrentTimeEpochSecond(TOKEN_EPIRES + 10);
+        receivedWithCurrentTimeEpochSecond(TOKEN_EPIRES + 10);
+
         assertThatThrownBy(() -> tokenValidator.validate(TOKEN, TOKEN_HASH))
             .isInstanceOf(InvalidImageRequestTokenException.class)
             .hasMessageContaining("Outdated token");
@@ -69,13 +77,14 @@ class ImageRequestTokenValidatorTest {
 
     @Test
     void succeedsOnValidToken() {
-        withCurrentTimeEpochSecond(TOKEN_EPIRES - 10);
+        receivedWithCurrentTimeEpochSecond(TOKEN_EPIRES - 10);
+
         tokenValidator.validate(TOKEN, TOKEN_HASH);
     }
 
-
-    private void withCurrentTimeEpochSecond(long epochSecond) {
+    private void receivedWithCurrentTimeEpochSecond(long epochSecond) {
         when(clock.instant()).thenReturn(Instant.ofEpochSecond(epochSecond));
+        tokenValidator.receivedTokenUpdateFromLeader(new LeaderTokenEvent(SECRET_KEY));
     }
 
     @TestConfiguration
