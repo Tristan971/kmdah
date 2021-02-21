@@ -6,6 +6,7 @@ import java.time.ZonedDateTime;
 import java.util.Base64;
 import java.util.Base64.Decoder;
 
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.crypto.sodium.SecretBox;
 import org.apache.tuweni.crypto.sodium.SecretBox.Key;
 import org.apache.tuweni.crypto.sodium.SecretBox.Nonce;
@@ -77,15 +78,13 @@ public class ImageRequestTokenValidator {
         }
 
         int nonceLength = 24;
-        byte[] nonceBytes = new byte[nonceLength];
-        System.arraycopy(tokenBytes, 0, nonceBytes, 0, nonceLength);
-        Nonce nonce = Nonce.fromBytes(nonceBytes);
+        Nonce nonce = Nonce.fromBytes(Bytes.wrap(tokenBytes, 0, nonceLength));
 
         int cipherTextLength = tokenBytes.length - nonceLength;
-        byte[] cipherText = new byte[cipherTextLength];
-        System.arraycopy(tokenBytes, nonceLength, cipherText, 0, cipherTextLength);
+        Bytes cipherText = Bytes.wrap(tokenBytes, nonceLength, cipherTextLength);
 
-        return SecretBox.decrypt(cipherText, secretKey, nonce);
+        //noinspection ConstantConditions
+        return SecretBox.decrypt(cipherText, secretKey, nonce).toArrayUnsafe();
     }
 
     private ImageToken openToken(byte[] decryptedTokenBytes) {

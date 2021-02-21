@@ -5,6 +5,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
+import com.fasterxml.jackson.module.blackbird.BlackbirdModule;
+
 @Configuration
 public class HttpClientConfiguration {
 
@@ -21,6 +23,11 @@ public class HttpClientConfiguration {
         requestFactory.setBufferRequestBody(false); // ensures streaming mode
         requestFactory.setOutputStreaming(true);
         return requestFactory;
+    }
+
+    @Bean
+    public BlackbirdModule blackbirdModule() {
+        return new BlackbirdModule();
     }
 
 }

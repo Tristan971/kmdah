@@ -15,11 +15,13 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.context.annotation.Bean;
 
+import moe.tristan.kmdah.HttpClientConfiguration;
 import moe.tristan.kmdah.KmdahConfiguration;
 import moe.tristan.kmdah.service.gossip.messages.LeaderTokenEvent;
 
 @SpringBootTest(classes = {
     ImageRequestTokenValidator.class,
+    HttpClientConfiguration.class,
     JacksonAutoConfiguration.class,
     ImageRequestTokenValidatorTest.ClockConfiguration.class
 })
