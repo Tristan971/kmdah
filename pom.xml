@@ -162,10 +162,9 @@
         <!-- Crypto -->
         <dependency>
             <groupId>com.github.jnr</groupId>
-            <artifactId>jnr-posix</artifactId>
-            <version>3.1.4</version>
+            <artifactId>jnr-ffi</artifactId>
+            <version>2.2.1</version>
         </dependency>
-
         <dependency>
             <groupId>org.apache.tuweni</groupId>
             <artifactId>bytes</artifactId>
