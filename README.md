@@ -49,6 +49,17 @@ kmdah:
       lock-registry-key: ${KMDAH_GOSSIP_REDIS_LOCK_REGISTRY_KEY:kmdah-leadership}
 ```
 
+---
+
+If your redis has authentication enabled, you can add the following **at the root** of your configuration file:
+
+```yaml
+spring:
+  redis:
+    username: myuser
+    password: some-password
+```
+
 #### `kmdah.gossip.id-generation-strategy`
 
 Each instance must have a unique identity.
@@ -66,17 +77,6 @@ The `gossip-topic` is the [Redis PubSub topic/channel](https://redis.io/topics/p
 
 The `lock-registry-key` is the name of the [Redis DistLock](https://redis.io/topics/distlock) that will serve for elections of the cluster leader instance.
 
----
-
-If your redis has authentication enabled, you can add the following **at the root** of your configuration file:
-
-```yaml
-spring:
-  redis:
-    username: myuser
-    password: some-password
-```
-
 ## SSL Termination
 
 On start, the client receives its SSL certificate from the backend and needs a way to configure the cluster with it.
@@ -84,6 +84,7 @@ On start, the client receives its SSL certificate from the backend and needs a w
 ### Relevant configuration
 
 ```yaml
+kmdah:
   tls:
     backend: ${KMDAH_TLS_BACKEND:unset}
     file:
@@ -98,31 +99,65 @@ On start, the client receives its SSL certificate from the backend and needs a w
 
 #### `kmdah.tls.backend`
 
-There are 2 [backends](src/main/java/moe/tristan/kmdah/service/tls/TlsBackend.java) available.
+There are 2 ["TLS Backends"](src/main/java/moe/tristan/kmdah/service/tls/TlsBackend.java) available to configure SSL:
 
-1. The `k8s` backend: auto-configuring the Certificate resource used by the Ingress.
+1. The `k8s` backend
 
-   When the leader of the cluster receives the certificate, it updates a Certificate's Secret resource.
+   When the leader of the cluster receives the certificate, it updates a Certificate's Secret resource, which is picked up by your Ingress controller:
 
-   a. First, we need a [ServiceAccount](docs/examples/kubernetes/serviceaccount.yml).
+   a. Create a [ServiceAccount](docs/examples/kubernetes/serviceaccount.yml).
 
-   b. Then, this ServiceAccount should have correct [RBAC permissions](docs/examples/kubernetes/rbac.yml) for Kmdah to have `UPDATE` (and optionally `CREATE`)
-   permissions on the Secret resource.
-
-   c. This might require editing the RBAC or pre-creating the Secret with the [sample fake cert resource](docs/examples/kubernetes/initial-tls-secret.yaml)
+   b. Grant this ServiceAccount the [RBAC permissions](docs/examples/kubernetes/rbac.yml) to `UPDATE` (and optionally `CREATE`)
+   the Secret resource. This might require editing the RBAC or pre-creating the Secret with
+   the [sample fake cert resource](docs/examples/kubernetes/initial-tls-secret.yaml)
    depending on your cluster's RBAC configuration.
 
-   d. Then, ensure your [Ingress](docs/examples/kubernetes/ingress.yml) is configured to use that secret for TLS.
+   c. Then, ensure your [Ingress](docs/examples/kubernetes/ingress.yml) is configured to use that secret for TLS.
 
-2. The `file` backend:
+2. The `file` backend
 
-##### `k8s.secret.auto-update`
+   If you prefer to handle setting these certificates manually for some reason (if you are using nginx as a reverse proxy outside k8s for example), this backend
+   simply outputs the content of the certificate and private key in a directory.
 
-To avoid mistakenly breaking your production configuration, this is set to `false` by default. Effectively rendering this backend completely disabled.
+   Note: **only the current leader outputs the certificate** files, **not** all instances.
 
-Set it to `true` when you have validated that the application works (with a separate ingress dedicated to testing).
+##### k8s backend configuration
 
-### `file` backend: Output certificate and private key to a location
+```yaml
+kmdah:
+  tls:
+    backend: k8s
+    k8s:
+      secret:
+        auto-update: ${KMDAH_TLS_K8S_SECRET_AUTO_UPDATE:false}
+        namespace: ${KMDAH_TLS_K8S_SECRET_NAMESPACE:default}
+        name: ${KMDAH_TLS_K8S_SECRET_NAME:secret-name}
+```
 
-If you prefer to handle setting these certificates manually for some reason (if you are using nginx as a reverse proxy outside k8s for example).
+To avoid mistakenly breaking your production configuration, `auto-update`, the automatic update of the certificate, is set to `false` by default.
+
+This effectively means that this backend is completely disabled, and you must set it to `true` when you are ready to go to production.
+
+Then, `namespace` and `name` are essentially a reference to the secret. Note that the secret **must** be in the same namespace as the Ingress that uses it,
+otherwise the Ingress cannot access it.
+
+With the sample manifests, you will want the `kmdah` namespace and `mangadex-at-home-tls-secret` name.
+
+##### `file` backend configuration
+
+```yaml
+kmdah:
+  tls:
+    backend: file
+    file:
+      certificate-output-file: ${KMDAH_TLS_FILE_CERTIFICATE_OUTPUT_FILE:tls.crt}
+      private-key-output-file: ${KMDAH_TLS_FILE_PRIVATE_KEY_OUTPUT_FILE:tls.key}
+```
+
+You may use either a relative (to the process' working directory) or absolute path.
+
+Notes:
+
+- Intermediate directories are **not** automatically created.
+- The ownership and permissions will be those of the Java process
 
