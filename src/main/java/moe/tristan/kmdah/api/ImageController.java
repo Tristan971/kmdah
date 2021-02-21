@@ -74,7 +74,12 @@ public class ImageController {
         @PathVariable String fileName,
         HttpServletRequest request
     ) {
-        tokenValidator.validate(token, chapterHash);
+        try {
+            tokenValidator.validate(token, chapterHash);
+        } catch (Exception e) {
+            LOGGER.error("Invalid token!", e);
+            throw e;
+        }
         return serve(imageMode, chapterHash, fileName, request);
     }
 
@@ -86,6 +91,7 @@ public class ImageController {
         HttpServletRequest request
     ) {
         if (mangadexSettings.enforceTokens() && !TEST_CHAPTERS.contains(chapterHash)) {
+            LOGGER.error("Invalid access to untokenized endpoint for {}/{}/{}", imageMode, chapterHash, fileName);
             throw new InvalidImageRequestTokenException("Tokens are currently enforced, only test chapters are allowed.");
         }
 
