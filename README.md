@@ -101,7 +101,7 @@ kmdah:
 
 There are 2 ["TLS Backends"](src/main/java/moe/tristan/kmdah/service/tls/TlsBackend.java) available to configure SSL:
 
-1. The `k8s` backend
+1. The [`k8s` backend](#k8s-backend-configuration)
 
    When the leader of the cluster receives the certificate, it updates a Certificate's Secret resource, which is picked up by your Ingress controller:
 
@@ -114,14 +114,14 @@ There are 2 ["TLS Backends"](src/main/java/moe/tristan/kmdah/service/tls/TlsBack
 
    c. Then, ensure your [Ingress](docs/examples/kubernetes/ingress.yml) is configured to use that secret for TLS.
 
-2. The `file` backend
+2. The [`file` backend](#file-backend-configuration)
 
    If you prefer to handle setting these certificates manually for some reason (if you are using nginx as a reverse proxy outside k8s for example), this backend
    simply outputs the content of the certificate and private key in a directory.
 
    Note: **only the current leader outputs the certificate** files, **not** all instances.
 
-##### k8s backend configuration
+##### `k8s` backend configuration
 
 ```yaml
 kmdah:
@@ -158,6 +158,5 @@ You may use either a relative (to the process' working directory) or absolute pa
 
 Notes:
 
-- Intermediate directories are **not** automatically created.
+- Intermediate directories are **not** automatically created
 - The ownership and permissions will be those of the Java process
-
