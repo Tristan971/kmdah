@@ -485,3 +485,5 @@ kmdah:
 ```
 
 If you want to get metrics for countries, set `enabled` to `true` and input your (free) license key from [MaxMind](https://www.maxmind.com/) for GeoIP 2 Lite.
+
+![dashboard - countries](docs/dashboard-countries.png)
