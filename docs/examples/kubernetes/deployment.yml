@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kmdah
+  namespace: kmdah
+spec:
+  replicas: 8
+  selector:
+    matchLabels:
+      app: kmdah
+  template:
+    metadata:
+      labels:
+        app: kmdah
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "8080"
+    spec:
+      serviceAccountName: kmdah
+      containers:
+        - name: kmdah
+          image: rg.fr-par.scw.cloud/tristandeloche/kmdah:0.3.33
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+          volumeMounts:
+            - name: kmdah-config
+              mountPath: "/etc/kmdah"
+            - name: cache
+              mountPath: "/cache"
+              readOnly: true
+          env:
+            - name: KMDAH_CONFIGURATION
+              value: "/etc/kmdah/application-prod.yml"
+            - name: JAVA_TOOL_OPTIONS
+              value: "-Xms512M -Xmx512M -Xss512K -XX:+UseShenandoahGC"
+          readinessProbe:
+            httpGet:
+              path: /__mon/health
+              port: http
+            periodSeconds: 5
+            initialDelaySeconds: 5
+            successThreshold: 1
+            failureThreshold: 1
+          resources:
+            requests:
+              cpu: 1000m
+              memory: 1Gi
+            limits:
+              memory: 1Gi
+          lifecycle:
+            preStop:
+              exec:
+                command: [ "sleep", "10" ] # give 10s to ingress controller to take it out of endpoints
+      volumes:
+        - name: kmdah-config
+          configMap:
+            name: kmdah-config
+        - name: cache
+          persistentVolumeClaim:
+            claimName: kmdah-pvc
+      terminationGracePeriodSeconds: 30
