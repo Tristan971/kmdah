@@ -1,22 +1,22 @@
 # kmdah
 
-A distributed-first mangadex@home (MD@H) client implementation.
+A distributed-first MangaDex@Home (MD@H) client implementation for ~~web~~ meme scale (that's when you misread the "home" part of the project as "datacenter").
 
-## Architecture overview
+## Overview
 
-To run multiple instances of a single client, we need to:
+To run multiple instances of a single client, you need to:
 
 1. Regularly ping the MD@H backend without causing compromission or sending inconsistent requests
 
-   For this, we use gossipping and distributed elections via [Redis](#redis)
+   See gossipping and distributed elections via [Redis](#redis)
 
 2. Support multiple read-write consumers at the storage level
 
-   For this, we have an array of persistent [storage](#storage) options available
+   See multi-consumer persistent [storage](#storage) options available
 
 3. Handle SSL termination at the cluster level
 
-   For this, we use a [dynamically updated](#ssl-termination) Ingress Certificate Secret
+   See [dynamically updated](#ssl-termination) Ingress Certificate Secret
 
 ![Architecture](docs/architecture.svg)
 
@@ -41,13 +41,13 @@ The default values are in [application.yml](src/main/resources/application.yml#L
 
 ## Redis
 
-First, we need to install and start [Redis](https://redis.io/) somewhere. It could be in the cluster, or outside it. The latter is probably preferable.
+To begin with, install and start [Redis](https://redis.io/) somewhere. It could be in the cluster, or outside it. The latter is probably preferable.
 
-As we do not store any actual data in it, a few megabytes of RAM and a very small bit of CPU is enough for our purposes.
+As kmdah does not store any actual data in it, a few megabytes of RAM and a very small bit of CPU is enough for our purposes.
 
-Redis Sentinel is currently not officially supported, mostly because it hasn't been tested.
+Note that Redis Sentinel is currently not supported yet.
 
-### Relevant default configuration
+### Kmdah configuration snippet for Redis
 
 ```yaml
 kmdah:
@@ -62,7 +62,7 @@ kmdah:
 
 ---
 
-If your redis has authentication enabled, you can add the following **at the root** of your configuration file:
+If your redis has authentication enabled, you can add the following at the root of your configuration file (not under `kmdah`):
 
 ```yaml
 spring:
@@ -73,9 +73,8 @@ spring:
 
 #### `kmdah.gossip.id-generation-strategy`
 
-Each instance must have a unique identity.
-
-You can use any of the [identity generation strategies](src/main/java/moe/tristan/kmdah/service/gossip/InstanceId.java):
+Each instance must have a unique identity and can do so
+via [identity generation strategies](src/main/java/moe/tristan/kmdah/service/gossip/InstanceId.java#L32-L35):
 
 - `random_uuid` to generate one on startup
 - `hostname` to use the container's hostname
@@ -134,12 +133,13 @@ There are 3 [`backend`](src/main/java/moe/tristan/kmdah/service/images/cache/Cac
    Refers to kmdah not serving images nor managing the cache. This is implemented specifically to be able to run kmdah as a pseudo-client. Seek advice
    on `#support-md-at-home` if you think this is for you.
 
-The `max-size-gb` is an integer, and refers to the maximal size to keep the cache under before deleting the oldest files in it. The size is checked periodically
-(every 15 minutes), so this is effectively a "best-effort" setting. In practice, the cache will always be slightly bigger between cleanups due to new files.
-Recommended is to put 90% of the disk space you actually want to commit to MDAH.
+The `max-size-gb` is an integer, and refers to the maximal size in gibibytes (1 GiB = 1024 MiB) of the cache before deleting the oldest files in it. The size is
+checked periodically (every 15 minutes), so this is effectively a "best-effort" setting. In practice, the cache will always be slightly bigger between cleanups
+due to new files. Recommended is to put 90% of the disk space you actually want to commit to MDAH.
 
 The `abort-lookup-threshold-millis` is the maximal amount of milliseconds to wait for a response from the underlying storage before giving up and treating a
-request as a cache MISS. If your storage is stressed, rather than piling up on this, this gives it a bit of breathing room to come back to life.
+request as a cache MISS. If your storage is stressed, rather than piling up on this, this gives it a bit of breathing room to come back to life. It is
+recommended to leave it as-is.
 
 ### Configuration for filesystem storage
 
@@ -244,7 +244,7 @@ The first solution is the ubiquitous standard for shared filesystems, NFS.
 
 ##### Conclusion
 
-Unfortunately, NFS has consistently poor performance along with very high CPU consumption for the client. At 200 req/s (~1Gbps):
+Unfortunately, NFS has consistently poor performance along with very high CPU consumption for the host nodes. At 200 req/s (~1Gbps):
 
 - 24% of CPU time was lost to the NFS client,
 - latency regularly spiked to multiple 100s of milliseconds.
@@ -285,7 +285,7 @@ spec:
 
 **Backend type:** `filesystem`
 
-[Ceph](https://ceph.io/) is an infinitely scalable solution for distributed storage. CephFS is able to sustain concurrent reads and writes by multiple clients
+[Ceph](https://ceph.io/) is an infinitely scalable solution for distributed storage. CephFS is able to sustain concurrent reads and writes by multiple consumers
 to a single filesystem.
 
 ##### Pros
@@ -342,8 +342,7 @@ This bit is relevant to both single-instance and sharded replicaset configuratio
 
 ##### Cons
 
-- Doesn't scale infinitely
-- Cannot use MongoDB sharding without storing the full archive
+- Cannot use sharding easily
 
 ##### Conclusion
 
@@ -361,7 +360,7 @@ Notes:
 
 ## SSL Termination
 
-On start, the client receives an SSL certificate and domain on which to listen from the backend.
+As part of heartbeat, the leader receives an SSL certificate and assigned domain from the backend.
 
 It then needs a way to configure the cluster with it.
 
@@ -373,27 +372,18 @@ To be more precise, the domain is made of 3 parts:
 
 Your url is thus in the form: `<random>.<account specific>.mangadex.network`
 
-The certificate is a wildcard certificate for the subject `*.<MangaDex user account specific>.mangadex.network`
+The certificate is a wildcard certificate for the subject `*.<account specific>.mangadex.network`
 
-### Relevant default configuration
+### Common TLS configuration
 
 ```yaml
 kmdah:
   tls:
     backend: ${KMDAH_TLS_BACKEND:unset}
-    file:
-      certificate-output-file: ${KMDAH_TLS_FILE_CERTIFICATE_OUTPUT_FILE:tls.crt}
-      private-key-output-file: ${KMDAH_TLS_FILE_PRIVATE_KEY_OUTPUT_FILE:tls.key}
-    k8s:
-      secret:
-        auto-update: ${KMDAH_TLS_K8S_SECRET_AUTO_UPDATE:false}
-        name: ${KMDAH_TLS_K8S_SECRET_NAME:secret-name}
-        namespace: ${KMDAH_TLS_K8S_SECRET_NAMESPACE:default}
+    ...
 ```
 
-#### `kmdah.tls.backend`
-
-There are 2 ["TLS Backends"](src/main/java/moe/tristan/kmdah/service/tls/TlsBackend.java) available to configure SSL:
+There are 2 [`backend`](src/main/java/moe/tristan/kmdah/service/tls/TlsBackend.java)s available to configure SSL:
 
 1. The [`k8s` backend](#k8s-backend-configuration)
 
@@ -402,7 +392,7 @@ There are 2 ["TLS Backends"](src/main/java/moe/tristan/kmdah/service/tls/TlsBack
    a. Create a [ServiceAccount](docs/examples/kubernetes/serviceaccount.yml).
 
    b. Grant this ServiceAccount the [RBAC permissions](docs/examples/kubernetes/rbac.yml) to `UPDATE` (and optionally `CREATE`)
-   the Secret resource. This might require editing the RBAC or pre-creating the Secret with
+   the Secret resource. This might require editing the RBAC manifests or pre-creating the Secret with
    the [sample fake cert resource](docs/examples/kubernetes/initial-tls-secret.yaml)
    depending on your cluster's RBAC configuration.
 
@@ -415,7 +405,7 @@ There are 2 ["TLS Backends"](src/main/java/moe/tristan/kmdah/service/tls/TlsBack
 
    Note: **only the current leader outputs the certificate** files, **not** all instances.
 
-##### `k8s` backend configuration
+#### `k8s` backend configuration
 
 ```yaml
 kmdah:
@@ -428,16 +418,15 @@ kmdah:
         name: ${KMDAH_TLS_K8S_SECRET_NAME:secret-name}
 ```
 
-To avoid mistakenly breaking your production configuration, `auto-update`, the automatic update of the certificate, is set to `false` by default.
+To avoid mistakenly breaking your production configuration, `auto-update` is set to `false` by default. This effectively means that this backend does nothing to
+your cluster, and you must set it to `true` when you are ready to go to production.
 
-This effectively means that this backend is completely disabled, and you must set it to `true` when you are ready to go to production.
+Then, `namespace` and `name` act like a SecretRef. Note that the secret usually must be in the same namespace as the Ingress that uses it unless you have
+specifically tweaked your cluster's RBAC configuration.
 
-Then, `namespace` and `name` are essentially a reference to the secret. Note that the secret **must** be in the same namespace as the Ingress that uses it,
-otherwise the Ingress cannot access it.
+Note that the sample manifests assume the `kmdah` namespace and `mangadex-at-home-tls-secret` name.
 
-With the sample manifests, you will want the `kmdah` namespace and `mangadex-at-home-tls-secret` name.
-
-##### `file` backend configuration
+#### `file` backend configuration
 
 ```yaml
 kmdah:
