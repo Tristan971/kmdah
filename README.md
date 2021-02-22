@@ -192,9 +192,9 @@ security:
 
 If you don't operate a MongoDB instance, or plan to dedicate it to mdah, you can do so with the following:
 
+<!-- @formatter:off -->
 ```js
-use
-admin;
+use admin;
 
 db.createUser({
     user: "kmdah",
@@ -202,6 +202,7 @@ db.createUser({
     roles: [{role: "root", db: "admin"}]
 })
 ```
+<!-- @formatter:on -->
 
 You can then test that the user was created correctly by running `mongo -u kmdah` and seeing if you can log in.
 
