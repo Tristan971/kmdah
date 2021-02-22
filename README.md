@@ -90,35 +90,84 @@ The `lock-registry-key` is the name of the [Redis DistLock](https://redis.io/top
 
 ## Storage
 
-To save cost and use storage optimally, it is ideal to share storage amongst instances. While it is technically possible to have completely different storage
-pools for each instance, that incurs a most likely unreasonable cost.
+To save cost, it is ideal to share storage amongst instances. While it is of course possible to have completely different storage pools for each instance, that
+means duplication and potentially very high cost, especially if each copy needs to be redundant and highly-available. It is therefore a very suboptimal option.
 
-Thankfully, kmdah is designed to avoid needing this.
+Thankfully, kmdah is designed specifically to not need this.
 
-There are many options available. Some that I have experimented with are listed hereafter along with the performance observed and some notes.
+There are many options available. Some that I have experimented with are linked/listed hereafter along with the performance observed and some notes.
+
+### Relevant default configuration
+
+```yaml
+kmdah:
+  cache:
+    backend: ${KMDAH_CACHE_BACKEND:unset}
+    max-size-gb: ${KMDAH_CACHE_MAX_SIZE_GB:100}
+    abort-lookup-threshold-millis: ${KMDAH_CACHE_ABORT_LOOKUP_THRESHOLD_MILLIS:500}
+
+    filesystem:
+      root-dir: ${KMDAH_CACHE_FILESYSTEM_ROOT_DIR:}
+      read-only: ${KMDAH_CACHE_FILESYSTEM_READ_ONLY:false}
+
+    mongodb:
+      host: ${KMDAH_CACHE_MONGODB_HOST:localhost}
+      port: ${KMDAH_CACHE_MONGODB_PORT:27017}
+      authentication-database: ${KMDAH_CACHE_MONGODB_AUTHENTICATION_DATABASE:admin}
+      username: ${KMDAH_CACHE_MONGODB_USERNAME:kmdah}
+      password: ${KMDAH_CACHE_MONGODB_PASSWORD:kmdah}
+```
+
+#### `kmdah.cache.backend`
+
+There are 3 [CacheBackends](src/main/java/moe/tristan/kmdah/service/images/cache/CacheBackend.java) available:
+
+1. The `filesystem` backend
+
+   Tested examples: [NFSv4](#nfsv4), [CephFS](#cephfs)
+
+   Refers to a cache managed by kmdah and exposed to it as a directory path
+
+2. The `mongodb` backend
+
+   Tested examples: [MongoDB](#mongodb-gridfs)
+
+   Refers to a cache managed by kmdah and exposed to it as a MongoDB instance
+
+3. The `delegating` backend
+
+   Test examples: Nginx array with `proxy_cache` and TLS backend `file`
+
+   Refers to a cache that kmdah is fully unaware of. This mode is essentially made to run kmdah as a pseudo-client while using something totally different to do
+   the actual serving of images.
+
+   Note: this is not recommended unless you know what you're doing very well. At this point, it's more likely that writing your own client is the right way.
+   Seek advice on `#support-md-at-home` before using this.
+
+### Test storage backends retrospective
 
 Reported performance characteristics, unless indicated otherwise, are always:
 
 - in a LAN environment with 10Gbps full-duplex connectivity between kmdah instances and storage servers
 - with real live traffic, and thus without much benefit from the Linux kernel's file caching
 
-### NFSv4
+#### NFSv4
 
 **Backend type:** `filesystem`
 
 The first solution is the ubiquitous standard for shared filesystems, NFS.
 
-#### Pros
+##### Pros
 
 - Simple to set up
 
-#### Cons
+##### Cons
 
 - Poor support in Kubernetes
 - Poor performance
 - High CPU usage
 
-#### Performance
+##### Conclusion
 
 Unfortunately, NFS has consistently poor performance along with very high CPU consumption for the client. At 200 req/s (~1Gbps):
 
@@ -129,7 +178,7 @@ In testing, it became clear that NFS is not suitable above the 150rqps range.
 
 **Recommended:** No, unless you expect less than 100 req/s.
 
-#### Example Kubernetes manifest
+##### Example Kubernetes manifest
 
 ```yaml
 apiVersion: v1
@@ -157,25 +206,26 @@ spec:
     - wsize=32768   # optional, if present it must match the server side
 ```
 
-### CephFS
+#### CephFS
 
 **Backend type:** `filesystem`
 
 [Ceph](https://ceph.io/) is an infinitely scalable solution for distributed storage. CephFS is able to sustain concurrent reads and writes by multiple clients
 to a single filesystem.
 
-#### Pros
+##### Pros
 
-- Can be incredibly fast
+- Very fast
+- No noticeable CPU overhead
 - Strong concurrency guarantees
 - You're literally using the same storage tech as CERN
 
-#### Cons
+##### Cons
 
 - Requires a pre-existing Ceph cluster, which is either costly or at least more involved to set up
 - Requires MTU 9000 for best performance
 
-#### Performance
+##### Conclusion
 
 CephFS has shown it is capable of handling at least 600 req/s without noticeable CPU overhead nor latency spikes.
 
@@ -183,6 +233,54 @@ We have not yet tested it for MDAH yet above these speeds at the time of writing
 but [institutional users have pushed it to multiple 100s of Gbps and millions of iops](https://www.vi4io.org/io500/list/20-11/10node).
 
 **Recommended: Yes, if you want to achieve extremely high performance.**
+
+##### Example Kubernetes manifest
+
+```yaml
+volumes:
+  - name: cache
+    cephfs:
+      user: mangadex
+      secretRef:
+        name: ceph-secret
+      monitors:
+        - 1.2.3.101:6789
+        - 1.2.3.102:6789
+        - 1.2.3.103:6789
+      path: /volumes/standard/mangadex/cache
+```
+
+#### MongoDB GridFS
+
+**Backend type:** `mongodb`
+
+While [MongoDB](https://www.mongodb.com/), a database, might not strike you as a viable option for massive file storage, it turns out to be a very solid
+middle-ground solution in practice ; specifically using its [GridFS](https://docs.mongodb.com/manual/core/gridfs/) feature.
+
+##### Pros
+
+- Relatively simple to set up
+- Very fast
+- No noticeable CPU overhead
+
+##### Cons
+
+- Doesn't scale infinitely
+- Cannot use MongoDB sharding without storing the full archive
+
+##### Conclusion
+
+I have personally been running my own client on MongoDB for months now, and was able to scale it up to 350 req/s (~2Gbps) without noticeable degradation of
+performance.
+
+Notes:
+
+- Do **not** use it if your underlying block device is backed by ZFS. MongoDB works best on XFS, and XFS over ZFS-backed block storage has very poor
+  performance.
+- Unless you plan to store the full archive (~17TB at the time of writing), do **not** use MongoDB sharding, as cache pruning will cause your shards
+  to [become unbalanced overtime](https://jira.mongodb.org/browse/SERVER-2487)
+
+**Recommended: Yes.**
 
 ## SSL Termination
 
