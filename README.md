@@ -4,19 +4,30 @@ A distributed-first mangadex@home (MD@H) client implementation.
 
 ## Architecture overview
 
-To run multiple instances of a single client, we need a few things:
+To run multiple instances of a single client, we need to:
 
-- A consistent heartbeat to the MD@H backend to avoid compromission/inconsistent queries: Redis locks and Redis PubSub
-- A way to handle SSL termination at the cluster level: see [SSL termination](#ssl-termination)
-- A storage backend supporting multiple RW consumers: see [Storage backends](#ssl-termination)
+1. Regularly ping the MD@H backend without causing compromission or sending inconsistent requests
 
-This is an example of configuration result:
+   For this, we use gossipping and distributed elections via [Redis](#redis)
+
+2. Support multiple read-write consumers at the storage level
+
+   For this, we have an array of persistent [storage](#storage) options available
+
+3. Handle SSL termination at the cluster level
+
+   For this, we use a [dynamically updated](#ssl-termination) Ingress Certificate Secret
 
 ![Architecture](docs/architecture.svg)
 
-## Getting started
+## Introduction
 
-While you probably should read this document to get on, you can also jump straight into the [examples](docs/examples) if you prefer.
+Additionally, this document, and kmdah in general, assume prior knowledge of Kubernetes. If that is not the case, feel free to ask for help in the
+`#support-md-at-home` channel.
+
+You can also jump straight into the [examples](docs/examples) and only refer to this document passively if that is your preference.
+
+## Getting started
 
 The configuration can be done either via environment variables or with a yaml configuration file (from a ConfigMap for example).
 
@@ -36,7 +47,7 @@ As we do not store any actual data in it, a few megabytes of RAM and a very smal
 
 Redis Sentinel is currently not officially supported, mostly because it hasn't been tested.
 
-### Relevant configuration
+### Relevant default configuration
 
 ```yaml
 kmdah:
@@ -77,11 +88,119 @@ The `gossip-topic` is the [Redis PubSub topic/channel](https://redis.io/topics/p
 
 The `lock-registry-key` is the name of the [Redis DistLock](https://redis.io/topics/distlock) that will serve for elections of the cluster leader instance.
 
+## Storage
+
+To save cost and use storage optimally, it is ideal to share storage amongst instances. While it is technically possible to have completely different storage
+pools for each instance, that incurs a most likely unreasonable cost.
+
+Thankfully, kmdah is designed to avoid needing this.
+
+There are many options available. Some that I have experimented with are listed hereafter along with the performance observed and some notes.
+
+Reported performance characteristics, unless indicated otherwise, are always:
+
+- in a LAN environment with 10Gbps full-duplex connectivity between kmdah instances and storage servers
+- with real live traffic, and thus without much benefit from the Linux kernel's file caching
+
+### NFSv4
+
+**Backend type:** `filesystem`
+
+The first solution is the ubiquitous standard for shared filesystems, NFS.
+
+#### Pros
+
+- Simple to set up
+
+#### Cons
+
+- Poor support in Kubernetes
+- Poor performance
+- High CPU usage
+
+#### Performance
+
+Unfortunately, NFS has consistently poor performance along with very high CPU consumption for the client. At 200 req/s (~1Gbps):
+
+- 24% of CPU time was lost to the NFS client,
+- latency regularly spiked to multiple 100s of milliseconds.
+
+In testing, it became clear that NFS is not suitable above the 150rqps range.
+
+**Recommended:** No, unless you expect less than 100 req/s.
+
+#### Example Kubernetes manifest
+
+```yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: kmdah-pv
+  namespace: kmdah
+spec:
+  capacity:
+    storage: 2Ti
+  accessModes:
+    - ReadWriteMany
+    - ReadWriteOnce
+    - ReadOnlyMany
+  nfs:
+    server: 192.168.2.3
+    path: "/nfs/cache"
+  mountOptions:
+    - noatime       # strongly recommended
+    - nodiratime    # strongly recommended
+    - async         # recommended
+    - noacl         # recommended
+    - nocto         # recommended
+    - rsize=32768   # optional, if present it must match the server side
+    - wsize=32768   # optional, if present it must match the server side
+```
+
+### CephFS
+
+**Backend type:** `filesystem`
+
+[Ceph](https://ceph.io/) is an infinitely scalable solution for distributed storage. CephFS is able to sustain concurrent reads and writes by multiple clients
+to a single filesystem.
+
+#### Pros
+
+- Can be incredibly fast
+- Strong concurrency guarantees
+- You're literally using the same storage tech as CERN
+
+#### Cons
+
+- Requires a pre-existing Ceph cluster, which is either costly or at least more involved to set up
+- Requires MTU 9000 for best performance
+
+#### Performance
+
+CephFS has shown it is capable of handling at least 600 req/s without noticeable CPU overhead nor latency spikes.
+
+We have not yet tested it for MDAH yet above these speeds at the time of writing,
+but [institutional users have pushed it to multiple 100s of Gbps and millions of iops](https://www.vi4io.org/io500/list/20-11/10node).
+
+**Recommended: Yes, if you want to achieve extremely high performance.**
+
 ## SSL Termination
 
-On start, the client receives its SSL certificate from the backend and needs a way to configure the cluster with it.
+On start, the client receives an SSL certificate and domain on which to listen from the backend.
 
-### Relevant configuration
+It then needs a way to configure the cluster with it.
+
+To be more precise, the domain is made of 3 parts:
+
+- The current temporary client-specific subdomain
+- A never-changing MangaDex account subdomain
+- `.mangadex.network` as TLD
+
+Your url is thus in the form: `<random>.<account specific>.mangadex.network`
+
+The certificate is a wildcard certificate for the subject `*.<MangaDex user account specific>.mangadex.network`
+
+### Relevant default configuration
 
 ```yaml
 kmdah:
@@ -160,3 +279,4 @@ Notes:
 
 - Intermediate directories are **not** automatically created
 - The ownership and permissions will be those of the Java process
+
