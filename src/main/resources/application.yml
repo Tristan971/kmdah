@@ -16,7 +16,6 @@ spring:
   redis:
     host: ${kmdah.gossip.redis.host}
     port: ${kmdah.gossip.redis.port}
-    sentine
 
   config:
     import: optional:file:${KMDAH_CONFIGURATION:config.yml}
