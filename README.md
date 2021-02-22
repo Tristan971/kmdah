@@ -39,6 +39,33 @@ The order of precedence is as follows (the lower down the list, the higher prior
 
 The default values are in [application.yml](src/main/resources/application.yml#L77) under `kmdah`.
 
+## MangaDex client configuration
+
+```yaml
+kmdah:
+  mangadex:
+    client-secret: ${KMDAH_MANGADEX_CLIENT_SECRET:asuka>rei}
+    load-balancer-ip: ${KMDAH_MANGADEX_LOAD_BALANCER_IP:unset}
+    bandwidth-mbps: ${KMDAH_MANGADEX_BANDWIDTH_MBPS:500}
+    enforce-tokens: ${KMDAH_MANGADEX_ENFORE_TOKENS:false}
+```
+
+`client-secret` and `bandwidth-mbps` should be self-explanatory
+
+`load-balancer-ip` is the IP of the load-balancer that you want users to access kmdah through
+
+`enforce-tokens` forces validation of tokens (to avoid aggregator websites hotlinking to your client). It is recommended to set it to `true`
+
+## Worker configuration
+
+```yaml
+kmdah:
+  worker:
+    port: ${KMDAH_WORKER_PORT:8080}
+```
+
+This is the port on which the instance will bind inside the docker container. Must match the container port in your Pod's manifest.
+
 ## Redis
 
 To begin with, install and start [Redis](https://redis.io/) somewhere. It could be in the cluster, or outside it. The latter is probably preferable.
@@ -444,3 +471,13 @@ Notes:
 - Intermediate directories are **not** automatically created
 - The ownership and permissions will be those of the Java process
 
+## Metrics configuration
+
+```yaml
+kmdah:
+  geoip:
+    enabled: ${KMDAH_GEOIP_ENABLED:false}
+    license-key: ${KMDAH_GEOIP_LICENSE_KEY:unset}
+```
+
+If you want to get metrics for countries, set `enabled` to `true` and input your (free) license key from [MaxMind](https://www.maxmind.com/) for GeoIP 2 Lite.
