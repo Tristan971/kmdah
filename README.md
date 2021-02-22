@@ -1,6 +1,10 @@
 # kmdah
 
-A distributed-first MangaDex@Home (MD@H) client implementation for ~~web~~ meme scale (that's when you misread the "home" part of the project as "datacenter").
+A distributed-first [MangaDex@Home](https://mangadex.network/d/6tsYVoWGz/online-status?orgId=1) (MD@H) client implementation for ~~web~~ meme scale
+
+That's when you read "home" in the project name and decided that you actually live in a "datacenter".
+
+![dashboard](docs/dashboard.png)
 
 ## Overview
 
