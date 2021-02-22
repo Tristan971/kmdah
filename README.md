@@ -190,13 +190,13 @@ security:
 
 - create a user for kmdah with all permissions on the `fs.files` and `fs.chunks` collections of the default database
 
-If you don't operate a MongoDB instance, or plan to dedicate it to mdah, you can do so with the following:
+If you don't operate a MongoDB instance, or plan to dedicate it to mdah, you can do so with the following in the `mongo` CLI:
 
 <!-- @formatter:off -->
 ```js
-use admin;
+> use admin
 
-db.createUser({
+> db.createUser({
     user: "kmdah",
     pwd: "verysecure",
     roles: [{role: "root", db: "admin"}]
@@ -208,7 +208,7 @@ You can then test that the user was created correctly by running `mongo -u kmdah
 
 ---
 
-If you want to override the database/buckets used, add
+If you want to override the database/buckets used, add this at the root of the configuration
 
 ```yaml
 spring:
