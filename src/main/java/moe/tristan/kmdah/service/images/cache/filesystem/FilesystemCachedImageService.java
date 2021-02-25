@@ -49,26 +49,31 @@ public class FilesystemCachedImageService implements CachedImageService, HealthI
         this.filesystemSettings = filesystemSettings;
 
         LOGGER.info("Initializing in filesystem mode with {}", filesystemSettings);
-        validateRootDirHealth();
+
+        validateDirHealth(filesystemSettings.rootDir());
         LOGGER.info("Successfully validated rootDir {} for usage as cache filesystem!", filesystemSettings.rootDir());
+
+        if (filesystemSettings.useAltDir()) {
+            validateDirHealth(filesystemSettings.altDir());
+            LOGGER.info("Successfully validated altDir {} for usage as secondary cache filesystem!", filesystemSettings.altDir());
+        }
     }
 
-    void validateRootDirHealth() {
-        Path rootDir = filesystemSettings.rootDir();
-        if (rootDir == null || rootDir.toString().isBlank()) {
-            throw new IllegalStateException("Filesystem mode requires setting kmdah.cache.filesystem.rootDir but none was set!");
+    void validateDirHealth(Path dir) {
+        if (dir == null || dir.toString().isBlank()) {
+            throw new IllegalStateException("Unset cache directory!");
         }
 
-        if (!rootDir.isAbsolute()) {
-            throw new IllegalStateException("rootDir should be an absolute path!");
+        if (!dir.isAbsolute()) {
+            throw new IllegalStateException(dir + " should be an absolute path!");
         }
 
-        if (!Files.exists(rootDir)) {
-            throw new IllegalStateException("rootDir doesn't exist!");
+        if (!Files.exists(dir)) {
+            throw new IllegalStateException(dir + " doesn't exist!");
         }
 
-        if (!Files.isDirectory(rootDir)) {
-            throw new IllegalStateException("rootDir is not a directory!");
+        if (!Files.isDirectory(dir)) {
+            throw new IllegalStateException(dir + " is not a directory!");
         }
 
         if (filesystemSettings.readOnly()) {
@@ -77,12 +82,12 @@ public class FilesystemCachedImageService implements CachedImageService, HealthI
         }
 
         String witness = UUID.randomUUID().toString();
-        Path testFile = rootDir.resolve(witness);
+        Path testFile = dir.resolve(witness);
 
         try {
             Files.writeString(testFile, witness, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
         } catch (IOException e) {
-            throw new IllegalStateException("rootDir cannot be written to!", e);
+            throw new IllegalStateException(dir + " cannot be written to!", e);
         }
 
         try {
@@ -91,21 +96,28 @@ public class FilesystemCachedImageService implements CachedImageService, HealthI
                 throw new IllegalStateException("Test file had different content on read than on write! Something's wrong!");
             }
         } catch (IOException e) {
-            throw new IllegalStateException("rootDir cannot be read from!", e);
+            throw new IllegalStateException(dir + " cannot be read from!", e);
         }
 
         try {
             Files.delete(testFile);
         } catch (IOException e) {
-            throw new IllegalStateException("rootDir cannot be deleted from!", e);
+            throw new IllegalStateException(dir + " cannot be deleted from!", e);
         }
     }
 
     @Override
     public Optional<ImageContent> findImage(ImageSpec imageSpec) {
-        Path file = specToPath(imageSpec);
+        Path file = specToPath(filesystemSettings.rootDir(), imageSpec);
         if (!Files.exists(file)) {
-            return Optional.empty();
+            if (filesystemSettings.useAltDir()) {
+                file = specToPath(filesystemSettings.altDir(), imageSpec);
+                if (!Files.exists(file)) {
+                    return Optional.empty();
+                }
+            } else {
+                return Optional.empty();
+            }
         }
 
         try {
@@ -152,7 +164,7 @@ public class FilesystemCachedImageService implements CachedImageService, HealthI
             throw new IllegalArgumentException("Refusing to delete chapter when filesystem backend is set to read-only mode.");
         }
 
-        Path path = specToPath(imageSpec).getParent();
+        Path path = specToPath(filesystemSettings.rootDir(), imageSpec).getParent();
         try {
             FileUtils.deleteDirectory(path.toFile());
         } catch (IOException e) {
@@ -161,7 +173,7 @@ public class FilesystemCachedImageService implements CachedImageService, HealthI
     }
 
     private void doSaveImage(ImageSpec imageSpec, InputStream content) throws IOException {
-        Path finalFile = specToPath(imageSpec);
+        Path finalFile = specToPath(filesystemSettings.rootDir(), imageSpec);
         Path tmpFile = finalFile.resolveSibling(imageSpec.file() + ".tmp");
 
         if (Files.exists(finalFile)) {
@@ -220,9 +232,8 @@ public class FilesystemCachedImageService implements CachedImageService, HealthI
         return new VacuumingResult(0L, DataSize.ofBytes(0L));
     }
 
-    private Path specToPath(ImageSpec spec) {
-        return filesystemSettings
-            .rootDir()
+    private Path specToPath(Path dir, ImageSpec spec) {
+        return dir
             .resolve(spec.mode().getPathFragment())
             .resolve(spec.chapter())
             .resolve(spec.file());
@@ -231,7 +242,10 @@ public class FilesystemCachedImageService implements CachedImageService, HealthI
     @Override
     public Health health() {
         try {
-            validateRootDirHealth();
+            validateDirHealth(filesystemSettings.rootDir());
+            if (filesystemSettings.useAltDir()) {
+                validateDirHealth(filesystemSettings.altDir());
+            }
             return Health.up().build();
         } catch (Exception e) {
             return Health.down(e).build();

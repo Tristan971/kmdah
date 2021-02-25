@@ -81,8 +81,10 @@ kmdah:
     abort-lookup-threshold-millis: ${KMDAH_CACHE_ABORT_LOOKUP_THRESHOLD_MILLIS:500}
 
     filesystem:
-      root-dir: ${KMDAH_CACHE_FILESYSTEM_ROOT_DIR:}
       read-only: ${KMDAH_CACHE_FILESYSTEM_READ_ONLY:false}
+      root-dir: ${KMDAH_CACHE_FILESYSTEM_ROOT_DIR:}
+      use-alt-dir: ${KMDAH_CACHE_FILESYSTEM_USE_ALT_DIR:false}
+      alt-dir: ${KMDAH_CACHE_FILESYSTEM_ALT_DIR:}
 
     mongodb:
       host: ${KMDAH_CACHE_MONGODB_HOST:localhost}
