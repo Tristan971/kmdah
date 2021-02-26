@@ -24,7 +24,7 @@ spring:
       - cache-${kmdah.cache.backend}
       - tls-${kmdah.tls.backend}
   jackson:
-    date-format: io.gsonfire.util.RFC3339DateFormat
+    date-format: com.fasterxml.jackson.databind.util.StdDateFormat
 
 server:
   port: ${kmdah.worker.port}
@@ -35,6 +35,10 @@ server:
     connection-idle-timeout: 3s
     threads:
       idle-timeout: 5s
+  error:
+    whitelabel:
+      enabled: false
+
 
 logging:
   level:

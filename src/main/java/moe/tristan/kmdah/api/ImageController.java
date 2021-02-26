@@ -77,8 +77,11 @@ public class ImageController {
         try {
             tokenValidator.validate(token, chapterHash);
         } catch (Exception e) {
-            LOGGER.error("Invalid token!", e);
-            throw e;
+            LOGGER.warn("Invalid token: {}", e.getMessage());
+            return ResponseEntity
+                .status(FORBIDDEN)
+                .header("Reason", "Token is not valid.")
+                .build();
         }
         return serve(imageMode, chapterHash, fileName, request);
     }

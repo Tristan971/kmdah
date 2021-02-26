@@ -61,7 +61,7 @@ public class ImageRequestTokenValidator {
         }
 
         if (lastAnnounce.isAfter(imageToken.expires())) {
-            throw new InvalidImageRequestTokenException("Outdated token! Expires: " + imageToken.expires() + " is after now: " + lastAnnounce);
+            throw new InvalidImageRequestTokenException("Outdated token! Expires: " + imageToken.expires() + ", Now: " + lastAnnounce);
         }
     }
 
