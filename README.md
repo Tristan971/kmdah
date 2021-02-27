@@ -1,19 +1,36 @@
 # kmdah
 
-A distributed-first [MangaDex@Home](https://mangadex.network/d/6tsYVoWGz/online-status?orgId=1) (MD@H)
-[client implementation](https://gitlab.com/mangadex-pub/mangadex_at_home/-/wikis/Formal-Specification-for-Custom-Clients) for ~~web~~ meme scale
+A
+distributed-first [MangaDex@Home](https://mangadex.network) [client implementation](https://gitlab.com/mangadex-pub/mangadex_at_home/-/wikis/Formal-Specification-for-Custom-Clients)
+for ~~web~~ meme scale.
 
-That's when you read "home" in the project name and decided that you actually live in a datacenter.
+If you read "home" in the project's name, but you [actually live in a datacenter](docs/dashboard.png), then this is for you.
 
-![dashboard](docs/dashboard.png)
+This document and kmdah do assume prior knowledge of Kubernetes. If that is not the case, feel free to ask for help in the `#support-md-at-home`
+channel.
+
+### What is MangaDex@Home, and why this implementation?
+
+Worldwide highly-available bandwidth and storage is expensive to maintain and expand when you can't rely on traditional CDNs like Cloudflare for it.
+
+To address the growing userbase of [MangaDex](https://mangadex.org), the MangaDex@Home project is an infinitely scalable, globally distributed and
+volunteer-based content delivery network.
+
+Anyone can offer compute, storage and network resources by running a node (referred to as 'client'), and keep track
+of [the global network's current state](https://mangadex.network). There are no particular incentives aside from a shared ~~addiction~~ appreciation of online
+manga reading that isn't awfully slow or ad-bloated.
+
+While the [reference implementation](https://gitlab.com/mangadex-pub/mangadex_at_home) works just fine, there exist
+some [alternative implementations](https://gitlab.com/mangadex-pub/mangadex_at_home/-/wikis/Formal-Specification-for-Custom-Clients) dedicated to building large
+individual clients, and naturally this is one of them, which achieves this through horizontal scaling.
 
 ## Overview
 
-To run multiple instances of a single client, you need to:
+So, how do we run a multi-instances client anyway? The major problems to solve are as follows:
 
 1. Regularly ping the MD@H backend without causing compromission or sending inconsistent requests
 
-   See gossipping and distributed elections via [Redis](#redis)
+   See gossipping and distributed elections between instances via [Redis](#redis)
 
 2. Support multiple read-write consumers at the storage level
 
@@ -24,11 +41,6 @@ To run multiple instances of a single client, you need to:
    See [dynamically updated](#ssl-termination) Ingress Certificate Secret
 
 ![Architecture](docs/architecture.svg)
-
-## Introduction
-
-Additionally, this document, and kmdah in general, assume prior knowledge of Kubernetes. If that is not the case, feel free to ask for help in the
-`#support-md-at-home` channel.
 
 You can also jump straight into the [examples](docs/examples) and only refer to this document passively if that is your preference.
 
@@ -183,12 +195,17 @@ kmdah:
     filesystem:
       root-dir: ${KMDAH_CACHE_FILESYSTEM_ROOT_DIR:}
       read-only: ${KMDAH_CACHE_FILESYSTEM_READ_ONLY:false}
+      use-alt-dir: ${KMDAH_CACHE_FILESYSTEM_USE_ALT_DIR:false}
+      alt-dir: ${KMDAH_CACHE_FILESYSTEM_ALT_DIR:}
 ```
 
 The `root-dir` is a filesystem path (and must be an absolute one) wherein kmdah will store images. kmdah must have read and write permissions on that directory.
 
 The `read-only` property allows disabling cache management. This is not needed and should be kept to default (`false`) unless you already have a full copy of
 the image set that you keep up to date by other means. This was implemented solely for MD@H upstream needs.
+
+The `use-alt-dir` and `alt-dir` options, when enabled, denote a second source of cache that is used as read-only replica (or shard). This was implemented merely
+for the 2-tier storage needs of the MD@H upstream, and you most likely do not need it.
 
 ### Configuration for MongoDB storage
 
@@ -220,7 +237,7 @@ security:
   authorization: enabled
 ```
 
-- create a user for kmdah with all permissions on the `fs.files` and `fs.chunks` collections of the default database
+- create a user for kmdah with all permissions on the database you plan to use (including administrative DB operations like statistics evaluation).
 
 If you don't operate a MongoDB instance, or plan to dedicate it to mdah, you can do so with the following in the `mongo` CLI:
 
