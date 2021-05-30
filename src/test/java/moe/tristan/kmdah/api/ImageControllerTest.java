@@ -19,7 +19,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.core.io.InputStreamResource;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -29,9 +28,7 @@ import moe.tristan.kmdah.service.images.ImageContent;
 import moe.tristan.kmdah.service.images.ImageService;
 import moe.tristan.kmdah.service.images.ImageSpec;
 import moe.tristan.kmdah.service.images.cache.CacheMode;
-import moe.tristan.kmdah.service.images.validation.ImageRequestReferrerValidator;
 import moe.tristan.kmdah.service.images.validation.ImageRequestTokenValidator;
-import moe.tristan.kmdah.service.images.validation.InvalidImageRequestReferrerException;
 import moe.tristan.kmdah.service.images.validation.InvalidImageRequestTokenException;
 import moe.tristan.kmdah.service.metrics.ImageMetrics;
 import moe.tristan.kmdah.service.metrics.geoip.GeoIpMetrics;
@@ -44,9 +41,6 @@ class ImageControllerTest {
 
     @MockBean
     private ImageRequestTokenValidator imageRequestTokenValidator;
-
-    @MockBean
-    private ImageRequestReferrerValidator imageRequestReferrerValidator;
 
     @MockBean
     private ImageControllerHeaders imageControllerHeaders;
@@ -66,7 +60,6 @@ class ImageControllerTest {
     @Test
     void onSuccess() throws Exception {
         String token = "sampletoken";
-        String referrer = "referrer";
 
         ImageSpec sample = new ImageSpec(ImageMode.DATA, "chapter", "file");
 
@@ -77,17 +70,12 @@ class ImageControllerTest {
 
         when(imageService.findOrFetch(eq(sample))).thenReturn(sampleContent);
 
-        mockMvc.perform(
-            request(GET, "/{token}/{mode}/{chapter}/{file}", token, sample.mode().getPathFragment(), sample.chapter(), sample.file())
-                .header(HttpHeaders.REFERER, referrer)
-        ).andExpect(
-            status().isOk()
-        ).andExpect(
-            content().string(expectedContent)
-        );
+        mockMvc
+            .perform(request(GET, "/{token}/{mode}/{chapter}/{file}", token, sample.mode().getPathFragment(), sample.chapter(), sample.file()))
+            .andExpect(status().isOk())
+            .andExpect(content().string(expectedContent));
 
         verify(imageRequestTokenValidator).validate(eq(token), eq(sample.chapter()));
-        verify(imageRequestReferrerValidator).validate(eq(referrer));
     }
 
     @Test
@@ -98,27 +86,9 @@ class ImageControllerTest {
 
         doThrow(new InvalidImageRequestTokenException(token)).when(imageRequestTokenValidator).validate(eq(token), eq(sample.chapter()));
 
-        mockMvc.perform(
-            request(GET, "/{token}/{mode}/{chapter}/{file}", token, sample.mode().getPathFragment(), sample.chapter(), sample.file())
-        ).andExpect(
-            status().isForbidden()
-        );
-    }
-
-    @Test
-    void onInvalidReferrerHeader() throws Exception {
-        String referrer = "referrer";
-
-        ImageSpec sample = new ImageSpec(ImageMode.DATA, "chapter", "file");
-
-        doThrow(new InvalidImageRequestReferrerException(referrer)).when(imageRequestReferrerValidator).validate(eq(referrer));
-
-        mockMvc.perform(
-            request(GET, "/{token}/{mode}/{chapter}/{file}", "whatever", sample.mode().getPathFragment(), sample.chapter(), sample.file())
-                .header(HttpHeaders.REFERER, referrer)
-        ).andExpect(
-            status().isForbidden()
-        );
+        mockMvc
+            .perform(request(GET, "/{token}/{mode}/{chapter}/{file}", token, sample.mode().getPathFragment(), sample.chapter(), sample.file()))
+            .andExpect(status().isForbidden());
     }
 
     private ImageContent sampleContent(byte[] contentBytes, MediaType mediaType, OptionalLong contentLength) {

@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.4.5</version>
+        <version>2.5.0</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
@@ -20,7 +20,7 @@
     <properties>
         <revision>local-SNAPSHOT</revision>
         <java.version>16</java.version>
-        <mangadex.spec>29</mangadex.spec>
+        <mangadex.spec>31</mangadex.spec>
     </properties>
 
     <build>
@@ -97,7 +97,6 @@
         <dependency>
             <groupId>com.fasterxml.jackson.module</groupId>
             <artifactId>jackson-module-blackbird</artifactId>
-            <version>2.12.0</version>
         </dependency>
 
         <!-- Monitoring -->

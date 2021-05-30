@@ -29,14 +29,14 @@ public class KmdahErrorController implements ErrorController {
         </head>
         <body>
             Hi, something went wrong. Apologies.<br />
-                                
+
             If it persists, ask on discord with the following information:<br />
             <ul>
                 <li>uri: %s</li>
                 <li>instance: %s</li>
             </ul>
         </body>
-        </html>        
+        </html>
         """;
 
     private final InstanceId instanceId;
@@ -59,11 +59,6 @@ public class KmdahErrorController implements ErrorController {
         return ResponseEntity
             .status(parseInt(valueOf(statusCode)))
             .body(message);
-    }
-
-    @Override
-    public String getErrorPath() {
-        return null; // unused
     }
 
 }
