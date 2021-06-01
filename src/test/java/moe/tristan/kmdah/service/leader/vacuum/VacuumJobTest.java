@@ -15,6 +15,7 @@ import moe.tristan.kmdah.service.images.cache.CacheSettings;
 import moe.tristan.kmdah.service.images.cache.CachedImageService;
 import moe.tristan.kmdah.service.images.cache.VacuumingRequest;
 import moe.tristan.kmdah.service.images.cache.VacuumingResult;
+import moe.tristan.kmdah.service.images.cache.VacuumingResult.VacuumGranularity;
 
 @SpringBootTest(
     classes = VacuumJob.class,
@@ -37,7 +38,7 @@ class VacuumJobTest {
         VacuumingRequest expectedVacuumingRequest = new VacuumingRequest(DataSize.ofGigabytes(cacheSettings.maxSizeGb()));
 
         when(cachedImageService.vacuum(eq(expectedVacuumingRequest)))
-            .thenReturn(new VacuumingResult(5L, DataSize.ofMegabytes(10)));
+            .thenReturn(new VacuumingResult(5L, DataSize.ofMegabytes(10), VacuumGranularity.CHAPTER));
 
         vacuumJob.run();
 

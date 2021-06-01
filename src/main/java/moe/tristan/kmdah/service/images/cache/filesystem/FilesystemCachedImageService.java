@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileStore;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -13,9 +14,12 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -24,14 +28,17 @@ import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.MediaType;
+import org.springframework.util.FileSystemUtils;
 import org.springframework.util.unit.DataSize;
 
+import moe.tristan.kmdah.mangadex.image.ImageMode;
 import moe.tristan.kmdah.service.images.ImageContent;
 import moe.tristan.kmdah.service.images.ImageSpec;
 import moe.tristan.kmdah.service.images.cache.CacheMode;
 import moe.tristan.kmdah.service.images.cache.CachedImageService;
 import moe.tristan.kmdah.service.images.cache.VacuumingRequest;
 import moe.tristan.kmdah.service.images.cache.VacuumingResult;
+import moe.tristan.kmdah.service.images.cache.VacuumingResult.VacuumGranularity;
 import moe.tristan.kmdah.util.ThrottledExecutorService;
 
 public class FilesystemCachedImageService implements CachedImageService, HealthIndicator {
@@ -228,8 +235,25 @@ public class FilesystemCachedImageService implements CachedImageService, HealthI
 
     @Override
     public VacuumingResult vacuum(VacuumingRequest vacuumingRequest) {
-        LOGGER.info("Vacuuming is not supported on {}", getClass().getSimpleName());
-        return new VacuumingResult(0L, DataSize.ofBytes(0L));
+        DataSize originalSpaceUse = getSpaceUsed();
+        DataSize targetSpaceUse = vacuumingRequest.targetSize();
+
+        double loadFactor = (double) originalSpaceUse.toBytes() / (double) targetSpaceUse.toBytes();
+        LOGGER.info("Cache fill factor: {}% ({}/{}GB)", (int) (loadFactor * 100), originalSpaceUse.toGigabytes(), targetSpaceUse.toGigabytes());
+
+        if (loadFactor < 1.) {
+            LOGGER.info("No need for vacuuming");
+            return new VacuumingResult(0L, DataSize.ofBytes(0L), VacuumGranularity.CHAPTER);
+        } else {
+            LOGGER.info("Vacuuming required");
+            long deletedChapters = vacuumFilesystem(loadFactor);
+
+            DataSize postCleanupSpaceUse = getSpaceUsed();
+            DataSize freedSpace = DataSize.ofBytes(originalSpaceUse.toBytes() - postCleanupSpaceUse.toBytes());
+
+            return new VacuumingResult(deletedChapters, freedSpace, VacuumGranularity.CHAPTER);
+        }
+
     }
 
     private Path specToPath(Path dir, ImageSpec spec) {
@@ -249,6 +273,48 @@ public class FilesystemCachedImageService implements CachedImageService, HealthI
             return Health.up().build();
         } catch (Exception e) {
             return Health.down(e).build();
+        }
+    }
+
+    private long vacuumFilesystem(double loadFactor) {
+        Path dataDir = filesystemSettings.rootDir().resolve(ImageMode.DATA.getPathFragment());
+        Path dataSaverDir = filesystemSettings.rootDir().resolve(ImageMode.DATA_SAVER.getPathFragment());
+
+        Set<Path> chapters;
+        try (
+            Stream<Path> dataChapters = Files.list(dataDir);
+            Stream<Path> dataSaverChapters = Files.list(dataSaverDir)
+        ) {
+            chapters = Stream.concat(dataChapters, dataSaverChapters).collect(Collectors.toSet());
+            LOGGER.info("Gathered {} chapters", chapters.size());
+        } catch (IOException e) {
+            throw new IllegalStateException("Cannot scan directory!", e);
+        }
+
+        double extraLoadFactor = loadFactor - 1.;
+
+        long chaptersCount = chapters.size();
+        long toDelete = (long) Math.floor(extraLoadFactor * (double) chaptersCount);
+        LOGGER.info("Deleting {}/{} chapters", toDelete, chaptersCount);
+
+        chapters.stream().unordered().limit(toDelete).forEach(path -> {
+            try {
+                FileSystemUtils.deleteRecursively(path);
+            } catch (IOException e) {
+                throw new IllegalStateException("Cannot delete chapter at " + path, e);
+            }
+        });
+
+        return toDelete;
+    }
+
+    private DataSize getSpaceUsed() {
+        try {
+            FileStore fileStore = Files.getFileStore(filesystemSettings.rootDir());
+            long usedSpaceBytes = fileStore.getTotalSpace() - fileStore.getUnallocatedSpace();
+            return DataSize.ofBytes(usedSpaceBytes);
+        } catch (IOException e) {
+            throw new IllegalStateException("Cannot get FileStore information", e);
         }
     }
 
