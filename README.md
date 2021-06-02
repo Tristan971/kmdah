@@ -195,17 +195,12 @@ kmdah:
     filesystem:
       root-dir: ${KMDAH_CACHE_FILESYSTEM_ROOT_DIR:}
       read-only: ${KMDAH_CACHE_FILESYSTEM_READ_ONLY:false}
-      use-alt-dir: ${KMDAH_CACHE_FILESYSTEM_USE_ALT_DIR:false}
-      alt-dir: ${KMDAH_CACHE_FILESYSTEM_ALT_DIR:}
 ```
 
 The `root-dir` is a filesystem path (and must be an absolute one) wherein kmdah will store images. kmdah must have read and write permissions on that directory.
 
 The `read-only` property allows disabling cache management. This is not needed and should be kept to default (`false`) unless you already have a full copy of
 the image set that you keep up to date by other means. This was implemented solely for MD@H upstream needs.
-
-The `use-alt-dir` and `alt-dir` options, when enabled, denote a second source of cache that is used as read-only replica (or shard). This was implemented merely
-for the 2-tier storage needs of the MD@H upstream, and you most likely do not need it.
 
 ### Configuration for MongoDB storage
 

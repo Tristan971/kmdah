@@ -51,11 +51,12 @@ public class VacuumJob implements LeaderActivity {
         long endTime = System.nanoTime();
         Duration duration = Duration.ofNanos(endTime - startTime);
 
-        if (result.deletedFileCount() > 0) {
+        if (result.deletedCount() > 0) {
             LOGGER.info(
-                "Vacuuming run done - freed {}MB by deleting {} files ({}h {}m {}s {}ms)",
+                "Vacuuming run done - freed {}MB by deleting {} {}s ({}h {}m {}s {}ms)",
                 result.freedSpace().toMegabytes(),
-                result.deletedFileCount(),
+                result.deletedCount(),
+                result.granularity().name().toLowerCase(),
                 duration.toHoursPart(),
                 duration.toMinutes(),
                 duration.toSecondsPart(),

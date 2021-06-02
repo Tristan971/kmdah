@@ -31,6 +31,7 @@ import moe.tristan.kmdah.service.images.cache.CacheMode;
 import moe.tristan.kmdah.service.images.cache.CachedImageService;
 import moe.tristan.kmdah.service.images.cache.VacuumingRequest;
 import moe.tristan.kmdah.service.images.cache.VacuumingResult;
+import moe.tristan.kmdah.service.images.cache.VacuumingResult.VacuumGranularity;
 
 public class MongodbCachedImageService implements CachedImageService {
 
@@ -137,7 +138,7 @@ public class MongodbCachedImageService implements CachedImageService {
 
         if (loadFactor < 1.) {
             LOGGER.info("No need for vacuuming");
-            return new VacuumingResult(0L, DataSize.ofBytes(0L));
+            return new VacuumingResult(0L, DataSize.ofBytes(0L), VacuumGranularity.FILE);
         }
 
         long totalFileCount = mongoTemplate.estimatedCount("fs.files");
@@ -148,7 +149,7 @@ public class MongodbCachedImageService implements CachedImageService {
 
         deleteRandomGridfsFiles(toIntExact(toDeleteCount));
 
-        return new VacuumingResult(toDeleteCount, DataSize.ofBytes(current.toBytes() - max.toBytes()));
+        return new VacuumingResult(toDeleteCount, DataSize.ofBytes(current.toBytes() - max.toBytes()), VacuumGranularity.FILE);
     }
 
     private String specToFilename(ImageSpec spec) {

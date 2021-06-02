@@ -11,10 +11,6 @@ public record FilesystemSettings(
 
     Path rootDir,
 
-    boolean useAltDir,
-
-    Path altDir,
-
     boolean readOnly
 
 ) {}

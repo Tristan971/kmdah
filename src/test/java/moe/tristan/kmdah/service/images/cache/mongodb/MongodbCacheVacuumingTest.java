@@ -58,7 +58,7 @@ class MongodbCacheVacuumingTest {
     void vacuumUnnecessary() {
         VacuumingResult vacuum = mongodbCachedImageService.vacuum(new VacuumingRequest(DataSize.ofGigabytes(100)));
 
-        assertThat(vacuum.deletedFileCount()).isZero();
+        assertThat(vacuum.deletedCount()).isZero();
         assertThat(vacuum.freedSpace().toBytes()).isZero();
     }
 
@@ -85,7 +85,7 @@ class MongodbCacheVacuumingTest {
         );
 
         VacuumingResult vacuum = mongodbCachedImageService.vacuum(new VacuumingRequest(maxSize));
-        assertThat(vacuum.deletedFileCount()).isEqualTo(expectedDeletedCount);
+        assertThat(vacuum.deletedCount()).isEqualTo(expectedDeletedCount);
 
         long remainingFileCount = mongoTemplate.count(Query.query(Criteria.where("_id").exists(true)), "fs.files");
         assertThat(remainingFileCount).isEqualTo(maxFileCount);

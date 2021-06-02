@@ -80,10 +80,10 @@ class ImageControllerHeadersTest {
     }
 
     private void validateMangadexHeadersPresent(HttpHeaders headers) {
-        assertThat(headers.getAccessControlAllowOrigin()).isEqualTo("https://mangadex.org");
+        assertThat(headers.getAccessControlAllowOrigin()).isEqualTo("*");
         assertThat(headers.getAccessControlExposeHeaders()).containsExactly("*");
         assertThat(requireNonNull(headers.getCacheControl()).split(", ")).containsExactlyInAnyOrder("public", "max-age=1209600");
-        assertThat(headers.getFirst("Timing-Allow-Origin")).isEqualTo("https://mangadex.org");
+        assertThat(headers.getFirst("Timing-Allow-Origin")).isEqualTo("*");
         assertThat(headers.getFirst("X-Content-Type-Options")).isEqualTo("nosniff");
         assertThat(headers.getLastModified()).isEqualTo(LAST_MODIFIED.toEpochMilli());
     }

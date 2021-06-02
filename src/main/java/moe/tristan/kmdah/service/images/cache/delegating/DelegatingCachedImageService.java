@@ -11,6 +11,7 @@ import moe.tristan.kmdah.service.images.ImageSpec;
 import moe.tristan.kmdah.service.images.cache.CachedImageService;
 import moe.tristan.kmdah.service.images.cache.VacuumingRequest;
 import moe.tristan.kmdah.service.images.cache.VacuumingResult;
+import moe.tristan.kmdah.service.images.cache.VacuumingResult.VacuumGranularity;
 
 public class DelegatingCachedImageService implements CachedImageService {
 
@@ -29,7 +30,7 @@ public class DelegatingCachedImageService implements CachedImageService {
 
     @Override
     public VacuumingResult vacuum(VacuumingRequest vacuumingRequest) {
-        return new VacuumingResult(0L, DataSize.ofBytes(0L));
+        return new VacuumingResult(0L, DataSize.ofBytes(0L), VacuumGranularity.FILE);
     }
 
 }
