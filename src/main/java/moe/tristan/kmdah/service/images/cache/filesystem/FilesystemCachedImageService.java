@@ -54,16 +54,9 @@ public class FilesystemCachedImageService implements CachedImageService, HealthI
 
     public FilesystemCachedImageService(FilesystemSettings filesystemSettings) {
         this.filesystemSettings = filesystemSettings;
-
         LOGGER.info("Initializing in filesystem mode with {}", filesystemSettings);
-
         validateDirHealth(filesystemSettings.rootDir());
         LOGGER.info("Successfully validated rootDir {} for usage as cache filesystem!", filesystemSettings.rootDir());
-
-        if (filesystemSettings.useAltDir()) {
-            validateDirHealth(filesystemSettings.altDir());
-            LOGGER.info("Successfully validated altDir {} for usage as secondary cache filesystem!", filesystemSettings.altDir());
-        }
     }
 
     void validateDirHealth(Path dir) {
@@ -117,14 +110,7 @@ public class FilesystemCachedImageService implements CachedImageService, HealthI
     public Optional<ImageContent> findImage(ImageSpec imageSpec) {
         Path file = specToPath(filesystemSettings.rootDir(), imageSpec);
         if (!Files.exists(file)) {
-            if (filesystemSettings.useAltDir()) {
-                file = specToPath(filesystemSettings.altDir(), imageSpec);
-                if (!Files.exists(file)) {
-                    return Optional.empty();
-                }
-            } else {
-                return Optional.empty();
-            }
+            return Optional.empty();
         }
 
         try {
@@ -235,6 +221,11 @@ public class FilesystemCachedImageService implements CachedImageService, HealthI
 
     @Override
     public VacuumingResult vacuum(VacuumingRequest vacuumingRequest) {
+        if (filesystemSettings.readOnly()) {
+            LOGGER.info("Not running vacuum over read-only filesystem.");
+            return new VacuumingResult(0, DataSize.ofBytes(0L), VacuumGranularity.CHAPTER);
+        }
+
         DataSize originalSpaceUse = getSpaceUsed();
         DataSize targetSpaceUse = vacuumingRequest.targetSize();
 
@@ -267,9 +258,6 @@ public class FilesystemCachedImageService implements CachedImageService, HealthI
     public Health health() {
         try {
             validateDirHealth(filesystemSettings.rootDir());
-            if (filesystemSettings.useAltDir()) {
-                validateDirHealth(filesystemSettings.altDir());
-            }
             return Health.up().build();
         } catch (Exception e) {
             return Health.down(e).build();
@@ -291,13 +279,13 @@ public class FilesystemCachedImageService implements CachedImageService, HealthI
             throw new IllegalStateException("Cannot scan directory!", e);
         }
 
-        double extraLoadFactor = loadFactor - 1.;
 
         long chaptersCount = chapters.size();
-        long toDelete = (long) Math.floor(extraLoadFactor * (double) chaptersCount);
-        LOGGER.info("Deleting {}/{} chapters", toDelete, chaptersCount);
+        long wantToDelete = (long) ((double) chaptersCount * (loadFactor - 1.));
 
-        chapters.stream().unordered().limit(toDelete).forEach(path -> {
+        LOGGER.info("Deleting {}/{} chapters", wantToDelete, chaptersCount);
+
+        chapters.stream().unordered().limit(wantToDelete).forEach(path -> {
             try {
                 FileSystemUtils.deleteRecursively(path);
             } catch (IOException e) {
@@ -305,7 +293,7 @@ public class FilesystemCachedImageService implements CachedImageService, HealthI
             }
         });
 
-        return toDelete;
+        return wantToDelete;
     }
 
     private DataSize getSpaceUsed() {

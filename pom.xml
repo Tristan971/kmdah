@@ -20,7 +20,7 @@
     <properties>
         <revision>local-SNAPSHOT</revision>
         <java.version>16</java.version>
-        <mangadex.spec>31</mangadex.spec>
+        <mangadex.spec>32</mangadex.spec>
     </properties>
 
     <build>
@@ -83,6 +83,8 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-jetty</artifactId>
         </dependency>
+
+        <!-- DB -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-mongodb</artifactId>
@@ -107,6 +109,13 @@
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+        <!-- Works around desync in micrometer client versions causing extra formatters to be absent (wtf) -->
+        <dependency>
+            <groupId>io.prometheus</groupId>
+            <artifactId>simpleclient_common</artifactId>
+            <version>0.11.0</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.maxmind.geoip2</groupId>
@@ -200,6 +209,12 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-inline</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <version>4.1.0</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

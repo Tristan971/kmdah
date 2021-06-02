@@ -25,6 +25,7 @@ import moe.tristan.kmdah.mangadex.image.ImageMode;
 import moe.tristan.kmdah.service.images.ImageContent;
 import moe.tristan.kmdah.service.images.ImageService;
 import moe.tristan.kmdah.service.images.ImageSpec;
+import moe.tristan.kmdah.service.images.validation.ImageRequestReferrerValidator;
 import moe.tristan.kmdah.service.images.validation.ImageRequestTokenValidator;
 import moe.tristan.kmdah.service.images.validation.InvalidImageRequestTokenException;
 import moe.tristan.kmdah.service.metrics.ImageMetrics;
@@ -47,19 +48,22 @@ public class ImageController {
     private final MangadexSettings mangadexSettings;
     private final ImageControllerHeaders controllerHeaders;
     private final ImageRequestTokenValidator tokenValidator;
+    private final ImageRequestReferrerValidator referrerValidator;
 
     public ImageController(
         ImageService imageService,
         ImageMetrics imageMetrics,
         MangadexSettings mangadexSettings,
         ImageRequestTokenValidator tokenValidator,
-        ImageControllerHeaders controllerHeaders
+        ImageControllerHeaders controllerHeaders,
+        ImageRequestReferrerValidator referrerValidator
     ) {
         this.imageService = imageService;
         this.imageMetrics = imageMetrics;
         this.mangadexSettings = mangadexSettings;
         this.tokenValidator = tokenValidator;
         this.controllerHeaders = controllerHeaders;
+        this.referrerValidator = referrerValidator;
     }
 
     @GetMapping("/{token}/{image-mode}/{chapterHash}/{fileName}")
@@ -131,6 +135,10 @@ public class ImageController {
 
     private ResponseEntity<Resource> serve(String imageMode, String chapterHash, String fileName, HttpServletRequest request) {
         long startServe = System.nanoTime();
+
+        if (request.getHeader(HttpHeaders.REFERER) != null) {
+            referrerValidator.validate(request.getHeaders(HttpHeaders.REFERER).nextElement());
+        }
 
         if (request.getHeader(HttpHeaders.IF_MODIFIED_SINCE) != null) {
             return new ResponseEntity<>(HttpStatus.NOT_MODIFIED);

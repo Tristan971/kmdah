@@ -28,10 +28,10 @@ public class ImageControllerHeaders {
         HttpHeaders headers = new HttpHeaders();
 
         // MDAH spec headers
-        headers.setAccessControlAllowOrigin("https://mangadex.org");
+        headers.setAccessControlAllowOrigin("*");
         headers.setAccessControlExposeHeaders(EXPOSE_HEADERS);
         headers.setCacheControl(CACHE_CONTROL);
-        headers.add("Timing-Allow-Origin", "https://mangadex.org");
+        headers.add("Timing-Allow-Origin", "*");
         headers.add("X-Content-Type-Options", "nosniff");
         headers.add("X-Cache", imageContent.cacheMode().name());
         headers.setLastModified(imageContent.lastModified());
