@@ -29,7 +29,7 @@ jobs:
             ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
 
       - name: Build with Maven
-        run: mvn -B -e -fae --show-version -Drevision=$(cat version) package
+        run: JAVA_TOOL_OPTIONS="--illegal-access=permit" mvn -B -e -fae --show-version -Drevision=$(cat version) package
 
       - name: Login to DockerHub
         uses: docker/login-action@v1
