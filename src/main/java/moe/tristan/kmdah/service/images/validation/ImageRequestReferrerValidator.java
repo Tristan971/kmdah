@@ -4,10 +4,14 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.regex.Pattern;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 @Component
 public class ImageRequestReferrerValidator {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ImageRequestReferrerValidator.class);
 
     private static final Pattern VALID_REFERERS = Pattern.compile(
         // *.*.mangadex.network
@@ -24,13 +28,17 @@ public class ImageRequestReferrerValidator {
             URI referrerUri = new URI(referrer);
             String host = referrerUri.getHost();
             if (host == null) {
-                throw new InvalidImageRequestReferrerException("Invalid referrer didn't have a host for " + referrer);
+                LOGGER.warn("Invalid referrer: {}", referrer);
+                return;
+                //throw new InvalidImageRequestReferrerException("Invalid referrer didn't have a host for " + referrer);
             }
 
             if (!VALID_REFERERS.matcher(host).find()) {
-                throw new InvalidImageRequestReferrerException("Invalid Referrer header had unexpected host for " + referrer);
+                LOGGER.warn("Illegal referrer: {}", referrer);
+                //throw new InvalidImageRequestReferrerException("Invalid Referrer header had unexpected host for " + referrer);
             }
         } catch (URISyntaxException e) {
+            LOGGER.warn("Invalid referrer isn't a URI: {}", referrer);
             throw new InvalidImageRequestReferrerException("Invalid Referrer header was present but not a URI for " + referrer, e);
         }
     }
