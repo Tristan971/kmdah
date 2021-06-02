@@ -20,9 +20,9 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
-public class WebMetricsLoggerConfiguration extends OncePerRequestFilter implements ClientHttpRequestInterceptor, RestTemplateCustomizer {
+public class RequestsLogger extends OncePerRequestFilter implements ClientHttpRequestInterceptor, RestTemplateCustomizer {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(WebMetricsLoggerConfiguration.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RequestsLogger.class);
     private static final Clock CLOCK = Clock.systemUTC();
 
     @Override
