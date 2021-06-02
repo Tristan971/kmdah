@@ -48,7 +48,7 @@ logging:
       boot.web.embedded.jetty: INFO
       integration.leader: INFO
   pattern:
-    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%5p) %clr([%X{ruid:- } %15.15X{reqip:- }]){faint} %clr(%32.32logger{0}){cyan} %clr(:){faint} %m%n%wEx"
+    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%5p) %clr(%36.36X{ruid:-internal} %15.15X{reqip:-}){faint} %clr(%32.32logger{0}){cyan} %clr(:){faint} %m%n%wEx"
 
 management:
   endpoint.health.show-details: always
