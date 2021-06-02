@@ -2,6 +2,7 @@ package moe.tristan.kmdah.api;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import moe.tristan.kmdah.service.images.validation.ImageRequestReferrerValidator;
@@ -24,6 +25,7 @@ class ImageRequestReferrerValidatorTest {
     }
 
     @Test
+    @Disabled
     void testInvalid() {
         assertThatThrownBy(() -> validator.validate("https://notmangadex.org"))
             .isInstanceOf(InvalidImageRequestReferrerException.class)
