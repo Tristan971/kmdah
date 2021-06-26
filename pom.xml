@@ -219,20 +219,4 @@
         </dependency>
     </dependencies>
 
-    <repositories>
-        <repository>
-            <id>central-proxy</id>
-            <name>Maven Proxy</name>
-            <url>https://nexus.tristan.moe/repository/maven/</url>
-            <releases>
-                <enabled>true</enabled>
-                <checksumPolicy>fail</checksumPolicy>
-                <updatePolicy>never</updatePolicy>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
-
 </project>
