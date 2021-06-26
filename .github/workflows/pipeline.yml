@@ -53,9 +53,7 @@ jobs:
           push: true
           tags: |
             tristandeloche/kmdah:latest
-            tristandeloche/kmdah:0.5.3
-            rg.fr-par.scw.cloud/tristandeloche/kmdah:latest
-            rg.fr-par.scw.cloud/tristandeloche/kmdah:0.5.3
+            tristandeloche/kmdah:0.5.4
 
   extras-varnish:
     runs-on: ubuntu-latest
@@ -91,5 +89,3 @@ jobs:
           tags: |
             tristandeloche/prometheus-varnish-exporter:latest
             tristandeloche/prometheus-varnish-exporter:v6-vpe1.6-SNAPSHOT
-            rg.fr-par.scw.cloud/tristandeloche/prometheus-varnish-exporter:latest
-            rg.fr-par.scw.cloud/tristandeloche/prometheus-varnish-exporter:v6-vpe1.6-SNAPSHOT
