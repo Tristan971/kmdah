@@ -75,7 +75,9 @@ public class ImageController {
         HttpServletRequest request
     ) {
         try {
-            tokenValidator.validate(token, chapterHash);
+            if (mangadexSettings.enforceTokens() && !TEST_CHAPTERS.contains(chapterHash)) {
+                tokenValidator.validate(token, chapterHash);
+            }
         } catch (Exception e) {
             LOGGER.warn("Invalid token: {}", e.getMessage());
             return ResponseEntity
