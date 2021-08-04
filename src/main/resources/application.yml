@@ -122,3 +122,6 @@ kmdah:
 
   worker:
     port: ${KMDAH_WORKER_PORT:8080}
+
+  experimental-features:
+    jackson-blackbird-module: false

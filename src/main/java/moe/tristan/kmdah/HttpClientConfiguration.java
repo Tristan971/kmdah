@@ -1,5 +1,6 @@
 package moe.tristan.kmdah;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,9 +23,15 @@ public class HttpClientConfiguration {
         return new HttpComponentsClientHttpConnector();
     }
 
-    @Bean
-    public BlackbirdModule blackbirdModule() {
-        return new BlackbirdModule();
+    @Configuration
+    @ConditionalOnProperty(name = "kmdah.experimental-features.jackson-blackbird", havingValue = "true")
+    public static class JacksonBlackbirdConfiguration {
+
+        @Bean
+        public BlackbirdModule blackbirdModule() {
+            return new BlackbirdModule();
+        }
+
     }
 
 }

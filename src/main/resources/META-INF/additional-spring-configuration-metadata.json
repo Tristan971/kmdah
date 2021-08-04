@@ -9,6 +9,11 @@
       "name": "spring.application.spec",
       "type": "java.lang.Integer",
       "description": "Version of the mangadex unofficial client specification."
+    },
+    {
+      "name": "kmdah.experimental-features",
+      "type": "java.util.Map",
+      "description": "Unstable features that can be opted-in."
     }
   ]
 }
