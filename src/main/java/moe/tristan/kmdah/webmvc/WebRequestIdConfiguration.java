@@ -31,8 +31,7 @@ public class WebRequestIdConfiguration extends OncePerRequestFilter implements C
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         try {
-            RequestContext.newRuid();
-            RequestContext.setIp(request.getRemoteAddr());
+            RequestContext.setId(request.getRemoteAddr());
             filterChain.doFilter(request, response);
         } finally {
             RequestContext.reset();
@@ -41,7 +40,6 @@ public class WebRequestIdConfiguration extends OncePerRequestFilter implements C
 
     @Override
     public ClientHttpResponse intercept(HttpRequest request, byte[] body, ClientHttpRequestExecution execution) throws IOException {
-        RequestContext.getOrCreateRuid();
         return execution.execute(request, body);
     }
 
