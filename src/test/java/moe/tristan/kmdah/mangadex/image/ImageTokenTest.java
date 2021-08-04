@@ -11,12 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import moe.tristan.kmdah.HttpClientConfiguration;
-
-@SpringBootTest(classes = {
-    HttpClientConfiguration.class,
-    JacksonAutoConfiguration.class
-})
+@SpringBootTest(classes = JacksonAutoConfiguration.class)
 class ImageTokenTest {
 
     @Autowired

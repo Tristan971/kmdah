@@ -2,39 +2,45 @@ package moe.tristan.kmdah.mangadex.ping;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
+import org.springframework.boot.autoconfigure.web.client.RestTemplateAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureMockRestServiceServer;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.core.env.Environment;
-import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.util.unit.DataSize;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import moe.tristan.kmdah.HttpClientConfiguration;
-import moe.tristan.kmdah.MockWebServerSupport;
 import moe.tristan.kmdah.mangadex.MangadexApi;
 import moe.tristan.kmdah.mangadex.MangadexSettings;
 import moe.tristan.kmdah.service.images.cache.CacheSettings;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.RecordedRequest;
+import moe.tristan.kmdah.webmvc.RequestsLogger;
 
 @SpringBootTest(
     classes = {
-        PingService.class,
+        HttpClientConfiguration.class,
         JacksonAutoConfiguration.class,
-        HttpClientConfiguration.class
+        PingService.class,
+        RestTemplateAutoConfiguration.class,
+        RequestsLogger.class
     },
     properties = {
         "kmdah.mangadex.client-secret=secret",
@@ -42,13 +48,15 @@ import okhttp3.mockwebserver.RecordedRequest;
         "kmdah.cache.max-size-gb=100"
     }
 )
+@AutoConfigureMockRestServiceServer
 @EnableConfigurationProperties({MangadexSettings.class, CacheSettings.class})
 class PingServiceTest {
 
-    private final MockWebServerSupport mockWebServerSupport = new MockWebServerSupport();
-
     @MockBean
     private MangadexApi mangadexApi;
+
+    @Autowired
+    private MockRestServiceServer mockRestServiceServer;
 
     @Autowired
     private MangadexSettings mangadexSettings;
@@ -66,14 +74,8 @@ class PingServiceTest {
     private Environment environment;
 
     @BeforeEach
-    void setUp() throws IOException {
-        String mockWebServerUri = mockWebServerSupport.start();
-        when(mangadexApi.getApiUrl()).thenReturn(mockWebServerUri);
-    }
-
-    @AfterEach
-    void tearDown() throws IOException {
-        mockWebServerSupport.stop();
+    void setUp() {
+        when(mangadexApi.getApiUrl()).thenReturn("https://api.mangadex.network");
     }
 
     @Test
@@ -101,19 +103,21 @@ class PingServiceTest {
             Optional.empty()
         );
 
-        MockResponse mockResponse = new MockResponse();
-        mockResponse.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
-        mockResponse.setBody(objectMapper.writeValueAsString(expectedResponse));
-        mockWebServerSupport.enqueue(mockResponse);
+        mockRestServiceServer
+            .expect(method(HttpMethod.POST))
+            .andExpect(requestTo(mangadexApi.getApiUrl() + "/ping"))
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(content().json(objectMapper.writeValueAsString(expectedRequest)))
+            .andRespond(
+                withStatus(HttpStatus.OK)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(objectMapper.writeValueAsString(expectedResponse))
+            );
 
         PingResponse response = pingService.ping(Optional.empty(), poolSpeed);
         assertThat(response).isEqualTo(expectedResponse);
 
-        RecordedRequest request = mockWebServerSupport.takeRequest();
-        String requestPath = request.getPath();
-        String requestBody = request.getBody().readString(StandardCharsets.UTF_8);
-        assertThat(requestPath).isEqualTo("/ping");
-        assertThat(objectMapper.readValue(requestBody, PingRequest.class)).isEqualTo(expectedRequest);
+        mockRestServiceServer.verify();
     }
 
 }

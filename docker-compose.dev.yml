@@ -9,7 +9,7 @@ services:
     container_name: kmdah_redis
     image: library/redis:6-alpine
     ports:
-      - 6379:6379
+      - "6379:6379"
     deploy:
       resources:
         limits:
@@ -36,7 +36,7 @@ services:
     depends_on:
       - redis
     ports:
-      - 8080:8080
+      - "8080:8080"
     environment:
       KMDAH_MANGADEX_CLIENT_SECRET: ${KMDAH_MANGADEX_CLIENT_SECRET}
       KMDAH_MANGADEX_LOAD_BALANCER_IP: ${KMDAH_MANGADEX_LOAD_BALANCER_IP}

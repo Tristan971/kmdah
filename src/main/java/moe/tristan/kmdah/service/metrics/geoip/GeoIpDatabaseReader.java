@@ -8,14 +8,12 @@ import java.nio.file.Path;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.maxmind.db.CHMCache;
 import com.maxmind.geoip2.DatabaseReader;
 
-@Component
 public class GeoIpDatabaseReader {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GeoIpDatabaseReader.class);

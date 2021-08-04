@@ -5,25 +5,17 @@ import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
 import com.maxmind.geoip2.DatabaseReader;
 
-@Component
 public class GeoIpService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GeoIpService.class);
 
-    private DatabaseReader databaseReader;
+    private final DatabaseReader databaseReader;
 
-    public GeoIpService(GeoIpSettings geoIpSettings, GeoIpDatabaseReader geoIpDatabaseReader) {
-        if (geoIpSettings.enabled()) {
-            LOGGER.info("Initializing the GeoIp support...");
-            databaseReader = geoIpDatabaseReader.newDatabaseReader(geoIpSettings.licenseKey());
-            LOGGER.info("GeoIp support initialized!");
-        } else {
-            LOGGER.info("GeoIp support is not enabled.");
-        }
+    public GeoIpService(DatabaseReader databaseReader) {
+        this.databaseReader = databaseReader;
     }
 
     public Optional<String> resolveCountryCode(String address) {

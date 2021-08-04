@@ -1,47 +1,56 @@
 package moe.tristan.kmdah.mangadex.stop;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
+import org.springframework.boot.autoconfigure.web.client.RestTemplateAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureMockRestServiceServer;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.client.MockRestServiceServer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import moe.tristan.kmdah.HttpClientConfiguration;
-import moe.tristan.kmdah.MockWebServerSupport;
 import moe.tristan.kmdah.mangadex.MangadexApi;
 import moe.tristan.kmdah.mangadex.MangadexSettings;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.RecordedRequest;
+import moe.tristan.kmdah.webmvc.RequestsLogger;
 
 @SpringBootTest(
-    classes = {StopService.class, JacksonAutoConfiguration.class, HttpClientConfiguration.class},
+    classes = {
+        JacksonAutoConfiguration.class,
+        HttpClientConfiguration.class,
+        RequestsLogger.class,
+        RestTemplateAutoConfiguration.class,
+        StopService.class
+    },
     properties = {
         "kmdah.mangadex.client-secret=secret",
         "kmdah.mangadex.load-balancer-ip=192.168.0.1"
     }
 )
+@AutoConfigureMockRestServiceServer
 @EnableConfigurationProperties(MangadexSettings.class)
 class StopServiceTest {
 
-    private final MockWebServerSupport mockWebServerSupport = new MockWebServerSupport();
-
     @MockBean
     private MangadexApi mangadexApi;
+
+    @Autowired
+    private MockRestServiceServer mockRestServiceServer;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -50,39 +59,40 @@ class StopServiceTest {
     private StopService stopService;
 
     @BeforeEach
-    void setUp() throws IOException {
-        String mockWebServerUri = mockWebServerSupport.start();
-        when(mangadexApi.getApiUrl()).thenReturn(mockWebServerUri);
-    }
-
-    @AfterEach
-    void tearDown() throws IOException {
-        mockWebServerSupport.stop();
+    void setUp() {
+        when(mangadexApi.getApiUrl()).thenReturn("https://api.mangadex.network");
     }
 
     @Test
     void stopSuccess() throws JsonProcessingException {
-        MockResponse mockResponse = new MockResponse();
-        mockResponse.setResponseCode(HttpStatus.OK.value());
-        mockWebServerSupport.enqueue(mockResponse);
-
         StopRequest expectedRequest = new StopRequest("secret");
+
+        mockRestServiceServer
+            .expect(method(HttpMethod.POST))
+            .andExpect(requestTo(mangadexApi.getApiUrl() + "/stop"))
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(content().json(objectMapper.writeValueAsString(expectedRequest)))
+            .andRespond(withStatus(HttpStatus.OK));
 
         stopService.stop();
 
-        RecordedRequest recordedRequest = mockWebServerSupport.takeRequest();
-        String requestBody = recordedRequest.getBody().readString(StandardCharsets.UTF_8);
-        assertThat(recordedRequest.getMethod()).isEqualTo(HttpMethod.POST.name());
-        assertThat(objectMapper.readValue(requestBody, StopRequest.class)).isEqualTo(expectedRequest);
+        mockRestServiceServer.verify();
     }
 
     @Test
-    void stopFailure() {
-        MockResponse mockResponse = new MockResponse();
-        mockResponse.setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
-        mockWebServerSupport.enqueue(mockResponse);
+    void stopFailure() throws JsonProcessingException {
+        StopRequest expectedRequest = new StopRequest("secret");
+
+        mockRestServiceServer
+            .expect(method(HttpMethod.POST))
+            .andExpect(requestTo(mangadexApi.getApiUrl() + "/stop"))
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(content().json(objectMapper.writeValueAsString(expectedRequest)))
+            .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR));
 
         assertThatThrownBy(stopService::stop).hasMessageContaining(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR.value()));
+
+        mockRestServiceServer.verify();
     }
 
 }

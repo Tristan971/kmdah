@@ -17,13 +17,11 @@ import org.springframework.context.annotation.Bean;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import moe.tristan.kmdah.HttpClientConfiguration;
 import moe.tristan.kmdah.KmdahConfiguration;
 import moe.tristan.kmdah.service.gossip.messages.LeaderTokenEvent;
 
 @SpringBootTest(classes = {
     ImageRequestTokenValidator.class,
-    HttpClientConfiguration.class,
     JacksonAutoConfiguration.class,
     ImageRequestTokenValidatorTest.ClockConfiguration.class
 })
@@ -31,7 +29,7 @@ class ImageRequestTokenValidatorTest {
 
     private static final String SECRET_KEY = "jRrpGgZ7jNLEYbaUuToxfIhNMdQr4wL41nOQjTOWQr4=";
     private static final String TOKEN = "mAVIDb9zAiqX53RE5zDxwuCF2XtyB9zV9VLMwTrXyJLeBhOCWpRgpOe-cWOsmDnIJU6K2IrcIXl7-CanizbO2AAsIpyX-f9u1k64IXm8XY8gPLaY15GVVLFDZMiHgJ-pW1eVFpL9k9MRRE6DFhuwZLWdH-hUoJGTVvRRItDFYU7vo4pOc_WQTECvaD0-uaTVwslpolpCid7IwzE52RsMSsHScp7T";
-    private static final long TOKEN_EPIRES = 1613867356L;
+    private static final long TOKEN_EXPIRES = 1613867356L;
     private static final String TOKEN_HASH = "cae036bff6074695c9629bdc1ba9d6ca";
 
     @Autowired
@@ -49,7 +47,7 @@ class ImageRequestTokenValidatorTest {
 
     @Test
     void failsOnBadTokenSyntax() {
-        receivedWithCurrentTimeEpochSecond(TOKEN_EPIRES - 10);
+        receivedWithCurrentTimeEpochSecond(TOKEN_EXPIRES - 10);
 
         String sampleToken = "abc";
         assertThatThrownBy(() -> tokenValidator.validate(sampleToken, "test"))
@@ -59,7 +57,7 @@ class ImageRequestTokenValidatorTest {
 
     @Test
     void failsOnMismatchedChapter() {
-        receivedWithCurrentTimeEpochSecond(TOKEN_EPIRES - 10);
+        receivedWithCurrentTimeEpochSecond(TOKEN_EXPIRES - 10);
 
         assertThatThrownBy(() -> tokenValidator.validate(TOKEN, "not the chapter for this token!"))
             .isInstanceOf(InvalidImageRequestTokenException.class)
@@ -68,7 +66,7 @@ class ImageRequestTokenValidatorTest {
 
     @Test
     void failsOnOutdatedToken() {
-        receivedWithCurrentTimeEpochSecond(TOKEN_EPIRES + 10);
+        receivedWithCurrentTimeEpochSecond(TOKEN_EXPIRES + 10);
 
         assertThatThrownBy(() -> tokenValidator.validate(TOKEN, TOKEN_HASH))
             .isInstanceOf(InvalidImageRequestTokenException.class)
@@ -77,7 +75,7 @@ class ImageRequestTokenValidatorTest {
 
     @Test
     void succeedsOnValidToken() {
-        receivedWithCurrentTimeEpochSecond(TOKEN_EPIRES - 10);
+        receivedWithCurrentTimeEpochSecond(TOKEN_EXPIRES - 10);
 
         tokenValidator.validate(TOKEN, TOKEN_HASH);
     }
