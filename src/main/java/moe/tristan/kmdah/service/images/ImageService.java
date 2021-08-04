@@ -96,7 +96,7 @@ public class ImageService implements HealthIndicator {
             return upstreamResponseContent;
         });
 
-        LOGGER.info("Cache {} for {} (content-length: {})", imageContent.cacheMode(), imageSpec, imageContent.contentLength().orElse(-1L));
+        LOGGER.debug("Cache {} for {} (content-length: {})", imageContent.cacheMode(), imageSpec, imageContent.contentLength().orElse(-1L));
         imageMetrics.recordSearch(startSearch, imageContent.cacheMode());
 
         return imageContent;
