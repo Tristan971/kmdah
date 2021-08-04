@@ -48,7 +48,7 @@ logging:
       boot.web.embedded.jetty: INFO
       integration.leader: INFO
   pattern:
-    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%5p) %clr(%15.15X{ruid:-internal}){faint} %clr(%32.32logger{0}){cyan} %clr(:){faint} %m%n%wEx"
+    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%5p) %clr(%X{ruid:-internal}){faint} %clr(%.32logger{0}){cyan} %clr(:){faint} %m%n%wEx"
 
 management:
   endpoint.health.show-details: always
@@ -94,7 +94,7 @@ kmdah:
 
   geoip:
     enabled: ${KMDAH_GEOIP_ENABLED:false}
-    license-key: ${KMDAH_GEOIP_LICENSE_KEY:unset}
+    license-key: ${KMDAH_GEOIP_LICENSE_KEY:}
 
   gossip:
     id-generation-strategy: ${KMDAH_GOSSIP_ID_GENERATION_METHOD:random_uuid}

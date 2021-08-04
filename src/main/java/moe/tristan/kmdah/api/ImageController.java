@@ -3,8 +3,6 @@ package moe.tristan.kmdah.api;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.RejectedExecutionException;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -17,7 +15,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import moe.tristan.kmdah.mangadex.MangadexSettings;
@@ -29,14 +26,11 @@ import moe.tristan.kmdah.service.images.validation.ImageRequestReferrerValidator
 import moe.tristan.kmdah.service.images.validation.ImageRequestTokenValidator;
 import moe.tristan.kmdah.service.images.validation.InvalidImageRequestTokenException;
 import moe.tristan.kmdah.service.metrics.ImageMetrics;
-import moe.tristan.kmdah.util.ThrottledExecutorService;
 
 @RestController
 public class ImageController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ImageController.class);
-
-    private static final ExecutorService PRELOAD_SERVICE = ThrottledExecutorService.from(1, 1, 16);
 
     private static final Set<String> TEST_CHAPTERS = Set.of(
         "1b682e7b24ae7dbdc5064eeeb8e8e353",
@@ -101,22 +95,6 @@ public class ImageController {
         }
 
         return serve(imageMode, chapterHash, fileName, request);
-    }
-
-    @PostMapping("/preload/{image-mode}/{chapterHash}/{fileName}")
-    public ResponseEntity<Void> preload(
-        @PathVariable("image-mode") String imageMode,
-        @PathVariable String chapterHash,
-        @PathVariable String fileName
-    ) {
-        ImageSpec imageSpec = new ImageSpec(ImageMode.fromPathFragment(imageMode), chapterHash, fileName);
-        try {
-            PRELOAD_SERVICE.submit(() -> imageService.preload(imageSpec));
-            return ResponseEntity.ok().build();
-        } catch (RejectedExecutionException e) {
-            LOGGER.error("Rejected scheduling preloading of {}", imageSpec);
-            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).build();
-        }
     }
 
     @DeleteMapping("/{client-secret}/{image-mode}/{chapterHash}")

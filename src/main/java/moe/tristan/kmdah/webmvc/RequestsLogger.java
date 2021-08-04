@@ -29,10 +29,12 @@ public class RequestsLogger extends OncePerRequestFilter implements ClientHttpRe
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         long startTime = CLOCK.instant().toEpochMilli();
 
-        String requestMethodAndPath = "%s %s".formatted(request.getMethod(), request.getRequestURL());
+        String requestMethodAndPath = request.getMethod() + " " + request.getRequestURL();
 
         try {
-            logStart(requestMethodAndPath);
+            if (LOGGER.isDebugEnabled()) {
+                logStart(requestMethodAndPath);
+            }
             filterChain.doFilter(request, response);
         } finally {
             logEnd(requestMethodAndPath, response.getStatus(), startTime);
@@ -57,7 +59,7 @@ public class RequestsLogger extends OncePerRequestFilter implements ClientHttpRe
     }
 
     private void logStart(String requestMethodAndPath) {
-        LOGGER.info("{} begin", requestMethodAndPath);
+        LOGGER.debug("{} begin", requestMethodAndPath);
     }
 
     private void logEnd(String requestMethodAndPath, int statusCode, long startTimeMillis) {

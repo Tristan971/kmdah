@@ -9,10 +9,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-@Component
 public class GeoIpMetricsFilter extends OncePerRequestFilter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GeoIpMetricsFilter.class);
@@ -20,6 +18,7 @@ public class GeoIpMetricsFilter extends OncePerRequestFilter {
     private final GeoIpMetrics geoIpMetrics;
 
     public GeoIpMetricsFilter(GeoIpMetrics geoIpMetrics) {
+        LOGGER.info("GeoIP metrics enabled");
         this.geoIpMetrics = geoIpMetrics;
     }
 

@@ -20,7 +20,6 @@ import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StreamUtils;
 
 import moe.tristan.kmdah.mangadex.image.MangadexImageService;
 import moe.tristan.kmdah.service.gossip.messages.LeaderImageServerEvent;
@@ -126,15 +125,6 @@ public class ImageService implements HealthIndicator {
             );
         } catch (IOException e) {
             throw new IllegalStateException("Cannot open upstream response for reading!", e);
-        }
-    }
-
-    public void preload(ImageSpec imageSpec) {
-        try {
-            ImageContent content = findOrFetch(imageSpec);
-            StreamUtils.drain(content.resource().getInputStream());
-        } catch (IOException e) {
-            LOGGER.error("Failed preloading of {}", imageSpec, e);
         }
     }
 
