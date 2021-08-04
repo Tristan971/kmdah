@@ -15,6 +15,7 @@ import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.client.RestTemplateAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureMockRestServiceServer;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -51,6 +52,10 @@ class MangadexImageServiceTest {
         MediaType contentType = MediaType.IMAGE_JPEG;
         byte[] content = UUID.randomUUID().toString().getBytes();
 
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.IMAGE_JPEG);
+        headers.setContentLength(content.length);
+
         mockRestServiceServer
             .expect(method(HttpMethod.GET))
             .andExpect(requestToUriTemplate(
@@ -59,11 +64,7 @@ class MangadexImageServiceTest {
                 IMAGE.chapter(),
                 IMAGE.file()
             ))
-            .andRespond(
-                withStatus(HttpStatus.OK)
-                    .contentType(contentType)
-                    .body(content)
-            );
+            .andRespond(withStatus(HttpStatus.OK).headers(headers).body(content));
 
         ImageContent download = mangadexImageService.download(IMAGE, UPSTREAM_URI);
 
@@ -90,7 +91,8 @@ class MangadexImageServiceTest {
 
         assertThatThrownBy(() -> mangadexImageService.download(IMAGE, UPSTREAM_URI))
             .isInstanceOf(MangadexUpstreamException.class)
-            .hasMessageContaining(failureHttpStatus.toString());
+            .getCause()
+            .hasMessageContaining("500 Internal Server Error");
     }
 
 }
