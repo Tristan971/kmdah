@@ -46,7 +46,7 @@ jobs:
           push: true
           tags: |
             tristandeloche/kmdah:latest
-            tristandeloche/kmdah:0.7.0-SNAPSHOT
+            tristandeloche/kmdah:0.7.0
 
   extras-varnish:
     runs-on: ubuntu-latest
