@@ -3,8 +3,8 @@ package moe.tristan.kmdah.api;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.valueOf;
 
-import javax.servlet.RequestDispatcher;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

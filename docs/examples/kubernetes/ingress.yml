@@ -1,4 +1,4 @@
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: kmdah-ingress
@@ -11,8 +11,10 @@ spec:
       http:
         paths:
           - backend:
-              serviceName: kmdah-service
-              servicePort: http
+              service:
+                name: kmdah-service
+                port:
+                  name: http
   tls:
     - hosts:
         - "*.<client specific>.mangadex.network"
