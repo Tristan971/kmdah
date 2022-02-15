@@ -54,7 +54,7 @@ The order of precedence is as follows (the lower down the list, the higher prior
 - Environment variable
 - Explicit yaml configuration key
 
-The default values are in [application.yml](src/main/resources/application.yml#L77) under `kmdah`.
+The default values are in [application.yml](src/main/resources/application.yml) under `kmdah`.
 
 ## MangaDex client configuration
 
@@ -118,7 +118,7 @@ spring:
 #### `kmdah.gossip.id-generation-strategy`
 
 Each instance must have a unique identity and can do so
-via [identity generation strategies](src/main/java/moe/tristan/kmdah/service/gossip/InstanceId.java#L32-L35):
+via [identity generation strategies](src/main/java/moe/tristan/kmdah/service/gossip/InstanceId.java):
 
 - `random_uuid` to generate one on startup
 - `hostname` to use the container's hostname

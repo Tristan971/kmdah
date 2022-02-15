@@ -3,7 +3,6 @@ package moe.tristan.kmdah.api;
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.text.ParseException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -49,7 +48,7 @@ class ImageControllerHeadersTest {
 
     @ParameterizedTest
     @EnumSource(CacheMode.class)
-    void validateHeadersByCacheMode(CacheMode cacheMode) throws ParseException {
+    void validateHeadersByCacheMode(CacheMode cacheMode) {
         ImageContent content = new ImageContent(
             new InputStreamResource(StreamUtils.emptyInput()),
             MediaType.IMAGE_JPEG,

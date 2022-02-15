@@ -1,4 +1,4 @@
-FROM docker.mdcloud.moe/library/eclipse-temurin:17
+FROM docker.mdcloud.moe/docker_io/library/eclipse-temurin:17
 
 RUN apt update && apt install -y libsodium23
 
