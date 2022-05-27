@@ -29,20 +29,3 @@ services:
         limits:
           cpus: '1'
           memory: '512M'
-
-  kmdah:
-    container_name: kmdah
-    image: tristandeloche/kmdah:latest
-    depends_on:
-      - redis
-    ports:
-      - "8080:8080"
-    environment:
-      KMDAH_MANGADEX_CLIENT_SECRET: ${KMDAH_MANGADEX_CLIENT_SECRET}
-      KMDAH_MANGADEX_LOAD_BALANCER_IP: ${KMDAH_MANGADEX_LOAD_BALANCER_IP}
-      KMDAH_CACHE_MONGODB_HOST: mongo
-      KMDAH_GOSSIP_REDIS_HOST: redis
-    deploy:
-      resources:
-        limits:
-          memory: '1G'
