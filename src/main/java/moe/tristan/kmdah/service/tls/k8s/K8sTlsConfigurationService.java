@@ -84,6 +84,7 @@ public class K8sTlsConfigurationService implements TlsConfigurationService {
             secret,
             "true",
             null,
+            null,
             null
         );
     }
@@ -95,6 +96,7 @@ public class K8sTlsConfigurationService implements TlsConfigurationService {
             metadata.getNamespace(),
             secret,
             "true",
+            null,
             null,
             null
         );

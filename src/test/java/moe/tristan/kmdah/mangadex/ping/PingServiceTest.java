@@ -45,7 +45,8 @@ import moe.tristan.kmdah.webmvc.RequestsLogger;
     properties = {
         "kmdah.mangadex.client-secret=secret",
         "kmdah.mangadex.load-balancer-ip=192.168.0.1",
-        "kmdah.cache.max-size-gb=100"
+        "kmdah.cache.backend=delegating",
+        "kmdah.cache.max-size-gb=100",
     }
 )
 @AutoConfigureMockRestServiceServer
@@ -85,7 +86,7 @@ class PingServiceTest {
         //noinspection ConstantConditions
         PingRequest expectedRequest = new PingRequest(
             mangadexSettings.clientSecret(),
-            mangadexSettings.loadBalancerIp().getHostAddress(),
+            mangadexSettings.loadBalancerIp(),
             443,
             DataSize.ofGigabytes(cacheSettings.maxSizeGb()).toBytes(),
             poolSpeed.toBytes(),

@@ -17,10 +17,10 @@ import moe.tristan.kmdah.service.images.cache.VacuumingRequest;
 import moe.tristan.kmdah.service.images.cache.VacuumingResult;
 import moe.tristan.kmdah.service.images.cache.VacuumingResult.VacuumGranularity;
 
-@SpringBootTest(
-    classes = VacuumJob.class,
-    properties = "kmdah.cache.max-size-gb=100"
-)
+@SpringBootTest(classes = VacuumJob.class, properties = {
+    "kmdah.cache.backend=delegating",
+    "kmdah.cache.max-size-gb=100",
+})
 @EnableConfigurationProperties(CacheSettings.class)
 class VacuumJobTest {
 

@@ -53,7 +53,7 @@ public class RequestsLogger extends OncePerRequestFilter implements ClientHttpRe
         String requestMethodAndPath = "%s %s".formatted(request.getMethod(), request.getURI());
 
         ClientHttpResponse response = execution.execute(request, body);
-        logEnd(requestMethodAndPath, response.getRawStatusCode(), startTime);
+        logEnd(requestMethodAndPath, response.getStatusCode().value(), startTime);
 
         return response;
     }
