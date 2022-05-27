@@ -1,10 +1,18 @@
-FROM docker.mdcloud.moe/docker_io/library/eclipse-temurin:17
+FROM docker.io/library/eclipse-temurin:18
 
-RUN apt update && apt install -y libsodium23
+RUN apt -qq update && \
+    apt install -y --no-install-recommends libsodium23 && \
+    apt autoremove -y && \
+    apt -qq -y clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /var/cache/* /var/log/*
 
-WORKDIR /mangahome
-ADD target/kmdah.jar /mangahome/kmdah.jar
+RUN groupadd -r -g 999 kmdah && \
+    useradd -u 999 -r -g 999 kmdah
+COPY --chown=root:root target/kmdah.jar /opt/kmdah/kmdah.jar
+
+USER kmdah
+WORKDIR /tmp
 
 STOPSIGNAL 15
 
-CMD [ "java", "-jar", "/mangahome/kmdah.jar" ]
+CMD [ "java", "-jar", "/opt/kmdah/kmdah.jar" ]

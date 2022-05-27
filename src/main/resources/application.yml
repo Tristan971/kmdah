@@ -76,7 +76,7 @@ management:
 kmdah:
 
   cache:
-    backend: ${KMDAH_CACHE_BACKEND:unset}
+    backend: ${KMDAH_CACHE_BACKEND}
     max-size-gb: ${KMDAH_CACHE_MAX_SIZE_GB:100}
     abort-lookup-threshold-millis: ${KMDAH_CACHE_ABORT_LOOKUP_THRESHOLD_MILLIS:500}
 
@@ -104,20 +104,20 @@ kmdah:
       lock-registry-key: ${KMDAH_GOSSIP_REDIS_LOCK_REGISTRY_KEY:kmdah-leadership}
 
   tls:
-    backend: ${KMDAH_TLS_BACKEND:unset}
+    backend: ${KMDAH_TLS_BACKEND}
     file:
       certificate-output-file: ${KMDAH_TLS_FILE_CERTIFICATE_OUTPUT_FILE:tls.crt}
       private-key-output-file: ${KMDAH_TLS_FILE_PRIVATE_KEY_OUTPUT_FILE:tls.key}
     k8s:
       secret:
-        auto-update: ${KMDAH_TLS_K8S_SECRET_AUTO_UPDATE:false}
-        name: ${KMDAH_TLS_K8S_SECRET_NAME:secret-name}
-        namespace: ${KMDAH_TLS_K8S_SECRET_NAMESPACE:default}
+        auto-update: ${KMDAH_TLS_K8S_SECRET_AUTO_UPDATE:true}
+        name: ${KMDAH_TLS_K8S_SECRET_NAME}
+        namespace: ${KMDAH_TLS_K8S_SECRET_NAMESPACE}
 
   mangadex:
-    client-secret: ${KMDAH_MANGADEX_CLIENT_SECRET:asuka>rei}
-    load-balancer-ip: ${KMDAH_MANGADEX_LOAD_BALANCER_IP:unset}
-    bandwidth-mbps: ${KMDAH_MANGADEX_BANDWIDTH_MBPS:500}
+    client-secret: ${KMDAH_MANGADEX_CLIENT_SECRET}
+    load-balancer-ip: ${KMDAH_MANGADEX_LOAD_BALANCER_IP}
+    bandwidth-mbps: ${KMDAH_MANGADEX_BANDWIDTH_MBPS:1}
     enforce-tokens: ${KMDAH_MANGADEX_ENFORE_TOKENS:true}
 
   worker:

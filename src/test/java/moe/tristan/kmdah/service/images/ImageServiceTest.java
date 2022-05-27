@@ -33,7 +33,7 @@ import moe.tristan.kmdah.service.images.cache.CachedImageService;
 import moe.tristan.kmdah.service.images.validation.ImageValidationService;
 import moe.tristan.kmdah.service.metrics.ImageMetrics;
 
-@SpringBootTest(classes = ImageService.class)
+@SpringBootTest(classes = ImageService.class, properties = "kmdah.cache.backend=delegating")
 @EnableConfigurationProperties(CacheSettings.class)
 class ImageServiceTest {
 
