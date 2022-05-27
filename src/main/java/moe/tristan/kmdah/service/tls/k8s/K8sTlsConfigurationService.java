@@ -27,9 +27,9 @@ public class K8sTlsConfigurationService implements TlsConfigurationService {
 
     private TlsData lastTlsData;
 
-    public K8sTlsConfigurationService(K8sTlsSecretSettings kubernetesTlsSecretSettings, CoreV1Api kubernetesCoreV1Api) {
-        this.kubernetesTlsSecretSettings = kubernetesTlsSecretSettings;
-        this.coreV1Api = kubernetesCoreV1Api;
+    public K8sTlsConfigurationService(K8sTlsSecretSettings secretSettings, CoreV1Api coreV1Api) {
+        this.kubernetesTlsSecretSettings = secretSettings;
+        this.coreV1Api = coreV1Api;
     }
 
     @EventListener(TlsDataReceivedEvent.class)
@@ -51,55 +51,34 @@ public class K8sTlsConfigurationService implements TlsConfigurationService {
 
         V1Secret secret = buildSecretFromTlsData(tlsData);
 
-        V1Secret result;
+        V1Secret result = null;
         try {
-            result = createSecret(secret);
-        } catch (Throwable createException) {
+            result = replaceSecret(secret);
+        } catch (ApiException e) {
+            if (e.getCode() == 404) {
+                LOGGER.warn("Failed replacement of secret with 404 code. Secret just doesn't exist yet or was deleted, try creation...");
+            } else {
+                throw new IllegalStateException("Cannot synchronize secret!\n" + e.getResponseBody(), e);
+            }
+        }
+
+        // if we soft-failed due to non-existence rather than other errors
+        // then try creating the secret instead
+        if (result == null) {
             try {
-                result = updateSecret(secret);
-            } catch (Throwable updateException) {
-                updateException.printStackTrace();
-                throw new IllegalStateException(
-                    "Could not "
-                        + "create (" + createException.getMessage() + ") "
-                        + "nor update (" + updateException.getMessage() + ") "
-                        + "secret!"
-                );
+                result = createSecret(secret);
+            } catch (ApiException e) {
+                throw new IllegalStateException("Cannot synchronize secret!\n" + e.getResponseBody(), e);
             }
         }
 
         V1ObjectMeta resultMeta = requireNonNull(result.getMetadata());
         LOGGER.info(
-            "Configured secret {}/{} with latest TlsData",
+            "Reconfigured secret {}/{} with latest TlsData",
             resultMeta.getNamespace(),
             resultMeta.getName()
         );
         lastTlsData = tlsData;
-    }
-
-    private V1Secret createSecret(V1Secret secret) throws ApiException {
-        V1ObjectMeta metadata = requireNonNull(secret.getMetadata());
-        return coreV1Api.createNamespacedSecret(
-            metadata.getNamespace(),
-            secret,
-            "true",
-            null,
-            null,
-            null
-        );
-    }
-
-    private V1Secret updateSecret(V1Secret secret) throws ApiException {
-        V1ObjectMeta metadata = requireNonNull(secret.getMetadata());
-        return coreV1Api.replaceNamespacedSecret(
-            metadata.getName(),
-            metadata.getNamespace(),
-            secret,
-            "true",
-            null,
-            null,
-            null
-        );
     }
 
     private V1Secret buildSecretFromTlsData(TlsData tlsData) {
@@ -117,6 +96,29 @@ public class K8sTlsConfigurationService implements TlsConfigurationService {
         secret.setData(secretData);
 
         return secret;
+    }
+
+    private V1Secret createSecret(V1Secret secret) throws ApiException {
+        return coreV1Api.createNamespacedSecret(
+            kubernetesTlsSecretSettings.namespace(),
+            secret,
+            "true",
+            null,
+            null,
+            null
+        );
+    }
+
+    private V1Secret replaceSecret(V1Secret secret) throws ApiException {
+        return coreV1Api.replaceNamespacedSecret(
+            kubernetesTlsSecretSettings.name(),
+            kubernetesTlsSecretSettings.namespace(),
+            secret,
+            "true",
+            null,
+            null,
+            null
+        );
     }
 
 }
