@@ -7,8 +7,8 @@ public final class RequestContext {
     private RequestContext() {
     }
 
-    public static void getId(String ipAddress) {
-        MDC.get("ruid");
+    public static String getId() {
+        return MDC.get("ruid");
     }
 
     public static void setId(String ipAddress) {

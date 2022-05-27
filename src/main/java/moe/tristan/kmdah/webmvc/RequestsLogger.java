@@ -68,8 +68,10 @@ public class RequestsLogger extends OncePerRequestFilter implements ClientHttpRe
 
         int statusRange = statusCode / 100;
 
-        if (statusRange > 3) {
+        if (statusRange >= 5) {
             LOGGER.error("{} {} ({}ms)", requestMethodAndPath, statusCode, durationMillis);
+        } else if (statusRange >= 4) {
+            LOGGER.warn("{} {} ({}ms)", requestMethodAndPath, statusCode, durationMillis);
         } else {
             LOGGER.info("{} {} ({}ms)", requestMethodAndPath, statusCode, durationMillis);
         }

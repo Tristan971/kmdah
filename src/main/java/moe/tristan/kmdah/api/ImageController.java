@@ -5,6 +5,7 @@ import static org.springframework.http.HttpStatus.FORBIDDEN;
 import java.util.Set;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.constraints.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +13,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,10 +29,13 @@ import moe.tristan.kmdah.service.images.validation.ImageRequestTokenValidator;
 import moe.tristan.kmdah.service.images.validation.InvalidImageRequestTokenException;
 import moe.tristan.kmdah.service.metrics.ImageMetrics;
 
+@Validated
 @RestController
 public class ImageController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ImageController.class);
+    private static final String RX_MD5 = "^\\w+$";
+    private static final String RX_FILENAME = "^[\\w-]+\\.(gif|jpe?g|png)$";
 
     private static final Set<String> TEST_CHAPTERS = Set.of(
         "1b682e7b24ae7dbdc5064eeeb8e8e353",
@@ -64,20 +69,12 @@ public class ImageController {
     public ResponseEntity<Resource> tokenizedImage(
         @PathVariable String token,
         @PathVariable("image-mode") String imageMode,
-        @PathVariable String chapterHash,
-        @PathVariable String fileName,
+        @Pattern(regexp = RX_MD5) @PathVariable String chapterHash,
+        @Pattern(regexp = RX_FILENAME) @PathVariable String fileName,
         HttpServletRequest request
     ) {
-        try {
-            if (mangadexSettings.enforceTokens() && !TEST_CHAPTERS.contains(chapterHash)) {
-                tokenValidator.validate(token, chapterHash);
-            }
-        } catch (Exception e) {
-            LOGGER.warn("Invalid token: {}", e.getMessage());
-            return ResponseEntity
-                .status(FORBIDDEN)
-                .header("Reason", "Token is not valid.")
-                .build();
+        if (mangadexSettings.enforceTokens() && !TEST_CHAPTERS.contains(chapterHash)) {
+            tokenValidator.validate(token, chapterHash);
         }
         return serve(imageMode, chapterHash, fileName, request);
     }
@@ -85,8 +82,8 @@ public class ImageController {
     @GetMapping("/{image-mode}/{chapterHash}/{fileName}")
     public ResponseEntity<Resource> image(
         @PathVariable("image-mode") String imageMode,
-        @PathVariable String chapterHash,
-        @PathVariable String fileName,
+        @Pattern(regexp = RX_MD5) @PathVariable String chapterHash,
+        @Pattern(regexp = RX_FILENAME) @PathVariable String fileName,
         HttpServletRequest request
     ) {
         if (mangadexSettings.enforceTokens() && !TEST_CHAPTERS.contains(chapterHash)) {
@@ -101,7 +98,7 @@ public class ImageController {
     public ResponseEntity<Void> delete(
         @PathVariable("client-secret") String clientSecret,
         @PathVariable("image-mode") String imageMode,
-        @PathVariable String chapterHash
+        @Pattern(regexp = RX_MD5) @PathVariable String chapterHash
     ) {
         if (!mangadexSettings.clientSecret().equals(clientSecret)) {
             LOGGER.warn("Attempt to delete image had invalid client secret!");

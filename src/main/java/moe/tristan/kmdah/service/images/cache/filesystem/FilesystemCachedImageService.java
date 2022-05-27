@@ -45,9 +45,8 @@ public class FilesystemCachedImageService implements CachedImageService, HealthI
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FilesystemCachedImageService.class);
 
-    private static final int NB_CORES = Runtime.getRuntime().availableProcessors();
-
     // pool of as many threads as CPU cores, with the same amount queued
+    private static final int NB_CORES = Runtime.getRuntime().availableProcessors();
     private static final ExecutorService WRITE_EXECUTOR_SERVICE = ThrottledExecutorService.from(NB_CORES, NB_CORES, NB_CORES);
 
     private final FilesystemSettings filesystemSettings;
