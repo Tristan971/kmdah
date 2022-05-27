@@ -20,7 +20,7 @@ spec:
       serviceAccountName: kmdah
       containers:
         - name: kmdah
-          image: rg.fr-par.scw.cloud/tristandeloche/kmdah:0.3.33
+          image: ghcr.io/tristan971/kmdah:0.11.0
           imagePullPolicy: Always
           ports:
             - name: http
