@@ -5,7 +5,6 @@ import static java.util.Objects.requireNonNull;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,15 +51,28 @@ public class K8sTlsConfigurationService implements TlsConfigurationService {
 
         V1Secret secret = buildSecretFromTlsData(tlsData);
 
-        V1Secret newSecret = CompletableFuture.supplyAsync(() -> replaceSecret(secret)).exceptionally(createException -> {
-            if (createException instanceof ApiException apiException && apiException.getCode() == 404) {
+        V1Secret result = null;
+        try {
+            result = replaceSecret(secret);
+        } catch (ApiException e) {
+            if (e.getCode() == 404) {
                 LOGGER.warn("Failed replacement of secret with 404 code. Secret just doesn't exist yet or was deleted, try creation...");
-                return createSecret(secret);
+            } else {
+                throw new IllegalStateException("Cannot synchronize secret!\n" + e.getResponseBody(), e);
             }
-            throw new IllegalStateException("Unable to replace TLS secret!", createException);
-        }).join();
+        }
 
-        V1ObjectMeta resultMeta = requireNonNull(newSecret.getMetadata());
+        // if we soft-failed due to non-existence rather than other errors
+        // then try creating the secret instead
+        if (result == null) {
+            try {
+                result = createSecret(secret);
+            } catch (ApiException e) {
+                throw new IllegalStateException("Cannot synchronize secret!\n" + e.getResponseBody(), e);
+            }
+        }
+
+        V1ObjectMeta resultMeta = requireNonNull(result.getMetadata());
         LOGGER.info(
             "Reconfigured secret {}/{} with latest TlsData",
             resultMeta.getNamespace(),
@@ -86,37 +98,27 @@ public class K8sTlsConfigurationService implements TlsConfigurationService {
         return secret;
     }
 
-    private V1Secret createSecret(V1Secret secret) {
-        try {
-            return coreV1Api.createNamespacedSecret(
-                kubernetesTlsSecretSettings.namespace(),
-                secret,
-                "true",
-                null,
-                null,
-                null
-            );
-        } catch (ApiException e) {
-            LOGGER.error("Cannot replace secret!\n{}", e.getResponseBody());
-            throw new RuntimeException(e);
-        }
+    private V1Secret createSecret(V1Secret secret) throws ApiException {
+        return coreV1Api.createNamespacedSecret(
+            kubernetesTlsSecretSettings.namespace(),
+            secret,
+            "true",
+            null,
+            null,
+            null
+        );
     }
 
-    private V1Secret replaceSecret(V1Secret secret) {
-        try {
-            return coreV1Api.replaceNamespacedSecret(
-                kubernetesTlsSecretSettings.name(),
-                kubernetesTlsSecretSettings.namespace(),
-                secret,
-                "true",
-                null,
-                null,
-                null
-            );
-        } catch (ApiException e) {
-            LOGGER.error("Cannot create secret!\n{}", e.getResponseBody());
-            throw new RuntimeException(e);
-        }
+    private V1Secret replaceSecret(V1Secret secret) throws ApiException {
+        return coreV1Api.replaceNamespacedSecret(
+            kubernetesTlsSecretSettings.name(),
+            kubernetesTlsSecretSettings.namespace(),
+            secret,
+            "true",
+            null,
+            null,
+            null
+        );
     }
 
 }
