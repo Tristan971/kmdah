@@ -27,9 +27,9 @@ public class K8sTlsConfigurationService implements TlsConfigurationService {
 
     private TlsData lastTlsData;
 
-    public K8sTlsConfigurationService(K8sTlsSecretSettings kubernetesTlsSecretSettings, CoreV1Api kubernetesCoreV1Api) {
-        this.kubernetesTlsSecretSettings = kubernetesTlsSecretSettings;
-        this.coreV1Api = kubernetesCoreV1Api;
+    public K8sTlsConfigurationService(K8sTlsSecretSettings secretSettings, CoreV1Api coreV1Api) {
+        this.kubernetesTlsSecretSettings = secretSettings;
+        this.coreV1Api = coreV1Api;
     }
 
     @EventListener(TlsDataReceivedEvent.class)
@@ -50,56 +50,29 @@ public class K8sTlsConfigurationService implements TlsConfigurationService {
         LOGGER.info("New TlsData - syncing tls cert secret as {}/{}", kubernetesTlsSecretSettings.namespace(), kubernetesTlsSecretSettings.name());
 
         V1Secret secret = buildSecretFromTlsData(tlsData);
-
         V1Secret result;
         try {
-            result = createSecret(secret);
-        } catch (Throwable createException) {
-            try {
-                result = updateSecret(secret);
-            } catch (Throwable updateException) {
-                updateException.printStackTrace();
-                throw new IllegalStateException(
-                    "Could not "
-                        + "create (" + createException.getMessage() + ") "
-                        + "nor update (" + updateException.getMessage() + ") "
-                        + "secret!"
-                );
-            }
+            result = coreV1Api.replaceNamespacedSecret(
+                kubernetesTlsSecretSettings.name(),
+                kubernetesTlsSecretSettings.namespace(),
+                secret,
+                "true",
+                null,
+                null,
+                null
+            );
+        } catch (ApiException exception) {
+            LOGGER.error("Failed secret synchronization!\n{}", exception.getResponseBody());
+            throw new IllegalStateException("Unable to synchronize TLS secret", exception);
         }
 
         V1ObjectMeta resultMeta = requireNonNull(result.getMetadata());
         LOGGER.info(
-            "Configured secret {}/{} with latest TlsData",
+            "Reconfigured secret {}/{} with latest TlsData",
             resultMeta.getNamespace(),
             resultMeta.getName()
         );
         lastTlsData = tlsData;
-    }
-
-    private V1Secret createSecret(V1Secret secret) throws ApiException {
-        V1ObjectMeta metadata = requireNonNull(secret.getMetadata());
-        return coreV1Api.createNamespacedSecret(
-            metadata.getNamespace(),
-            secret,
-            "true",
-            null,
-            null,
-            null
-        );
-    }
-
-    private V1Secret updateSecret(V1Secret secret) throws ApiException {
-        V1ObjectMeta metadata = requireNonNull(secret.getMetadata());
-        return coreV1Api.replaceNamespacedSecret(
-            metadata.getName(),
-            metadata.getNamespace(),
-            secret,
-            "true",
-            null,
-            null,
-            null
-        );
     }
 
     private V1Secret buildSecretFromTlsData(TlsData tlsData) {
