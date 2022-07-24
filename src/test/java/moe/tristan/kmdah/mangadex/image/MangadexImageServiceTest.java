@@ -91,7 +91,7 @@ class MangadexImageServiceTest {
 
         assertThatThrownBy(() -> mangadexImageService.download(IMAGE, UPSTREAM_URI))
             .isInstanceOf(MangadexUpstreamException.class)
-            .getCause()
+            .cause()
             .hasMessageContaining("500 Internal Server Error");
     }
 
