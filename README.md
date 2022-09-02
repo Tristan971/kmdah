@@ -89,7 +89,7 @@ To begin with, install and start [Redis](https://redis.io/) somewhere. It could 
 
 As kmdah does not store any actual data in it, a few megabytes of RAM and a very small bit of CPU is enough for our purposes.
 
-To use Redis Sentinel, you should carefully override the Redis configuration
+To use Redis Sentinel, you should carefully override the Redis configuration. You must also be using Redis version 6 or higher.
 
 ### Kmdah configuration snippet for Redis
 
@@ -103,11 +103,13 @@ spring:
     # 4. fail
     host: ${KMDAH_GOSSIP_REDIS_HOST:localhost}
     port: ${KMDAH_GOSSIP_REDIS_PORT:6379}
+    # password: redis
+    #
     # If you want to use Redis Sentinel, due to the configuration parse order, you just need to add the sentinel config
     # sentinel:
     #   master: kmdah-masterset
     #   nodes: "10.0.0.1:26379,10.0.0.2:26379,10.0.0.3:26379"
-    #   password: verysecret
+    #   password: sentinel # note that the password to a sentinel and to a redis aren't necessarily the same
 
 kmdah:
   gossip:

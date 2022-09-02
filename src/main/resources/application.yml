@@ -2,8 +2,10 @@
 spring:
   application:
     name: @project.artifactId@
+    hostname: "${HOSTNAME:${HOST:unknown}}"
     version: @project.version@
     spec: @mangadex.spec@
+    identifier: "${spring.application.hostname}/${spring.application.name}:${spring.application.version}"
 
   data:
     mongodb:
@@ -14,6 +16,7 @@ spring:
       password: ${kmdah.cache.mongodb.password}
 
   redis:
+    client-type: LETTUCE
     # Jedis and Lettuce both (at the time of writing) evaluate redis configuration in the following order:
     # 1. attempt to use sentinel, unless unavailable
     # 2. attempt to use cluster, unless unavailable,
