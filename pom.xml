@@ -68,6 +68,18 @@
                     <runOnlyOnce>true</runOnlyOnce>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <version>7.1.1</version>
+                <configuration>
+                    <!-- Mark CVE DB valid for a week -->
+                    <cveValidForHours>168</cveValidForHours>
+                    <formats>
+                        <format>HTML</format>
+                    </formats>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
@@ -128,6 +140,11 @@
         <dependency>
             <groupId>com.fasterxml.jackson.module</groupId>
             <artifactId>jackson-module-blackbird</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>1.31</version>
         </dependency>
 
         <!-- Monitoring -->
