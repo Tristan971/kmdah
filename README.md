@@ -89,17 +89,32 @@ To begin with, install and start [Redis](https://redis.io/) somewhere. It could 
 
 As kmdah does not store any actual data in it, a few megabytes of RAM and a very small bit of CPU is enough for our purposes.
 
-Note that Redis Sentinel is currently not supported yet.
+To use Redis Sentinel, you should carefully override the Redis configuration. You must also be using Redis version 6 or higher.
 
 ### Kmdah configuration snippet for Redis
 
 ```yaml
+spring:
+  redis:
+    # Jedis and Lettuce both (at the time of writing) evaluate redis configuration in the following order:
+    # 1. attempt to use sentinel, unless unavailable
+    # 2. attempt to use cluster, unless unavailable,
+    # 3. attempt to use standalone, unless unavailable,
+    # 4. fail
+    host: ${KMDAH_GOSSIP_REDIS_HOST:localhost}
+    port: ${KMDAH_GOSSIP_REDIS_PORT:6379}
+    # password: redis
+    #
+    # If you want to use Redis Sentinel, due to the configuration parse order, you just need to add the sentinel config
+    # sentinel:
+    #   master: kmdah-masterset
+    #   nodes: "10.0.0.1:26379,10.0.0.2:26379,10.0.0.3:26379"
+    #   password: sentinel # note that the password to a sentinel and to a redis aren't necessarily the same
+
 kmdah:
   gossip:
     id-generation-strategy: ${KMDAH_GOSSIP_ID_GENERATION_METHOD:random_uuid}
     redis:
-      host: ${KMDAH_GOSSIP_REDIS_HOST:localhost}
-      port: ${KMDAH_GOSSIP_REDIS_PORT:6379}
       gossip-topic: ${KMDAH_GOSSIP_REDIS_TOPIC:kmdah}
       lock-registry-key: ${KMDAH_GOSSIP_REDIS_LOCK_REGISTRY_KEY:kmdah-leadership}
 ```

@@ -14,6 +14,11 @@
       "name": "kmdah.experimental-features",
       "type": "java.util.Map",
       "description": "Unstable features that can be opted-in."
+    },
+    {
+      "name": "spring.application.identifier",
+      "type": "java.lang.String",
+      "description": "Instance specific identifier."
     }
   ]
 }

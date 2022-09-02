@@ -2,8 +2,10 @@
 spring:
   application:
     name: @project.artifactId@
+    hostname: "${HOSTNAME:${HOST:unknown}}"
     version: @project.version@
     spec: @mangadex.spec@
+    identifier: "${spring.application.hostname}/${spring.application.name}:${spring.application.version}"
 
   data:
     mongodb:
@@ -14,8 +16,14 @@ spring:
       password: ${kmdah.cache.mongodb.password}
 
   redis:
-    host: ${kmdah.gossip.redis.host}
-    port: ${kmdah.gossip.redis.port}
+    client-type: LETTUCE
+    # Jedis and Lettuce both (at the time of writing) evaluate redis configuration in the following order:
+    # 1. attempt to use sentinel, unless unavailable
+    # 2. attempt to use cluster, unless unavailable,
+    # 3. attempt to use standalone, unless unavailable,
+    # 4. fail
+    host: ${KMDAH_GOSSIP_REDIS_HOST:localhost}
+    port: ${KMDAH_GOSSIP_REDIS_PORT:6379}
 
   config:
     import: optional:file:${KMDAH_CONFIGURATION:config.yml}
@@ -98,8 +106,6 @@ kmdah:
   gossip:
     id-generation-strategy: ${KMDAH_GOSSIP_ID_GENERATION_METHOD:random_uuid}
     redis:
-      host: ${KMDAH_GOSSIP_REDIS_HOST:localhost}
-      port: ${KMDAH_GOSSIP_REDIS_PORT:6379}
       gossip-topic: ${KMDAH_GOSSIP_REDIS_TOPIC:kmdah}
       lock-registry-key: ${KMDAH_GOSSIP_REDIS_LOCK_REGISTRY_KEY:kmdah-leadership}
 
