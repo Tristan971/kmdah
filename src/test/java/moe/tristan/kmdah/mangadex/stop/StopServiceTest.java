@@ -26,7 +26,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import moe.tristan.kmdah.HttpClientConfiguration;
 import moe.tristan.kmdah.mangadex.MangadexApi;
-import moe.tristan.kmdah.mangadex.MangadexSettings;
+import moe.tristan.kmdah.mangadex.MangaDexSettings;
 import moe.tristan.kmdah.webmvc.RequestsLogger;
 
 @SpringBootTest(
@@ -43,7 +43,7 @@ import moe.tristan.kmdah.webmvc.RequestsLogger;
     }
 )
 @AutoConfigureMockRestServiceServer
-@EnableConfigurationProperties(MangadexSettings.class)
+@EnableConfigurationProperties(MangaDexSettings.class)
 class StopServiceTest {
 
     @MockBean

@@ -2,8 +2,10 @@ name: Build and test
 
 on:
   push:
-    branches: [ "master" ]
-    tags: [ "*" ]
+    branches:
+      - master
+    tags:
+      - "*"
 
 env:
   REGISTRY: ghcr.io

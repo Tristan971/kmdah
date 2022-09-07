@@ -125,6 +125,8 @@ kmdah:
     load-balancer-ip: ${KMDAH_MANGADEX_LOAD_BALANCER_IP}
     bandwidth-mbps: ${KMDAH_MANGADEX_BANDWIDTH_MBPS:1}
     enforce-tokens: ${KMDAH_MANGADEX_ENFORE_TOKENS:true}
+    # override-api-url: "https://api.example.com"
+    # override-upstream-image-server: "https://images.example.com"
 
   worker:
     port: ${KMDAH_WORKER_PORT:8080}

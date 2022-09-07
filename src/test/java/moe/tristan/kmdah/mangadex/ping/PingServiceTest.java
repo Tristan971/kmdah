@@ -30,7 +30,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import moe.tristan.kmdah.HttpClientConfiguration;
 import moe.tristan.kmdah.mangadex.MangadexApi;
-import moe.tristan.kmdah.mangadex.MangadexSettings;
+import moe.tristan.kmdah.mangadex.MangaDexSettings;
 import moe.tristan.kmdah.service.images.cache.CacheSettings;
 import moe.tristan.kmdah.webmvc.RequestsLogger;
 
@@ -50,7 +50,7 @@ import moe.tristan.kmdah.webmvc.RequestsLogger;
     }
 )
 @AutoConfigureMockRestServiceServer
-@EnableConfigurationProperties({MangadexSettings.class, CacheSettings.class})
+@EnableConfigurationProperties({MangaDexSettings.class, CacheSettings.class})
 class PingServiceTest {
 
     @MockBean
@@ -60,7 +60,7 @@ class PingServiceTest {
     private MockRestServiceServer mockRestServiceServer;
 
     @Autowired
-    private MangadexSettings mangadexSettings;
+    private MangaDexSettings mangadexSettings;
 
     @Autowired
     private CacheSettings cacheSettings;

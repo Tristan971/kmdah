@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import moe.tristan.kmdah.mangadex.MangadexApi;
-import moe.tristan.kmdah.mangadex.MangadexSettings;
+import moe.tristan.kmdah.mangadex.MangaDexSettings;
 
 @Service
 public class StopService {
@@ -16,9 +16,9 @@ public class StopService {
 
     private final RestTemplate restTemplate;
     private final MangadexApi mangadexApi;
-    private final MangadexSettings mangadexSettings;
+    private final MangaDexSettings mangadexSettings;
 
-    public StopService(RestTemplate restTemplate, MangadexApi mangadexApi, MangadexSettings mangadexSettings) {
+    public StopService(RestTemplate restTemplate, MangadexApi mangadexApi, MangaDexSettings mangadexSettings) {
         this.restTemplate = restTemplate;
         this.mangadexApi = mangadexApi;
         this.mangadexSettings = mangadexSettings;

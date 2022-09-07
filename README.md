@@ -65,6 +65,8 @@ kmdah:
     load-balancer-ip: ${KMDAH_MANGADEX_LOAD_BALANCER_IP:unset}
     bandwidth-mbps: ${KMDAH_MANGADEX_BANDWIDTH_MBPS:500}
     enforce-tokens: ${KMDAH_MANGADEX_ENFORE_TOKENS:false}
+    # override-api-url: "https://api.example.com"
+    # override-upstream-image-server: "https://images.example.com"
 ```
 
 `client-secret` and `bandwidth-mbps` should be self-explanatory
@@ -72,6 +74,10 @@ kmdah:
 `load-balancer-ip` is the IP of the load-balancer that you want users to access kmdah through
 
 `enforce-tokens` forces validation of tokens (to avoid aggregator websites hotlinking to your client). It is recommended to set it to `true`
+
+`override-api-url` (optional) allows overriding the MD@H API URL. Mostly a dev setting.
+
+`override-upstream-image-server` (optional) allows overriding the MD@H image upstream server. Mostly a dev setting.
 
 ## Worker configuration
 
