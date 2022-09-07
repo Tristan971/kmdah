@@ -11,6 +11,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.util.unit.DataSize;
 
+import moe.tristan.kmdah.mangadex.MangaDexSettings;
 import moe.tristan.kmdah.mangadex.ping.PingResponse;
 import moe.tristan.kmdah.mangadex.ping.PingService;
 import moe.tristan.kmdah.mangadex.ping.TlsData;
@@ -29,6 +30,7 @@ public class MangadexHeartbeatJob implements LeaderActivity {
     private final StopService stopService;
     private final GossipPublisher gossipPublisher;
     private final WorkersRegistry workersRegistry;
+    private final MangaDexSettings mangadexSettings;
     private final ApplicationEventPublisher applicationEventPublisher;
 
     private final AtomicReference<ZonedDateTime> lastCreatedAt = new AtomicReference<>();
@@ -38,12 +40,14 @@ public class MangadexHeartbeatJob implements LeaderActivity {
         StopService stopService,
         GossipPublisher gossipPublisher,
         WorkersRegistry workersRegistry,
+        MangaDexSettings mangadexSettings,
         ApplicationEventPublisher applicationEventPublisher
     ) {
         this.pingService = pingService;
         this.stopService = stopService;
         this.gossipPublisher = gossipPublisher;
         this.workersRegistry = workersRegistry;
+        this.mangadexSettings = mangadexSettings;
         this.applicationEventPublisher = applicationEventPublisher;
     }
 
@@ -83,7 +87,9 @@ public class MangadexHeartbeatJob implements LeaderActivity {
             // broadcast event to trigger k8s SSL secret update
             tlsData.map(TlsDataReceivedEvent::new).ifPresent(applicationEventPublisher::publishEvent);
 
-            gossipPublisher.broadcastImageServer(response.imageServer());
+            var effectiveImageServer = mangadexSettings.overrideUpstreamImageServer().orElse(response.imageServer());
+            gossipPublisher.broadcastImageServer(effectiveImageServer);
+
             gossipPublisher.broadcastTokenSecretKey(response.tokenKey());
         } catch (Exception e) {
             LOGGER.error("Error during ping!", e);

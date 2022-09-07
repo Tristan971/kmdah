@@ -24,7 +24,7 @@ import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import moe.tristan.kmdah.mangadex.MangadexSettings;
+import moe.tristan.kmdah.mangadex.MangaDexSettings;
 import moe.tristan.kmdah.mangadex.image.ImageMode;
 import moe.tristan.kmdah.service.images.ImageContent;
 import moe.tristan.kmdah.service.images.ImageService;
@@ -59,7 +59,7 @@ class ImageControllerTest {
     private ImageMetrics imageMetrics;
 
     @MockBean
-    private MangadexSettings mangadexSettings;
+    private MangaDexSettings mangadexSettings;
 
     @Autowired
     private MockMvc mockMvc;

@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
-import moe.tristan.kmdah.mangadex.MangadexSettings;
+import moe.tristan.kmdah.mangadex.MangaDexSettings;
 import moe.tristan.kmdah.mangadex.image.ImageMode;
 import moe.tristan.kmdah.service.images.ImageContent;
 import moe.tristan.kmdah.service.images.ImageService;
@@ -44,7 +44,7 @@ public class ImageController {
 
     private final ImageService imageService;
     private final ImageMetrics imageMetrics;
-    private final MangadexSettings mangadexSettings;
+    private final MangaDexSettings mangadexSettings;
     private final ImageControllerHeaders controllerHeaders;
     private final ImageRequestTokenValidator tokenValidator;
     private final ImageRequestReferrerValidator referrerValidator;
@@ -52,7 +52,7 @@ public class ImageController {
     public ImageController(
         ImageService imageService,
         ImageMetrics imageMetrics,
-        MangadexSettings mangadexSettings,
+        MangaDexSettings mangadexSettings,
         ImageRequestTokenValidator tokenValidator,
         ImageControllerHeaders controllerHeaders,
         ImageRequestReferrerValidator referrerValidator
