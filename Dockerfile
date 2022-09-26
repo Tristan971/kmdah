@@ -1,10 +1,9 @@
-FROM docker.io/library/eclipse-temurin:18
+FROM docker.io/library/amazoncorretto:19
 
-RUN apt -qq update && \
-    apt install -y --no-install-recommends libsodium23 && \
-    apt autoremove -y && \
-    apt -qq -y clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /var/cache/* /var/log/*
+RUN yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm && \
+    yum install -y libsodium shadow-utils && \
+    yum clean all && \
+    rm -rf /var/cache/yum/*
 
 RUN groupadd -r -g 999 kmdah && \
     useradd -u 999 -r -g 999 kmdah

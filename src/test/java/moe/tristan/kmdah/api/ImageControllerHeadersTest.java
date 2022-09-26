@@ -3,6 +3,7 @@ package moe.tristan.kmdah.api;
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.InputStream;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -18,7 +19,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.util.StreamUtils;
 
 import moe.tristan.kmdah.service.gossip.InstanceId;
 import moe.tristan.kmdah.service.images.ImageContent;
@@ -50,7 +50,7 @@ class ImageControllerHeadersTest {
     @EnumSource(CacheMode.class)
     void validateHeadersByCacheMode(CacheMode cacheMode) {
         ImageContent content = new ImageContent(
-            new InputStreamResource(StreamUtils.emptyInput()),
+            new InputStreamResource(InputStream.nullInputStream()),
             MediaType.IMAGE_JPEG,
             OptionalLong.of(1L),
             LAST_MODIFIED,
