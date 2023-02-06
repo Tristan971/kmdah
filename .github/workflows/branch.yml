@@ -64,7 +64,7 @@ jobs:
             type=ref,event=branch,enable=true,priority=600,prefix=branch-,suffix=-{{sha}}
             type=ref,event=pr,enable=true,priority=600,prefix=pr-,suffix=-{{sha}}
       - name: Build and push Docker image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           context: .
           push: true
