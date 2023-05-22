@@ -12,18 +12,19 @@ spring:
       host: ${kmdah.cache.mongodb.host}
       port: ${kmdah.cache.mongodb.port}
       authentication-database: ${kmdah.cache.mongodb.authentication-database}
+      database: ${kmdah.cache.mongodb.database}
       username: ${kmdah.cache.mongodb.username}
       password: ${kmdah.cache.mongodb.password}
 
-  redis:
-    client-type: LETTUCE
-    # Jedis and Lettuce both (at the time of writing) evaluate redis configuration in the following order:
-    # 1. attempt to use sentinel, unless unavailable
-    # 2. attempt to use cluster, unless unavailable,
-    # 3. attempt to use standalone, unless unavailable,
-    # 4. fail
-    host: ${KMDAH_GOSSIP_REDIS_HOST:localhost}
-    port: ${KMDAH_GOSSIP_REDIS_PORT:6379}
+    redis:
+      client-type: LETTUCE
+      # Jedis and Lettuce both (at the time of writing) evaluate redis configuration in the following order:
+      # 1. attempt to use sentinel, unless unavailable
+      # 2. attempt to use cluster, unless unavailable,
+      # 3. attempt to use standalone, unless unavailable,
+      # 4. fail
+      host: ${KMDAH_GOSSIP_REDIS_HOST:localhost}
+      port: ${KMDAH_GOSSIP_REDIS_PORT:6379}
 
   config:
     import: optional:file:${KMDAH_CONFIGURATION:config.yml}
@@ -70,15 +71,6 @@ management:
   metrics:
     tags:
       application: ${spring.application.name}
-    web:
-      server:
-        request:
-          autotime:
-            percentiles: 0.5,0.75,0.9,0.95,0.99
-      client:
-        request:
-          autotime:
-            percentiles: 0.5,0.75,0.9,0.95,0.99
 
 # User configuration
 kmdah:
@@ -95,6 +87,7 @@ kmdah:
     mongodb:
       host: ${KMDAH_CACHE_MONGODB_HOST:localhost}
       port: ${KMDAH_CACHE_MONGODB_PORT:27017}
+      database: ${KMDAH_CACHE_MONGODB_DATABASE:test}
       authentication-database: ${KMDAH_CACHE_MONGODB_AUTHENTICATION_DATABASE:admin}
       username: ${KMDAH_CACHE_MONGODB_USERNAME:kmdah}
       password: ${KMDAH_CACHE_MONGODB_PASSWORD:kmdah}
