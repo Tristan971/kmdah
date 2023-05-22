@@ -20,7 +20,7 @@
 
     <properties>
         <revision>local-SNAPSHOT</revision>
-        <java.version>19</java.version>
+        <java.version>20</java.version>
         <mangadex.spec>32</mangadex.spec>
 
         <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
