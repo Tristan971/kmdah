@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.1.0</version>
+        <version>3.1.1</version>
         <relativePath /> <!-- lookup parent from repository -->
     </parent>
 
@@ -24,18 +24,20 @@
         <mangadex.spec>32</mangadex.spec>
 
         <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
-        <maven-surefire-plugin.version>3.1.0</maven-surefire-plugin.version>
-        <git-commit-id-maven-plugin.version>6.0.0</git-commit-id-maven-plugin.version>
+        <maven-surefire-plugin.version>3.1.2</maven-surefire-plugin.version>
+        <maven-dependency-plugin.version>3.6.0</maven-dependency-plugin.version>
+        <maven-site-plugin.version>4.0.0-M6</maven-site-plugin.version>
         <dependency-check-maven.version>8.2.1</dependency-check-maven.version>
+        <git-commit-id-maven-plugin.version>6.0.0</git-commit-id-maven-plugin.version>
 
         <jsr305.version>3.0.2</jsr305.version>
-        <commons-io.version>2.12.0</commons-io.version>
+        <commons-io.version>2.13.0</commons-io.version>
         <snakeyaml.version>2.0</snakeyaml.version>
         <geoip2.version>4.0.1</geoip2.version>
         <kubernetes-client-java.version>18.0.0</kubernetes-client-java.version>
-        <jnr-ffi.version>2.2.13</jnr-ffi.version>
+        <jnr-ffi.version>2.2.14</jnr-ffi.version>
         <apache-tuweni.version>2.3.1</apache-tuweni.version>
-        <testcontainers.version>1.18.1</testcontainers.version>
+        <testcontainers.version>1.18.3</testcontainers.version>
         <mockito-inline.version>5.2.0</mockito-inline.version>
         <awaitility.version>4.2.0</awaitility.version>
     </properties>
@@ -67,6 +69,11 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>${maven-dependency-plugin.version}</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven-surefire-plugin.version}</version>
                 <configuration>
@@ -95,6 +102,11 @@
                         <format>HTML</format>
                     </formats>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-site-plugin</artifactId>
+                <version>${maven-site-plugin.version}</version>
             </plugin>
         </plugins>
     </build>

@@ -36,7 +36,7 @@ public class MongoDbSidecar implements Extension, BeforeAllCallback, AfterAllCal
         System.setProperty("KMDAH_CACHE_MONGODB_PORT", String.valueOf(mongoPort));
 
         System.setProperty("KMDAH_CACHE_MONGODB_AUTHENTICATION_DATABASE", "admin");
-        System.setProperty("KMDAH_CACHE_MONGODB_DATABASE", "admin");
+        System.setProperty("KMDAH_CACHE_MONGODB_DATABASE", "test");
 
         assertThat(mongodb.isRunning()).isTrue();
     }
