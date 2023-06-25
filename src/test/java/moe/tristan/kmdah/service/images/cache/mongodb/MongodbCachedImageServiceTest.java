@@ -9,6 +9,7 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
@@ -23,31 +24,14 @@ import moe.tristan.kmdah.service.images.ImageContent;
 import moe.tristan.kmdah.service.images.ImageSpec;
 import moe.tristan.kmdah.service.images.cache.CacheMode;
 
-@Testcontainers
-@DirtiesContext
 @ActiveProfiles("cache-mongodb")
+@DirtiesContext
+@ExtendWith(MongoDbSidecar.class)
 @SpringBootTest(classes = MongodbConfiguration.class)
 class MongodbCachedImageServiceTest {
 
-    private static final int MONGODB_PORT = 27017;
-
-    @Container
-    private static final GenericContainer<?> MONGODB = new GenericContainer<>("library/mongo:4.4")
-        .withEnv("MONGO_INITDB_ROOT_USERNAME", "kmdah")
-        .withEnv("MONGO_INITDB_ROOT_PASSWORD", "kmdah")
-        .withExposedPorts(MONGODB_PORT);
-
     @Autowired
     private MongodbCachedImageService mongodbCachedImageService;
-
-    @BeforeAll
-    static void beforeAll() {
-        String mongoHost = MONGODB.getHost();
-        System.setProperty("KMDAH_CACHE_MONGODB_HOST", mongoHost);
-
-        Integer mongoPort = MONGODB.getMappedPort(MONGODB_PORT);
-        System.setProperty("KMDAH_CACHE_MONGODB_PORT", String.valueOf(mongoPort));
-    }
 
     @Test
     void fileDoesntExist() {

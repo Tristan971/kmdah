@@ -20,9 +20,12 @@ public record MongodbSettings(
     String authenticationDatabase,
 
     @NotBlank
+    String database,
+
+    @NotBlank
     String username,
 
     @NotBlank
     String password
 
-) {}
+) { }
