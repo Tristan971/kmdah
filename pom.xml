@@ -26,7 +26,7 @@
         <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.1.2</maven-surefire-plugin.version>
         <maven-dependency-plugin.version>3.6.0</maven-dependency-plugin.version>
-        <maven-site-plugin.version>4.0.0-M6</maven-site-plugin.version>
+        <maven-site-plugin.version>4.0.0-M8</maven-site-plugin.version>
         <dependency-check-maven.version>8.2.1</dependency-check-maven.version>
         <git-commit-id-maven-plugin.version>6.0.0</git-commit-id-maven-plugin.version>
 
