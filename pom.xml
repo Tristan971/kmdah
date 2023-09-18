@@ -35,7 +35,7 @@
         <snakeyaml.version>2.0</snakeyaml.version>
         <geoip2.version>4.1.0</geoip2.version>
         <kubernetes-client-java.version>18.0.1</kubernetes-client-java.version>
-        <jnr-ffi.version>2.2.14</jnr-ffi.version>
+        <jnr-ffi.version>2.2.15</jnr-ffi.version>
         <apache-tuweni.version>2.3.1</apache-tuweni.version>
         <testcontainers.version>1.19.0</testcontainers.version>
         <mockito-inline.version>5.2.0</mockito-inline.version>
