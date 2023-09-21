@@ -1,5 +1,11 @@
 # kmdah
 
+---
+
+Project is archived as I have no time to maintain it.
+
+---
+
 A
 distributed-first [MangaDex@Home](https://mangadex.network) [client implementation](https://gitlab.com/mangadex-pub/mangadex_at_home/-/wikis/Formal-Specification-for-Custom-Clients)
 for ~~web~~ meme scale.
